@@ -1,0 +1,54 @@
+{
+  "name": "sg-church",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Free church management SaaS platform",
+  "keywords": [
+    "church",
+    "management",
+    "saas",
+    "nonprofit",
+    "donations",
+    "members"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/sg-church.git"
+  },
+  "license": "MIT",
+  "author": "SG Church Contributors",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "db:migrate:create": "turbo run db:migrate:create",
+    "db:migrate:deploy": "turbo run db:migrate:deploy",
+    "db:seed": "turbo run db:seed",
+    "db:studio": "turbo run db:studio",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.16",
+    "prettier": "^3.2.5",
+    "prettier-plugin-tailwindcss": "^0.5.11",
+    "turbo": "^1.12.4",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "pnpm@8.15.3",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
