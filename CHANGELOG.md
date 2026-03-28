@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 - Multi-tenant architecture implementation
-- User authentication with NextAuth.js
+- User authentication with Django Auth
 - Basic membership management
 - One-time donation processing
 - Simple event management
@@ -27,11 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Role-based access control (RBAC)
 
 #### Infrastructure
-- Next.js 14 setup with App Router
-- PostgreSQL database with Prisma ORM
+- Django 5 setup with Python 3.12
+- PostgreSQL database with Django ORM
 - Schema-per-tenant multi-tenancy
-- Vercel deployment configuration
-- Supabase integration
+- Django REST Framework for APIs
+- Bootstrap 5 frontend
+- Render/VPS deployment configuration
 
 ---
 
@@ -59,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance optimization
 - Public API for integrations
 - Full internationalization (i18n)
-- Native mobile apps (React Native)
+- Native mobile apps (Flutter)
 - AI-powered insights
 - Advanced security features
 - Compliance certifications

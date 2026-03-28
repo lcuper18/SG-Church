@@ -200,7 +200,7 @@ Ver [DEPLOYMENT.md](./docs/DEPLOYMENT.md) para configuración de producción.
 - [ ] Optimización de performance
 - [ ] API pública
 - [ ] Internacionalización (i18n)
-- [ ] Mobile apps nativas (Flutter/React Native)
+- [ ] Mobile apps nativas (Flutter)
 
 Ver [ROADMAP.md](./ROADMAP.md) para detalles completos de cada fase.
 

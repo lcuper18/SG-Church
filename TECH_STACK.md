@@ -822,7 +822,7 @@ whitenoise>=6.0,<7.0
 | Aspecto | Tecnología | Alternativa Principal | Por Qué Elegimos |
 |---------|-----------|----------------------|------------------|
 | **Backend** | Django 5 | Flask, FastAPI | ORM, Admin, Seguridad |
-| **Frontend** | HTML/CSS/JS | React, Vue | Simplicidad, mantenimiento |
+| **Frontend** | HTML/CSS/JS | - | Simplicidad, mantenimiento |
 | **API** | DRF | Graphene, Ninja | Estándar profesional |
 | **Database** | PostgreSQL | MySQL | Multi-schema, JSONB |
 | **ORM** | Django ORM | SQLAlchemy | Integrado, Admin built-in |

@@ -127,7 +127,7 @@ SG Church es una plataforma SaaS multi-tenant diseñada para escalar desde peque
 
 **Justificación**:
 - ✅ **Integraciones**: Conexión con apps móviles, otros sistemas
-- ✅ **SPA option**: Posibilidad de migrar a React/Vue en el futuro
+- ✅ **SPA option**: Posibilidad de migrar a frontend React/Vue en el futuro
 - ✅ **Third-party**: Webhooks y APIs públicas
 - ✅ **Mobile**: API lista para apps nativas
 

@@ -288,29 +288,38 @@ Luego en GitHub, crea un Pull Request desde tu branch hacia `main` del repositor
 
 ## Guías de Estilo
 
-### TypeScript
+### Python
 
-- **Strict mode**: Siempre habilitar TypeScript strict
-- **No `any`**: Evita `any`, usa `unknown` si es necesario
-- **Explicit return types**: Para funciones públicas
-- **Interfaces over types**: Para objetos, prefiere `interface`
+- **PEP 8**: Sigue las convenciones de PEP 8
+- **Type hints**: Usa type hints en funciones
+- **Docstrings**: Usa docstrings para funciones y clases
+- **Imports**: Organiza imports correctamente (1st party, 3rd party, local)
 
-```typescript
-// ✅ Good
-interface Member {
-  id: string
-  firstName: string
-  lastName: string
-}
+```python
+# ✅ Good
+def get_member(member_id: int) -> Member | None:
+    """Retrieve a member by ID.
+    
+    Args:
+        member_id: The member's unique identifier.
+        
+    Returns:
+        Member object if found, None otherwise.
+    """
+    return Member.objects.filter(id=member_id).first()
 
-async function getMember(id: string): Promise<Member | null> {
-  // ...
-}
+# ❌ Bad
+def get_member(id):  # No type hints
+    return Member.objects.filter(id=id).first()
+```
 
-// ❌ Bad
-function getMember(id: any) {  // any, no return type
-  // ...
-}
+### Django
+
+- **Models**: Usa `models.Model` y define `__str__`
+- **Views**: Prefiere Class-Based Views para casos complejos
+- **Forms**: Siempre usa Django Forms para validación
+- **URLs**: Define URLs en `urls.py` de cada app
+- **Admin**: Registra modelos en `admin.py`
 ```
 
 ### Django Views
@@ -349,34 +358,49 @@ export function MemberForm() {
 
 ### Naming Conventions
 
-- **Components**: PascalCase (`MemberCard.tsx`)
-- **Functions**: camelCase (`getMemberById`)
+- **Python**: snake_case (`get_member_by_id`)
+- **Classes/Models**: PascalCase (`Member`, `DonationView`)
 - **Constants**: UPPER_SNAKE_CASE (`MAX_UPLOAD_SIZE`)
-- **Files**: kebab-case para utils (`format-currency.ts`)
-- **CSS classes**: Tailwind utilities (no custom CSS en lo posible)
+- **Templates**: snake_case (`member_list.html`)
+- **CSS classes**: Bootstrap utilities
 
 ### File Organization
 
 ```
-feature/
-├── components/
-│   ├── member-card.tsx        # Component
-│   ├── member-form.tsx
-│   └── member-list.tsx
-├── hooks/
-│   └── use-members.ts         # Custom hooks
-├── lib/
-│   ├── validations.ts         # Zod schemas
-│   └── utils.ts               # Utility functions
-└── page.html                 # Django template
+members/
+├── models.py              # Modelos Django
+├── views.py              # Vistas
+├── forms.py              # Formularios
+├── serializers.py        # DRF Serializers
+├── urls.py               # URLs
+├── admin.py              # Configuración admin
+├── tasks.py              # Tareas Celery
+├── templates/
+│   └── members/
+│       ├── list.html
+│       └── detail.html
+└── static/
+    └── members/
+        └── style.css
 ```
 
 ### Imports Order
 
-```typescript
-// 1. React y frameworks
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+```python
+# 1. Python/Django
+import os
+import re
+from datetime import datetime
+
+# 2. Django
+from django.db import models
+from django.views.generic import ListView
+
+# 3. Third party
+from celery import shared_task
+
+# 4. Local
+from .models import Member
 
 // 2. External libraries
 import { z } from 'zod'

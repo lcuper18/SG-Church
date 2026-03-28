@@ -29,11 +29,11 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 #### Sprint 1-2: Setup Inicial (Semanas 1-4)
 - [x] **Configuración del Proyecto**
-  - [x] Inicializar monorepo con Turborepo
+  - [x] Crear proyecto Django
   - [x] Setup Django 5 con Python 3.12
-  - [x] Configurar TypeScript, ESLint, Prettier
-  - [x] Instalar Tailwind CSS + shadcn/ui base
+  - [x] Configurar Bootstrap 5
   - [x] Configurar Django ORM con PostgreSQL
+  - [x] Configurar Django REST Framework
   - [ ] Setup CI/CD con GitHub Actions
 
 - [ ] **Infraestructura Multi-Tenant**
@@ -583,7 +583,7 @@ Optimizar performance, abrir API pública, soportar internacionalización y esca
 **Entregable**: Plataforma multi-idioma
 
 #### Sprint 49-50: Mobile Native Apps (Semanas 97-100)
-- [ ] **Mobile App** (Flutter/React Native)
+- [ ] **Mobile App** (Flutter)
   - [ ] Setup con Expo
   - [ ] Compartir código con web (packages)
   - [ ] Pantallas principales:
@@ -812,7 +812,7 @@ Una feature está "Done" cuando:
 
 **Fases 2-3**:
 - 2-3 Full-Stack Developers
-- 1 Mobile Developer (Flutter/React Native)
+- 1 Mobile Developer (Flutter)
 - 1 Designer
 - 1 Product Manager (50% time)
 - 1 QA Engineer (part-time)
