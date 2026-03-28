@@ -144,15 +144,15 @@ pnpm clean            # Limpiar builds y node_modules
 pnpm --filter web build  # Compilar solo la app web
 ```
 
-## 📁 Estructura Actual del Proyecto
+## 📁 Estructura del Proyecto
 
+### Estructura Actual (Documentación)
 ```
 SG_Church/
 ├── docs/                    # Documentación detallada
 │   ├── DEPLOYMENT.md       # Guía de deployment
 │   ├── FAQ.md              # Preguntas frecuentes
-│   ├── GLOSSARY.md         # Glosario de términos
-│   └── README.md           # Índice de documentación
+│   └── GLOSSARY.md         # Glosario de términos
 │
 ├── .github/                # Configuración de GitHub
 │   ├── ISSUE_TEMPLATE/     # Plantillas de issues
@@ -163,7 +163,6 @@ SG_Church/
 ├── CONTRIBUTING.md         # Guía de contribución
 ├── DATABASE.md             # Esquema de base de datos
 ├── LICENSE                 # Licencia MIT
-├── PROJECT_STRUCTURE.md    # Estructura del proyecto
 ├── README.md               # Documentación principal
 ├── ROADMAP.md              # Plan de desarrollo
 ├── SECURITY.md             # Política de seguridad
@@ -175,6 +174,61 @@ SG_Church/
 ├── package.json            # Dependencias y scripts
 ├── tsconfig.json           # Configuración TypeScript
 └── turbo.json              # Configuración Turborepo
+```
+
+### Estructura Planeada (Código)
+
+Una vez que comience el desarrollo, el proyecto se expandirá a:
+
+```
+SG_Church/
+├── apps/                           # Aplicaciones
+│   ├── web/                        # App Next.js principal
+│   │   ├── app/                   # App Router
+│   │   ├── components/            # Componentes React
+│   │   ├── lib/                   # Utilidades
+│   │   ├── public/                # Assets estáticos
+│   │   └── middleware.ts          # Next.js middleware
+│   │
+│   └── mobile/ (Fase 4)           # React Native app
+│
+├── packages/                       # Paquetes compartidos
+│   ├── ui/                        # Componentes UI (shadcn/ui)
+│   ├── database/                  # Prisma schema y cliente
+│   ├── api/                       # Routers tRPC
+│   ├── auth/                      # Lógica de autenticación
+│   ├── email/                     # Templates de email
+│   └── config/                    # Configs compartidas
+│
+├── services/                       # Servicios backend
+│   ├── worker/                    # BullMQ worker
+│   └── api/ (Fase 4)             # API standalone
+│
+└── tests/                          # Tests E2E e integración
+```
+
+### Convenciones de Nombres
+
+| Tipo | Formato | Ejemplo |
+|------|---------|---------|
+| Componentes | PascalCase | `MemberCard.tsx` |
+| Utilidades | camelCase | `formatDate.ts` |
+| Tipos | PascalCase + `.types.ts` | `Member.types.ts` |
+| Rutas API | kebab-case | `create-member.ts` |
+| Tests | Mismo + `.test.ts` | `member.test.ts` |
+
+### Alias de Import
+
+```typescript
+// En apps/web
+import { Button } from '@/components/ui/button'
+import { prisma } from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth'
+
+// En todo el monorepo
+import { Button } from '@sg-church/ui'
+import { prisma } from '@sg-church/database'
+import { memberRouter } from '@sg-church/api'
 ```
 
 ## 🎯 Próximos Pasos en el Desarrollo

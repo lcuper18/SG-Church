@@ -209,5 +209,5 @@ Check:
 
 - **Community Forum**: [GitHub Discussions](https://github.com/your-org/sg-church/discussions)
 - **Email Support**: support@sgchurch.app
-- **Documentation**: [docs/](./README.md)
+- **Documentation**: Ver archivos en carpeta `docs/`
 - **Report Issues**: [GitHub Issues](https://github.com/your-org/sg-church/issues)
