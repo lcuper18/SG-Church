@@ -211,11 +211,11 @@ export async function POST(req: Request) {
 ### Infrastructure Security
 
 - ✅ **Secrets management**: Nunca en código, solo env vars
-- ✅ **Vercel security**: 
+- ✅ **Hosting security** (Render/Railway):
   - DDoS protection
   - Edge network
   - Automatic SSL
-- ✅ **Database encryption**: At rest (Supabase/AWS RDS)
+- ✅ **Database encryption**: At rest (PostgreSQL gestionado)
 - ✅ **Network isolation**: DB no accesible públicamente
 
 ### Monitoring & Alerting

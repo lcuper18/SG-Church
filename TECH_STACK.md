@@ -623,12 +623,13 @@ send_donation_email.delay(donation.id)
 
 ### Database Hosting
 
-#### **Supabase / Neon / Railway**
+#### **Railway / Render / Neon**
 
 **Por qué**:
 - ✅ PostgreSQL gestionado
 - ✅ Backups automáticos
 - ✅ Fácil setup
+- ✅ Buenos planes gratuitos para desarrollo
 
 ---
 

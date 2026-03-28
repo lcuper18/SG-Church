@@ -134,7 +134,7 @@ SG Church es una plataforma SaaS multi-tenant diseñada para escalar desde peque
 **Stack API**:
 - Django REST Framework
 - Serializers para validación
-- JWT/Token auth
+- Token/Session auth (django-allauth)
 - Throttling y permissions
 
 ---
@@ -679,8 +679,8 @@ def process_donation(donation_id):
 
 **Fase 1 (0-100 iglesias)**:
 - Single Django instance
-- PostgreSQL gestionado (Supabase/Neon)
-- Redis Cloud
+- PostgreSQL gestionado (Railway/Render/Neon)
+- Redis (Railway/Upstash)
 
 **Fase 2 (100-1,000 iglesias)**:
 - Multiple Django instances (Gunicorn + Nginx)

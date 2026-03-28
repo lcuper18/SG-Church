@@ -211,10 +211,10 @@ Financial record of money moving between accounts.
 Web framework for building REST APIs in Django.
 
 ### tRPC
-TypeScript framework for building type-safe APIs (not used in this project).
+TypeScript framework for building type-safe APIs (not used - Django REST Framework used instead).
 
 ### Turborepo
-Build system for managing monorepos.
+Build system for managing monorepos (not used in this project).
 
 ### Type Safety
 Programming approach that catches type errors at compile time rather than runtime.
@@ -230,7 +230,7 @@ Visual elements users interact with.
 ## V
 
 ### Vercel
-Cloud platform used for hosting SG Church applications.
+Cloud platform (not used - Railway/Render used instead for Django).
 
 ## W
 
@@ -243,7 +243,7 @@ In monorepo context, a package or application within the repository.
 ## Z
 
 ### zod
-Schema validation library (used with tRPC, not in this project - Django Forms used instead).
+Schema validation library (not used - Django serializers used instead).
 
 ---
 

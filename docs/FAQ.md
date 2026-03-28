@@ -15,7 +15,7 @@ SG Church is designed to scale from small house churches (10-50 members) to larg
 Absolutely. We implement schema-per-tenant database isolation, meaning each church's data is physically separated in the database. We follow industry best practices including encryption at rest and in transit, regular backups, and compliance with GDPR and other data protection regulations. See [SECURITY.md](../SECURITY.md) for details.
 
 ### Can I self-host SG Church?
-Yes! SG Church is open source (MIT License), so you can self-host on your own infrastructure. We provide deployment guides for Vercel, AWS, and other platforms. See [docs/DEPLOYMENT.md](./DEPLOYMENT.md).
+Yes! SG Church is open source (MIT License), so you can self-host on your own infrastructure. We provide deployment guides for Render, Railway, AWS, and other platforms. See [docs/DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Technical Questions
 

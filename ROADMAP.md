@@ -46,12 +46,12 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 **Entregable**: Proyecto base con multi-tenancy funcional
 
 #### Sprint 3-4: Autenticación (Semanas 5-8)
-- [ ] **NextAuth.js Setup**
-  - [ ] Configurar providers (Credentials, Google OAuth)
-  - [ ] Configurar Django Auth
+- [ ] **django-allauth Setup**
+  - [ ] Configurar providers (Email, Google OAuth)
+  - [ ] Configurar Django Auth con django-allauth
   - [ ] Implementar sistema de roles (RBAC)
-  - [ ] Crear biblioteca CASL para permisos
-  - [ ] Páginas de login/register/forgot-password
+  - [ ] Crear sistema de permisos
+  - [ ] Páginas de login/register/forgot-password (custom templates)
 
 - [ ] **Onboarding de Iglesias**
   - [ ] Wizard multi-paso (4 steps)
@@ -83,7 +83,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
   - [ ] Sistema de tags/etiquetas
 
 - [ ] **Funciones Adicionales**
-  - [ ] Upload de foto de perfil (Supabase Storage)
+  - [ ] Upload de foto de perfil (Django Media + AWS S3/Storages)
   - [ ] Importación CSV
     - [ ] UI para mapear columnas
     - [ ] Preview antes de importar
@@ -152,9 +152,9 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 #### Sprint 13: Deploy y Testing (Semanas 25-26)
 - [ ] **Deployment a Producción**
-  - [ ] Deploy app a Vercel
-  - [ ] Setup Supabase PostgreSQL
-  - [ ] Setup Redis (Upstash)
+  - [ ] Deploy app a Railway/Render/Dokploy
+  - [ ] Setup PostgreSQL (Railway/Render/Supabase)
+  - [ ] Setup Redis (Railway/Upstash)
   - [ ] Configurar variables de entorno
   - [ ] Setup dominio personalizado
   - [ ] SSL certificates
@@ -763,10 +763,11 @@ Una feature está "Done" cuando:
 | Dependencia | Impacto si Falla | Mitigación |
 |-------------|------------------|------------|
 | **Stripe API** | No se pueden procesar donaciones | Tener alternativa (PayPal), buffer de cash |
-| **Supabase/AWS** | Plataforma completa down | Multi-region, backups diarios |
-| **Vercel** | Frontend down | Tener deploy alternativo en AWS Amplify |
+| **PostgreSQL** | Plataforma completa down | Multi-region, backups diarios, replica de lectura |
+| **Railway/Render** | App down | Tener deploy alternativo configurado |
 | **Redis** | Background jobs fallan | Cola puede usar SQL como fallback |
 | **Resend/SendGrid** | Emails no se envían | Tener provider de backup configurado |
+| **AWS S3** | Archivos multimedia no disponibles | Cloudflare R2 como alternativa |
 
 ### Riesgos Identificados
 
@@ -806,7 +807,7 @@ Una feature está "Done" cuando:
 ### Equipo Estimado
 
 **Fase 1 (MVP)**:
-- 1-2 Full-Stack Developers (Django, Python, PostgreSQL)
+- 1-2 Full-Stack Developers (Django, Python, DRF)
 - 1 Designer/UI Dev (part-time)
 - 1 Product Manager (25% time)
 
@@ -827,12 +828,13 @@ Una feature está "Done" cuando:
 
 | Item | Costo Estimado |
 |------|----------------|
-| Hosting (Vercel, Supabase) | $100-500 |
+| Hosting (Railway/Render) | $100-500 |
+| PostgreSQL | $50-200 |
 | Email (Resend) | $50-200 |
 | SMS (Twilio) | $100-500 |
 | Stripe fees (2.9% + 30¢) | Variable (pass to donors) |
 | Monitoring (Sentry, etc.) | $50-100 |
-| **Total** | **$300-1,300/mes** |
+| **Total** | **$350-1,500/mes** |
 
 *Scaling: Con 100 iglesias, esperaríamos ~$2-3K/mes. Sostenible con donaciones voluntarias.*
 

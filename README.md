@@ -78,15 +78,16 @@ Ver [TECH_STACK.md](./TECH_STACK.md) para detalles completos.
 ```
 SG_Church/
 ├── sg_church/                  # Proyecto Django
-│   ├── settings/              # Configuración
-│   ├── core/                  # App core
-│   ├── tenants/               # Multi-tenancy
-│   ├── members/               # Gestión de miembros
-│   ├── finance/               # Finanzas
-│   ├── education/             # LMS
+│   ├── settings/              # Configuración (base, local, production)
+│   └── urls.py                # URLs principales
+├── core/                      # App core (home page)
+├── tenants/                   # Multi-tenancy (Tenant, TenantDomain)
+├── members/                   # Gestión de miembros (User, Member, Family)
+│   └── api/                   # API REST (serializers, views, urls)
+├── finance/                   # Finanzas (Donation, Expense, Campaign)
 │   └── api/                   # API REST
-├── templates/                  # Templates HTML
-├── static/                    # CSS, JS, imágenes
+├── templates/                  # Templates HTML (Bootstrap 5)
+├── fixtures/                  # Datos de ejemplo
 ├── requirements.txt            # Dependencias Python
 ├── manage.py                  # CLI de Django
 └── pytest.ini                 # Tests
@@ -101,8 +102,6 @@ Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para decisiones arquitectónicas detall
 - **Python** 3.11+ (recomendado: 3.12)
 - **PostgreSQL** 14+ (recomendado: 16)
 - **Redis** 6+ (para Celery)
-- **PostgreSQL** 16+ (o cuenta en Supabase)
-- **Redis** 7+ (para queues y cache)
 - **Cuenta Stripe** (modo test para desarrollo)
 
 ### Instalación
@@ -129,7 +128,7 @@ python manage.py loaddata fixtures/sample_data.json
 python manage.py runserver
 ```
 
-La aplicación estará disponible en `http://localhost:3000`
+La aplicación estará disponible en `http://localhost:8000`
 
 ### Variables de Entorno Requeridas
 
@@ -137,14 +136,15 @@ La aplicación estará disponible en `http://localhost:3000`
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/sgchurch"
 
-# Authentication
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="genera-un-secreto-seguro-aqui"
+# Django
+SECRET_KEY="genera-un-secreto-seguro-aqui"
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Stripe
 STRIPE_SECRET_KEY="sk_test_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
+STRIPE_PUBLISHABLE_KEY="pk_test_..."
 
 # Email
 RESEND_API_KEY="re_..."
@@ -152,9 +152,11 @@ RESEND_API_KEY="re_..."
 # Redis
 REDIS_URL="redis://localhost:6379"
 
-# Storage (Supabase o S3)
-SUPABASE_URL="https://xxx.supabase.co"
-SUPABASE_ANON_KEY="eyJ..."
+# Storage (AWS S3 o Cloudflare R2)
+AWS_ACCESS_KEY_ID="..."
+AWS_SECRET_ACCESS_KEY="..."
+AWS_STORAGE_BUCKET_NAME="sgchurch-media"
+AWS_S3_REGION_NAME="us-east-1"
 ```
 
 Ver [DEPLOYMENT.md](./docs/DEPLOYMENT.md) para configuración de producción.

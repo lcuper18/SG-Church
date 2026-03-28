@@ -97,13 +97,12 @@ Asegúrate de tener instalado:
 
 - **Node.js** 20+ ([descarga](https://nodejs.org/))
 - **uv** (instalar: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- **PostgreSQL** 14+
-- **Redis** 6+ (para Celery)
-- **Git** ([descarga](https://git-scm.com/))
-- **PostgreSQL** 16+ ([descarga](https://www.postgresql.org/download/))
-  - Alternativa: Cuenta en [Supabase](https://supabase.com) (gratis)
-- **Redis** 7+ ([descarga](https://redis.io/download))
+- **Python** 3.11+ ([descarga](https://www.python.org/downloads/))
+- **PostgreSQL** 14+ ([descarga](https://www.postgresql.org/download/))
+  - Alternativa: Cuenta en [Railway](https://railway.app) o [Neon](https://neon.tech) (gratis)
+- **Redis** 6+ ([descarga](https://redis.io/download))
   - Alternativa: Cuenta en [Upstash](https://upstash.com) (gratis)
+- **Git** ([descarga](https://git-scm.com/))
 
 ### Clonar el Repositorio
 
@@ -128,26 +127,27 @@ Esto instalará todas las dependencias de todos los paquetes en el monorepo.
 
 ```bash
 # Copiar ejemplo
-cp apps/web/.env.example apps/web/.env.local
+cp .env.example .env
 
 # Editar con tus valores
-nano apps/web/.env.local  # o usa tu editor favorito
+nano .env  # o usa tu editor favorito
 ```
 
 **Variables mínimas para desarrollo**:
 
 ```env
-# Database (usa Supabase o PostgreSQL local)
-DATABASE_URL="postgresql://postgres:password@localhost:5432/sgchurch_dev"
+# Django
+SECRET_KEY="genera-secreto-con-openssl-rand-base64-32"
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="genera-secreto-con-openssl-rand-base64-32"
+# Database (PostgreSQL local o cloud)
+DATABASE_URL="postgresql://postgres:password@localhost:5432/sgchurch_dev"
 
 # Stripe (usa test keys)
 STRIPE_SECRET_KEY="sk_test_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
+STRIPE_PUBLISHABLE_KEY="pk_test_..."
 
 # Email (Resend free tier)
 RESEND_API_KEY="re_..."
@@ -155,9 +155,10 @@ RESEND_API_KEY="re_..."
 # Redis (local o Upstash)
 REDIS_URL="redis://localhost:6379"
 
-# Storage (Supabase)
-SUPABASE_URL="https://xxx.supabase.co"
-SUPABASE_ANON_KEY="eyJ..."
+# Storage (AWS S3 o Cloudflare R2)
+AWS_ACCESS_KEY_ID="..."
+AWS_SECRET_ACCESS_KEY="..."
+AWS_STORAGE_BUCKET_NAME="sgchurch-media"
 ```
 
 ### Setup de Base de Datos
