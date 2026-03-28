@@ -9,10 +9,11 @@ Este documento describe las decisiones arquitectónicas clave del proyecto SG Ch
 - [Arquitectura Multi-Tenant](#arquitectura-multi-tenant)
 - [Arquitectura de la Aplicación](#arquitectura-de-la-aplicación)
 - [Patrón de Datos](#patrón-de-datos)
+- [API REST](#api-rest)
 - [Autenticación y Autorización](#autenticación-y-autorización)
 - [Procesamiento de Pagos](#procesamiento-de-pagos)
 - [Sistema de Notificaciones](#sistema-de-notificaciones)
-- [Background Jobs](#background-jobs)
+- [Tareas en Segundo Plano](#tareas-en-segundo-plano)
 - [Almacenamiento de Archivos](#almacenamiento-de-archivos)
 - [Caching Strategy](#caching-strategy)
 - [Escalabilidad](#escalabilidad)
@@ -24,8 +25,8 @@ Este documento describe las decisiones arquitectónicas clave del proyecto SG Ch
 SG Church es una plataforma SaaS multi-tenant diseñada para escalar desde pequeñas iglesias (10-50 miembros) hasta mega-iglesias (10,000+ miembros). La arquitectura prioriza:
 
 1. **Aislamiento de datos** entre tenants (iglesias)
-2. **Type safety** end-to-end
-3. **Developer experience** para rápido desarrollo
+2. **Simplicidad** en mantenimiento y desarrollo
+3. **API-first** para permitir integraciones futuras
 4. **Cost efficiency** para mantener el servicio gratuito
 5. **Escalabilidad** horizontal cuando sea necesario
 
@@ -38,116 +39,103 @@ SG Church es una plataforma SaaS multi-tenant diseñada para escalar desde peque
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    NEXT.JS APP (Vercel)                     │
+│                   DJANGO APP (VPS/Render)                    │
 │  ┌────────────────┐  ┌────────────────┐  ┌──────────────┐  │
-│  │  React UI      │  │  API Routes    │  │  tRPC Router │  │
-│  │  (Server/      │◄─┤  (Webhooks,    │◄─┤  (Business   │  │
-│  │   Client       │  │   Auth)        │  │   Logic)     │  │
-│  │   Components)  │  │                │  │              │  │
+│  │  HTML Templates │  │  Django Views │  │  DRF API    │  │
+│  │  (Server-side   │  │  (HTTP)       │  │  (REST)     │  │
+│  │   Rendering)    │  │               │  │              │  │
 │  └────────────────┘  └────────────────┘  └──────────────┘  │
 └──────────────┬────────────────┬───────────────┬────────────┘
                │                │               │
        ┌───────▼──────┐   ┌────▼─────┐   ┌────▼────────┐
-       │ PostgreSQL   │   │  Redis   │   │  S3/Storage │
-       │ (Multi-      │   │  (Cache, │   │  (Images,   │
-       │  Tenant DB)  │   │   Queue) │   │   Files)    │
+       │ PostgreSQL    │   │  Redis   │   │  S3/Storage │
+       │ (Multi-      │   │  + Celery│   │  (Images,   │
+       │  Tenant DB)  │   │  (Jobs)  │   │   Files)    │
        └──────────────┘   └──────────┘   └─────────────┘
                │
-       ┌───────▼──────────┐
-       │  BullMQ Worker   │
-       │  (Background     │
-       │   Jobs)          │
-       └──────────────────┘
-               │
-       ┌───────▼──────────┐
-       │  External APIs   │
-       │  - Stripe        │
-       │  - Resend/Email  │
-       │  - Twilio/SMS    │
-       └──────────────────┘
+               ▼
+       ┌──────────────────────────────────────────┐
+       │              EXTERNAL APIs                │
+       │  - Stripe (Payments)                    │
+       │  - SendGrid/Resend (Email)              │
+       │  - Google OAuth                         │
+       └──────────────────────────────────────────┘
 ```
 
 ---
 
 ## Principios de Diseño
 
-### 1. Modular Monolith First
+### 1. Django como Monolito Modular
 
-**Decisión**: Comenzar con un monolito modular en lugar de microservicios.
+**Decisión**: Comenzar con Django como monolito modular.
 
 **Justificación**:
-- ✅ **Simplicidad**: Un solo deployment, menos overhead de infraestructura
-- ✅ **Desarrollo rápido**: Menos boilerplate, refactoring más fácil
-- ✅ **Type safety**: tRPC permite type safety end-to-end en un monolito
-- ✅ **Debugging**: Stack traces completos, logging centralizado
-- ✅ **Costo**: Un solo servidor para comenzar
+- ✅ **Todo en uno**: ORM, Admin, Auth, Forms incluidos
+- ✅ **Admin panel**: Panel de admin automático
+- ✅ **Migrations**: Sistema de migraciones robusto
+- ✅ **Seguridad**: Protección built-in contra ataques comunes
+- ✅ **Curva de aprendizaje**: Fácil de aprender para nuevos devs
+- ✅ **Comunidad**: Gran cantidad de recursos y paquetes
 
 **Módulos claramente definidos**:
 - `members/` - Gestión de membresía
 - `finance/` - Contabilidad y donaciones
 - `education/` - Sistema LMS
-- `baptisms/` - Registros sacramentales
-- `auth/` - Autenticación y autorización
+- `sacraments/` - Registros sacramentales
+- `api/` - API REST
 
-Cada módulo puede extraerse a un microservicio si escala independientemente.
-
-**Alternativa considerada**: Microservicios desde el inicio
+**Alternativa considerada**: Microservicios
 - ❌ Complejidad operacional alta para MVP
-- ❌ Overhead de comunicación entre servicios
-- ❌ Más difícil mantener type safety
+- ❌ Mayor costo de infraestructura
+- ❌ Más difícil de mantener
 
-### 2. Type Safety End-to-End
+### 2. Server-Side Rendering con Templates
 
-**Decisión**: TypeScript estricto + Prisma + tRPC
-
-**Justificación**:
-- ✅ **Catch errors en compile time** en lugar de runtime
-- ✅ **IntelliSense** en frontend sabe exactamente qué devuelve el backend
-- ✅ **Refactoring seguro**: Cambiar un tipo en DB propaga a toda la app
-- ✅ **Menos tests necesarios**: TypeScript elimina clases enteras de bugs
-
-**Stack**:
-```typescript
-Database Schema (Prisma)
-    ↓ (prisma generate)
-TypeScript Types
-    ↓ (used by)
-tRPC Routers (Backend)
-    ↓ (exports types)
-tRPC Client (Frontend)
-    ↓ (fully typed)
-React Components
-```
-
-**Ejemplo**:
-```typescript
-// Backend: apps/web/server/routers/members.ts
-export const membersRouter = router({
-  getById: publicProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input, ctx }) => {
-      return ctx.db.member.findUnique({ where: { id: input.id } })
-    }),
-})
-
-// Frontend: apps/web/app/(dashboard)/members/[id]/page.tsx
-const member = trpc.members.getById.useQuery({ id: params.id })
-//    ^? const member: Member | null  ← Fully typed!
-```
-
-### 3. Progressive Enhancement
-
-**Decisión**: Server Components por defecto, Client Components cuando sea necesario.
+**Decisión**: Django Templates para el frontend.
 
 **Justificación**:
-- ✅ **Performance**: HTML renderizado en servidor es más rápido
-- ✅ **SEO**: Contenido disponible para crawlers
-- ✅ **Bundle size**: Menos JS enviado al cliente
-- ✅ **Security**: Queries a DB desde Server Components (no exponer en cliente)
+- ✅ **Simplicidad**: Sin JavaScript complejo
+- ✅ **SEO**: Contenido renderizado en servidor
+- ✅ **Mantenimiento**: Easier para equipos pequeños
+- ✅ **Velocidad**: Cargado inicial rápido
+- ✅ **Progressive enhancement**: Funciona sin JS
 
-**Regla**:
-- **Server Component** (default): Mostrar datos, layouts estáticos
-- **Client Component** (`'use client'`): Interactividad, forms, state
+**Frontend**: Vanilla JavaScript + Bootstrap 5
+```html
+<!-- Ejemplo de template -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h1>Miembros</h1>
+    <table class="table">
+        {% for member in members %}
+        <tr>
+            <td>{{ member.first_name }}</td>
+            <td>{{ member.last_name }}</td>
+            <td>{{ member.email }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
+```
+
+### 3. API-First Architecture
+
+**Decisión**: API REST integrada desde el inicio.
+
+**Justificación**:
+- ✅ **Integraciones**: Conexión con apps móviles, otros sistemas
+- ✅ **SPA option**: Posibilidad de migrar a React/Vue en el futuro
+- ✅ **Third-party**: Webhooks y APIs públicas
+- ✅ **Mobile**: API lista para apps nativas
+
+**Stack API**:
+- Django REST Framework
+- Serializers para validación
+- JWT/Token auth
+- Throttling y permissions
 
 ---
 
@@ -157,9 +145,10 @@ const member = trpc.members.getById.useQuery({ id: params.id })
 
 | Estrategia | Pros | Contras | Decisión |
 |------------|------|---------|----------|
-| **Database per Tenant** | Máximo aislamiento, fácil backup individual | 🔴 Muy caro (100s de DBs), gestión compleja | ❌ Rechazado |
-| **Shared DB, Row-Level Security** | Bajo costo, gestión simple | 🔴 Riesgo de data leaks, queries complejas | ❌ Rechazado |
-| **Schema per Tenant** | Buen aislamiento, costo razonable | Límite ~1000 schemas por DB | ✅ **ELEGIDO** |
+| **Database per Tenant** | Máximo aislamiento | 🔴 Muy caro (100s de DBs) | ❌ |
+| **Shared DB, Row-Level Security** | Bajo costo | 🔴 Queries complejas, riesgo leaks | ❌ |
+| **Schema per Tenant** | Buen aislamiento | Límite ~1000 schemas por DB | ✅ **ELEGIDO** |
+| **Discriminator Column** | Simple | 🔴 Aislamiento较弱 | ❌ |
 
 ### Implementación: Schema-per-Tenant
 
@@ -177,1042 +166,509 @@ CREATE TABLE church_xyz789.members (...);
 CREATE TABLE church_xyz789.donations (...);
 ```
 
-**Schema público** para datos compartidos:
-```sql
-CREATE SCHEMA public;
-CREATE TABLE public.tenants (
-  id UUID PRIMARY KEY,
-  schema_name TEXT UNIQUE,
-  subdomain TEXT UNIQUE,
-  name TEXT,
-  created_at TIMESTAMPTZ
-);
-```
-
 ### Tenant Resolution
 
-**Flujo**:
-1. Usuario accede a `firstchurch.sgchurch.app`
-2. Middleware extrae subdomain: `firstchurch`
-3. Query a `public.tenants` para obtener `schema_name`
-4. Todas las queries subsecuentes usan: `SET search_path TO church_abc123`
+**Middleware**:
+```python
+# core/middleware.py
+class TenantMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+    
+    def __call__(self, request):
+        # Extraer subdominio
+        host = request.get_host().split(':')[0]
+        subdomain = host.split('.')[0] if '.' in host else None
+        
+        # Buscar tenant
+        try:
+            tenant = Tenant.objects.get(subdomain=subdomain)
+            request.tenant = tenant
+            # Establecer schema
+            connection.set_schema(tenant.schema_name)
+        except Tenant.DoesNotExist:
+            request.tenant = None
+        
+        response = self.get_response(request)
+        return response
+```
 
-**Código**:
-```typescript
-// middleware.ts
-export async function middleware(req: NextRequest) {
-  const subdomain = getSubdomain(req.headers.get('host'))
-  
-  // Lookup tenant
-  const tenant = await db.tenant.findUnique({
-    where: { subdomain }
-  })
-  
-  if (!tenant) return new Response('Church not found', { status: 404 })
-  
-  // Store tenant context
-  req.headers.set('X-Tenant-Id', tenant.id)
-  req.headers.set('X-Tenant-Schema', tenant.schema_name)
-}
+**Connection wrapper**:
+```python
+# core/db.py
+from django.db import connection
 
-// db.ts - Prisma client wrapper
-export function getDbForRequest(req: Request): PrismaClient {
-  const schema = req.headers.get('X-Tenant-Schema')
-  
-  return new PrismaClient({
-    datasources: {
-      db: {
-        url: `${DATABASE_URL}?schema=${schema}`
-      }
-    }
-  })
-}
+def get_tenant_model():
+    """Retorna el modelo correcto según el tenant actual."""
+    schema_name = getattr(connection, 'schema_name', 'public')
+    if schema_name == 'public':
+        return PublicTenant
+    return get_model_for_schema(schema_name)
 ```
 
 ### Tenant Provisioning
 
-Cuando una iglesia se registra:
+```python
+# tenants/views.py
+import uuid
+from django.db import transaction
 
-```typescript
-export async function createTenant(input: CreateTenantInput) {
-  const schemaName = `church_${nanoid()}`
-  
-  return await db.$transaction(async (tx) => {
-    // 1. Crear registro en tabla tenants
-    const tenant = await tx.tenant.create({
-      data: {
-        schemaName,
-        subdomain: input.subdomain,
-        name: input.churchName,
-      }
-    })
+@transaction.atomic
+def create_tenant(name, subdomain, email):
+    schema_name = f"church_{uuid.uuid4().hex[:8]}"
     
-    // 2. Crear schema
-    await tx.$executeRawUnsafe(`CREATE SCHEMA ${schemaName}`)
+    # 1. Crear registro en tabla tenants
+    tenant = Tenant.objects.create(
+        schema_name=schema_name,
+        subdomain=subdomain,
+        name=name,
+        email=email,
+    )
     
-    // 3. Ejecutar migraciones en nuevo schema
-    await runMigrationsForSchema(schemaName)
+    # 2. Crear schema
+    with connection.cursor() as cursor:
+        cursor.execute(f"CREATE SCHEMA {schema_name}")
     
-    // 4. Seedear datos default (roles, configuración)
-    await seedTenant(schemaName)
+    # 3. Ejecutar migraciones en nuevo schema
+    call_command('migrate', 
+                 schema_name=schema_name, 
+                 verbosity=0)
     
-    // 5. Crear cuenta Stripe Connect
-    const stripeAccount = await stripe.accounts.create({
-      type: 'standard',
-      metadata: { tenantId: tenant.id }
-    })
-    
-    await tx.tenant.update({
-      where: { id: tenant.id },
-      data: { stripeAccountId: stripeAccount.id }
-    })
+    # 4. Crear cuenta Stripe Connect
+    import stripe
+    stripe_account = stripe.Account.create(
+        type='standard',
+        metadata={'tenant_id': str(tenant.id)}
+    )
+    tenant.stripe_account_id = stripe_account.id
+    tenant.save()
     
     return tenant
-  })
-}
 ```
-
-**Ventajas del enfoque**:
-- ✅ Aislamiento fuerte (schema-level isolation)
-- ✅ Backups individuales: `pg_dump --schema=church_abc123`
-- ✅ Migrar iglesias grandes a DB dedicada: exportar schema completo
-- ✅ Costos razonables (single DB cluster)
-
-**Limitaciones**:
-- ⚠️ PostgreSQL limita ~1000 schemas por instancia (suficiente para comenzar)
-- ⚠️ Migraciones deben aplicarse a todos los schemas (scripting necesario)
 
 ---
 
 ## Arquitectura de la Aplicación
 
-### Estructura de Carpetas (Next.js App Router)
+### Estructura de Carpetas
 
 ```
-apps/web/
-├── app/
-│   ├── (auth)/                  # Route group: páginas de auth
-│   │   ├── login/
-│   │   ├── register/
-│   │   └── onboard/             # Wizard de onboarding
-│   │
-│   ├── (dashboard)/             # Route group: app principal (requiere auth)
-│   │   ├── layout.tsx           # Sidebar, nav
-│   │   ├── members/
-│   │   │   ├── page.tsx         # Lista de miembros
-│   │   │   ├── [id]/
-│   │   │   │   └── page.tsx     # Detalle de miembro
-│   │   │   └── new/
-│   │   │       └── page.tsx     # Crear miembro
-│   │   ├── finance/
-│   │   ├── education/
-│   │   └── settings/
-│   │
-│   ├── (public)/                # Route group: páginas públicas
-│   │   ├── donate/
-│   │   └── directory/
-│   │
-│   ├── api/
-│   │   ├── trpc/[trpc]/         # tRPC endpoint
-│   │   │   └── route.ts
-│   │   ├── webhooks/
-│   │   │   └── stripe/
-│   │   │       └── route.ts
-│   │   └── auth/
-│   │       └── [...nextauth]/
-│   │           └── route.ts
-│   │
-│   └── layout.tsx               # Root layout
+sg_church/
+├── sg_church/                 # Configuración del proyecto
+│   ├── __init__.py
+│   ├── settings/              # Settings modular
+│   │   ├── __init__.py
+│   │   ├── base.py           # Settings base
+│   │   ├── local.py          # Desarrollo
+│   │   └── production.py     # Producción
+│   ├── urls.py               # URLs principales
+│   ├── wsgi.py
+│   └── asgi.py
 │
-├── components/
-│   ├── ui/                      # Shadcn components
-│   ├── members/                 # Feature-specific
-│   └── providers/               # Context providers
+├── core/                      # Funcionalidad core
+│   ├── models.py             # Modelos compartidos
+│   ├── middleware.py          # Tenant middleware
+│   ├── management/
+│   │   └── commands/         # Comandos Django
+│   └── utils.py
 │
-├── lib/
-│   ├── db.ts                    # Prisma client
-│   ├── auth.ts                  # NextAuth config
-│   ├── trpc.ts                  # tRPC setup
-│   └── utils.ts
+├── tenants/                  # Gestión de tenants
+│   ├── models.py
+│   ├── views.py
+│   ├── urls.py
+│   └── migrations/
 │
-└── server/
-    ├── routers/
-    │   ├── members.ts
-    │   ├── finance.ts
-    │   └── _app.ts              # Root router
-    └── context.ts               # tRPC context
+├── members/                  # Gestión de miembros
+│   ├── models.py
+│   ├── views.py
+│   ├── serializers.py        # DRF serializers
+│   ├── urls.py
+│   ├── templates/
+│   │   └── members/
+│   └── migrations/
+│
+├── finance/                  # Finanzas y donaciones
+│   ├── models.py
+│   ├── views.py
+│   ├── serializers.py
+│   ├── tasks.py             # Celery tasks
+│   └── migrations/
+│
+├── education/                # LMS
+│   ├── models.py
+│   ├── views.py
+│   └── migrations/
+│
+├── api/                      # API REST
+│   ├── urls.py
+│   ├── views.py
+│   └── routers.py
+│
+├── templates/                # Templates globales
+│   ├── base.html
+│   ├── admin/
+│   └── registration/
+│
+├── static/                   # CSS, JS, imágenes
+│   ├── css/
+│   ├── js/
+│   └── images/
+│
+├── media/                    # Archivos subidos (en desarrollo)
+│
+├── requirements.txt
+├── manage.py
+└── pytest.ini
 ```
 
 ### Flujo de Datos
 
-**Loading Data (Server → Client)**:
+**Vistas Django (Server-Side)**:
+```python
+# members/views.py
+from django.views.generic import ListView, DetailView
+from .models import Member
 
-```typescript
-// 1. Server Component (default en App Router)
-// apps/web/app/(dashboard)/members/page.tsx
-import { getServerSession } from 'next-auth'
-import { db } from '@/lib/db'
+class MemberListView(ListView):
+    model = Member
+    template_name = 'members/list.html'
+    context_object_name = 'members'
+    paginate_by = 50
+    
+    def get_queryset(self):
+        return Member.objects.filter(
+            tenant=self.request.tenant
+        ).order_by('last_name', 'first_name')
+```
 
-export default async function MembersPage() {
-  const session = await getServerSession()
-  const members = await db.member.findMany({
-    where: { tenantId: session.tenant.id }
-  })
-  
-  return <MembersList members={members} />
-}
+**API REST (DRF)**:
+```python
+# members/views.py (API)
+from rest_framework import viewsets
+from .models import Member
+from .serializers import MemberSerializer
 
-// 2. Client Component (para interactividad)
-// apps/web/components/members/member-form.tsx
-'use client'
-
-import { trpc } from '@/lib/trpc'
-
-export function MemberForm() {
-  const utils = trpc.useContext()
-  const createMember = trpc.members.create.useMutation({
-    onSuccess: () => {
-      utils.members.list.invalidate() // Refetch list
-    }
-  })
-  
-  return (
-    <form onSubmit={(e) => {
-      e.preventDefault()
-      createMember.mutate(formData)
-    }}>
-      {/* ... */}
-    </form>
-  )
-}
+class MemberViewSet(viewsets.ModelViewSet):
+    serializer_class = MemberSerializer
+    
+    def get_queryset(self):
+        return Member.objects.filter(
+            tenant=self.request.user.tenant
+        )
 ```
 
 ---
 
 ## Patrón de Datos
 
-### Prisma Schema Highlights
+### Model Django
 
-```prisma
-// packages/database/prisma/schema.prisma
+```python
+# members/models.py
+from django.db import models
+from django.contrib.auth.models import User
 
-generator client {
-  provider = "prisma-client-js"
-}
+class Tenant(models.Model):
+    """Modelo para cada iglesia (tenant)."""
+    name = models.CharField(max_length=255)
+    subdomain = models.CharField(max_length=63, unique=True)
+    schema_name = models.CharField(max_length=64, unique=True)
+    stripe_account_id = models.CharField(max_length=64, blank=True)
+    settings = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        app_label = 'tenants'
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
 
-// ============================================
-// SCHEMA PÚBLICO (Shared across all tenants)
-// ============================================
+class Member(models.Model):
+    """Modelo de miembro de la iglesia."""
+    STATUS_CHOICES = [
+        ('visitor', 'Visitante'),
+        ('attendee', 'Asistente'),
+        ('member', 'Miembro'),
+        ('inactive', 'Inactivo'),
+    ]
+    
+    # Relación con tenant
+    tenant = models.ForeignKey(
+        'tenants.Tenant', 
+        on_delete=models.CASCADE,
+        related_name='members'
+    )
+    
+    # Información básica
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(null=True, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    
+    # Información demográfica
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=20, blank=True)
+    marital_status = models.CharField(max_length=20, blank=True)
+    
+    # Estado
+    member_status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='visitor'
+    )
+    
+    # Familia
+    family = models.ForeignKey(
+        'Family',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='members'
+    )
+    
+    # Multimedia
+    photo = models.ImageField(
+        upload_to='members/photos/',
+        null=True, blank=True
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['last_name', 'first_name']
+        indexes = [
+            models.Index(fields=['last_name', 'first_name']),
+            models.Index(fields=['email']),
+            models.Index(fields=['member_status']),
+            models.Index(fields=['tenant', 'member_status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
 
-model Tenant {
-  id              String   @id @default(uuid())
-  schemaName      String   @unique
-  subdomain       String   @unique
-  name            String
-  stripeAccountId String?  @unique
-  settings        Json     @default("{}")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  @@map("tenants")
-  @@schema("public")
-}
 
-// ============================================
-// SCHEMA PER-TENANT (Tables created in each church_xxx schema)
-// ============================================
+class Family(models.Model):
+    """Modelo de familia."""
+    tenant = models.ForeignKey(
+        'tenants.Tenant',
+        on_delete=models.CASCADE,
+        related_name='families'
+    )
+    name = models.CharField(max_length=255)  # "Familia García"
+    primary_contact = models.ForeignKey(
+        Member,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='primary_for_families'
+    )
+    address = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['name']
 
-model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  passwordHash  String?
-  name          String?
-  role          Role     @default(MEMBER)
-  memberId      String?  @unique
-  member        Member?  @relation(fields: [memberId], references: [id])
-  createdAt     DateTime @default(now())
-  
-  @@index([email])
-}
 
-enum Role {
-  SUPER_ADMIN
-  CHURCH_ADMIN
-  PASTOR
-  TREASURER
-  TEACHER
-  VOLUNTEER
-  MEMBER
-  GUEST
-}
-
-model Member {
-  id            String    @id @default(uuid())
-  firstName     String
-  lastName      String
-  email         String?
-  phone         String?
-  dateOfBirth   DateTime?
-  photoUrl      String?
-  status        MemberStatus @default(ACTIVE)
-  familyId      String?
-  family        Family?   @relation(fields: [familyId], references: [id])
-  user          User?
-  donations     Donation[]
-  baptism       Baptism?
-  courseEnrollments CourseEnrollment[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  @@index([email])
-  @@index([lastName, firstName])
-}
-
-enum MemberStatus {
-  ACTIVE
-  INACTIVE
-  DECEASED
-}
-
-model Family {
-  id        String   @id @default(uuid())
-  name      String
-  members   Member[]
-  address   String?
-  city      String?
-  state     String?
-  zip       String?
-}
-
-model Donation {
-  id               String         @id @default(uuid())
-  amount           Decimal        @db.Decimal(10, 2)
-  currency         String         @default("USD")
-  memberId         String
-  member           Member         @relation(fields: [memberId], references: [id])
-  stripePaymentId  String?        @unique
-  type             DonationType   @default(ONE_TIME)
-  campaignId       String?
-  campaign         Campaign?      @relation(fields: [campaignId], references: [id])
-  transactionId    String         @unique
-  transaction      Transaction    @relation(fields: [transactionId], references: [id])
-  receiptEmailed   Boolean        @default(false)
-  createdAt        DateTime       @default(now())
-  
-  @@index([memberId])
-  @@index([createdAt])
-}
-
-enum DonationType {
-  ONE_TIME
-  RECURRING
-}
-
-model Transaction {
-  id            String      @id @default(uuid())
-  date          DateTime    @default(now())
-  description   String
-  amount        Decimal     @db.Decimal(10, 2)
-  type          TransactionType
-  accountId     String
-  account       Account     @relation(fields: [accountId], references: [id])
-  donation      Donation?
-  createdAt     DateTime    @default(now())
-  createdBy     String
-  
-  @@index([date])
-  @@index([accountId])
-}
-
-enum TransactionType {
-  DEBIT
-  CREDIT
-}
-
-model Account {
-  id            String        @id @default(uuid())
-  name          String
-  type          AccountType
-  balance       Decimal       @db.Decimal(10, 2) @default(0)
-  transactions  Transaction[]
-}
-
-enum AccountType {
-  ASSET
-  LIABILITY
-  EQUITY
-  REVENUE
-  EXPENSE
-}
-
-model Course {
-  id            String             @id @default(uuid())
-  title         String
-  description   String?
-  instructorId  String
-  lessons       Lesson[]
-  enrollments   CourseEnrollment[]
-  published     Boolean            @default(false)
-  createdAt     DateTime           @default(now())
-}
-
-model Lesson {
-  id          String   @id @default(uuid())
-  courseId    String
-  course      Course   @relation(fields: [courseId], references: [id])
-  title       String
-  content     String   @db.Text
-  videoUrl    String?
-  order       Int
-  quizzes     Quiz[]
-}
-
-model CourseEnrollment {
-  id          String   @id @default(uuid())
-  courseId    String
-  course      Course   @relation(fields: [courseId], references: [id])
-  memberId    String
-  member      Member   @relation(fields: [memberId], references: [id])
-  progress    Int      @default(0) // Percentage 0-100
-  completed   Boolean  @default(false)
-  enrolledAt  DateTime @default(now())
-  completedAt DateTime?
-  
-  @@unique([courseId, memberId])
-}
-
-model Baptism {
-  id          String   @id @default(uuid())
-  memberId    String   @unique
-  member      Member   @relation(fields: [memberId], references: [id])
-  date        DateTime
-  location    String?
-  officiant   String?
-  witnesses   String?
-  certificateUrl String?
-  photos      String[] // Array of URLs
-  createdAt   DateTime @default(now())
-}
+class Donation(models.Model):
+    """Modelo de donaciones."""
+    TYPE_CHOICES = [
+        ('one_time', 'Una vez'),
+        ('recurring', 'Recurrente'),
+    ]
+    
+    tenant = models.ForeignKey(
+        'tenants.Tenant',
+        on_delete=models.CASCADE,
+        related_name='donations'
+    )
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='donations'
+    )
+    
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='USD')
+    donation_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='one_time'
+    )
+    
+    # Stripe
+    stripe_payment_intent_id = models.CharField(max_length=64, blank=True)
+    stripe_subscription_id = models.CharField(max_length=64, blank=True)
+    
+    # Estado
+    status = models.CharField(
+        max_length=20,
+        default='completed'
+    )
+    receipt_sent = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['tenant', '-created_at']),
+            models.Index(fields=['member', '-created_at']),
+        ]
 ```
 
-### Audit Logging
+---
 
-Todas las operaciones críticas (financieras, cambios en membresía) se auditan:
+## API REST
 
-```prisma
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String
-  action    String   // "CREATE", "UPDATE", "DELETE"
-  entity    String   // "Member", "Donation", "Transaction"
-  entityId  String
-  changes   Json     // Snapshot de cambios
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  
-  @@index([userId])
-  @@index([entity, entityId])
-  @@index([createdAt])
-}
+### URLs de la API
+
+```python
+# api/urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from members.views import MemberViewSet
+from finance.views import DonationViewSet
+
+router = DefaultRouter()
+router.register(r'members', MemberViewSet)
+router.register(r'donations', DonationViewSet)
+
+urlpatterns = [
+    path('', include(router.urls)),
+    path('auth/', include('dj_rest_auth.urls')),
+]
 ```
+
+### Endpoints Disponibles
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/members/` | Listar miembros |
+| POST | `/api/members/` | Crear miembro |
+| GET | `/api/members/{id}/` | Ver miembro |
+| PUT | `/api/members/{id}/` | Actualizar miembro |
+| DELETE | `/api/members/{id}/` | Eliminar miembro |
+| GET | `/api/donations/` | Listar donaciones |
+| POST | `/api/donations/` | Crear donación |
 
 ---
 
 ## Autenticación y Autorización
 
-### NextAuth.js v5 (Auth.js)
+### Django Auth
 
-**Configuración**:
-```typescript
-// apps/web/lib/auth.ts
-import NextAuth from 'next-auth'
-import Credentials from 'next-auth/providers/credentials'
-import Google from 'next-auth/providers/google'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import { db } from './db'
+```python
+# settings.py
+AUTH_USER_MODEL = 'members.User'
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(db),
-  providers: [
-    Credentials({
-      credentials: {
-        email: {},
-        password: {},
-      },
-      authorize: async (credentials) => {
-        // Validate credentials, check password hash
-        const user = await db.user.findUnique({
-          where: { email: credentials.email }
-        })
-        
-        if (!user || !await verifyPassword(credentials.password, user.passwordHash)) {
-          return null
-        }
-        
-        return user
-      }
-    }),
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-  ],
-  callbacks: {
-    async session({ session, user }) {
-      // Add tenant info to session
-      const dbUser = await db.user.findUnique({
-        where: { email: user.email },
-        include: { member: { include: { family: true } } }
-      })
-      
-      session.user.id = dbUser.id
-      session.user.role = dbUser.role
-      session.tenant = await getTenantFromContext() // From middleware
-      
-      return session
-    }
-  }
-})
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
 ```
 
-### Role-Based Access Control (RBAC)
+### DRF Permissions
 
-**Usando CASL**:
+```python
+# core/permissions.py
+from rest_framework import permissions
 
-```typescript
-// apps/web/lib/rbac.ts
-import { defineAbility } from '@casl/ability'
+class IsChurchAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj):
+        return obj.tenant == request.user.tenant
 
-export function defineAbilitiesFor(user: User) {
-  return defineAbility((can, cannot) => {
-    if (user.role === 'SUPER_ADMIN') {
-      can('manage', 'all')
-    }
-    
-    if (user.role === 'CHURCH_ADMIN') {
-      can('manage', 'Member')
-      can('manage', 'Course')
-      can('read', 'Transaction')
-      can('manage', 'Settings')
-    }
-    
-    if (user.role === 'TREASURER') {
-      can('manage', 'Transaction')
-      can('manage', 'Donation')
-      can('read', 'Member')
-    }
-    
-    if (user.role === 'PASTOR') {
-      can('read', 'Member')
-      can('update', 'Member', ['notes', 'status'])
-      can('create', 'Baptism')
-    }
-    
-    if (user.role === 'TEACHER') {
-      can('manage', 'Course', { instructorId: user.id })
-      can('read', 'CourseEnrollment')
-    }
-    
-    if (user.role === 'MEMBER') {
-      can('read', 'Member', { id: user.memberId })
-      can('update', 'Member', { id: user.memberId }) // Own profile only
-      can('read', 'Donation', { memberId: user.memberId })
-    }
-  })
-}
-
-// Usage en tRPC procedures
-export const updateMemberProcedure = protectedProcedure
-  .input(updateMemberSchema)
-  .mutation(async ({ input, ctx }) => {
-    const ability = defineAbilitiesFor(ctx.session.user)
-    
-    if (!ability.can('update', 'Member')) {
-      throw new TRPCError({ code: 'FORBIDDEN' })
-    }
-    
-    // Proceed with update
-  })
+class IsReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.method in permissions.SAFE_METHODS
 ```
+
+### Roles
+
+| Rol | Permisos |
+|-----|----------|
+| CHURCH_ADMIN | Acceso total |
+| PASTOR | Ver/editar miembros, ver finanzas |
+| TREASURER | Gestionar finanzas y donaciones |
+| TEACHER | Gestionar cursos |
+| VOLUNTEER | Acceso limitado |
+| MEMBER | Ver perfil propio |
 
 ---
 
 ## Procesamiento de Pagos
 
-### Stripe Connect (Platform Model)
+### Stripe Connect
 
-**Arquitectura**:
-- **Platform Account**: SG Church (nosotros)
-- **Connected Accounts**: Una por iglesia (tenant)
-- **Payment Flow**: Donante → Connected Account de la iglesia
+```python
+# payments/views.py
+import stripe
+from django.conf import settings
 
-**Setup**:
-```typescript
-// Cuando se registra una iglesia
-const account = await stripe.accounts.create({
-  type: 'standard', // Express también es opción
-  country: 'US',
-  email: tenant.email,
-  capabilities: {
-    card_payments: { requested: true },
-    transfers: { requested: true },
-  },
-  metadata: {
-    tenantId: tenant.id,
-  }
-})
-
-// Save to tenant
-await db.tenant.update({
-  where: { id: tenant.id },
-  data: { stripeAccountId: account.id }
-})
-```
-
-**Donación One-Time**:
-```typescript
-// Frontend
-'use client'
-import { loadStripe } from '@stripe/stripe-js'
-
-export function DonateButton() {
-  const donate = async (amount: number) => {
-    // Create Checkout Session
-    const session = await fetch('/api/donations/create-checkout', {
-      method: 'POST',
-      body: JSON.stringify({ amount })
-    }).then(r => r.json())
+def create_checkout_session(request):
+    stripe.api_key = settings.STRIPE_SECRET_KEY
     
-    // Redirect to Stripe Checkout
-    const stripe = await loadStripe(env.NEXT_PUBLIC_STRIPE_KEY)
-    await stripe.redirectToCheckout({ sessionId: session.id })
-  }
-  
-  return <button onClick={() => donate(50)}>Donate $50</button>
-}
-
-// Backend API Route
-// apps/web/app/api/donations/create-checkout/route.ts
-export async function POST(req: Request) {
-  const { amount } = await req.json()
-  const tenant = await getTenantFromRequest(req)
-  
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    line_items: [{
-      price_data: {
-        currency: 'usd',
-        product_data: { name: 'Donation' },
-        unit_amount: amount * 100, // cents
-      },
-      quantity: 1,
-    }],
-    success_url: `${req.headers.get('origin')}/donate/success`,
-    cancel_url: `${req.headers.get('origin')}/donate`,
-    metadata: {
-      tenantId: tenant.id,
-      type: 'donation',
-    }
-  }, {
-    stripeAccount: tenant.stripeAccountId, // Route to church's account
-  })
-  
-  return Response.json({ id: session.id })
-}
-```
-
-**Webhooks**:
-```typescript
-// apps/web/app/api/webhooks/stripe/route.ts
-import { headers } from 'next/headers'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
-export async function POST(req: Request) {
-  const body = await req.text()
-  const sig = headers().get('stripe-signature')!
-  
-  let event: Stripe.Event
-  
-  try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+    session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {'name': 'Donación'},
+                'unit_amount': int(request.data['amount'] * 100),
+            },
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url=request.data['success_url'],
+        cancel_url=request.data['cancel_url'],
+        metadata={'tenant_id': str(request.user.tenant.id)}
     )
-  } catch (err) {
-    return new Response(`Webhook Error`, { status: 400 })
-  }
-  
-  // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object as Stripe.Checkout.Session
-      await handleDonationSuccess(session)
-      break
-      
-    case 'customer.subscription.created':
-      await handleRecurringDonationCreated(event.data.object)
-      break
-      
-    // ... más eventos
-  }
-  
-  return Response.json({ received: true })
-}
-
-async function handleDonationSuccess(session: Stripe.Checkout.Session) {
-  const tenantId = session.metadata.tenantId
-  
-  // Create donation record
-  await db.donation.create({
-    data: {
-      amount: session.amount_total / 100,
-      currency: session.currency,
-      stripePaymentId: session.payment_intent as string,
-      type: 'ONE_TIME',
-      // ... other fields
-    }
-  })
-  
-  // Create accounting transaction (double-entry)
-  await createTransaction({
-    debit: { account: 'Bank Account', amount: session.amount_total / 100 },
-    credit: { account: 'Donation Revenue', amount: session.amount_total / 100 },
-  })
-  
-  // Send receipt email
-  await sendDonationReceipt(donation)
-}
+    return Response({'session_id': session.id})
 ```
-
-**Donaciones Recurrentes**:
-- Usar Stripe Subscriptions
-- Webhooks: `customer.subscription.created`, `invoice.paid`, `invoice.payment_failed`
-- Portal de cliente para gestionar suscripciones
 
 ---
 
 ## Sistema de Notificaciones
 
-### Arquitectura
+### Email con Celery
 
-```
-┌─────────────┐
-│  Trigger    │  (New member, donation, birthday, etc.)
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────┐
-│  Notification       │
-│  Service            │
-│  (Determina canal)  │
-└──────┬──────────────┘
-       │
-       ├───────┬───────┬───────┐
-       │       │       │       │
-       ▼       ▼       ▼       ▼
-   ┌────┐  ┌────┐  ┌────┐  ┌─────┐
-   │Email  │ SMS │  │Push│  │In-App
-   │Queue│  │Queue│  │Queue  │Notif│
-   └──┬─┘  └──┬─┘  └──┬─┘  └──┬──┘
-      │       │       │       │
-      ▼       ▼       ▼       ▼
-   Workers process queues
-```
+```python
+# finance/tasks.py
+from celery import shared_task
+from django.core.mail import send_mail
 
-### Implementación
-
-**Email con React Email + Resend**:
-
-```typescript
-// packages/email-templates/donation-receipt.tsx
-import { Html, Head, Body, Container, Section, Text } from '@react-email/components'
-
-export function DonationReceipt({ donation, member, church }) {
-  return (
-    <Html>
-      <Head />
-      <Body style={{ fontFamily: 'sans-serif' }}>
-        <Container>
-          <Section>
-            <Text>Dear {member.firstName},</Text>
-            <Text>
-              Thank you for your generous donation of ${donation.amount} to {church.name}.
-            </Text>
-            <Text>
-              Date: {donation.createdAt.toLocaleDateString()}<br />
-              Transaction ID: {donation.id}
-            </Text>
-            <Text>
-              This email serves as your receipt for tax purposes.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
-  )
-}
-
-// services/worker/jobs/send-email.ts
-import { Resend } from 'resend'
-import { DonationReceipt } from '@repo/email-templates'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
-export async function sendDonationReceipt(donationId: string) {
-  const donation = await db.donation.findUnique({
-    where: { id: donationId },
-    include: { member: true }
-  })
-  
-  const church = await getTenantInfo()
-  
-  await resend.emails.send({
-    from: `${church.name} <noreply@sgchurch.app>`,
-    to: donation.member.email,
-    subject: 'Donation Receipt',
-    react: DonationReceipt({ donation, member: donation.member, church })
-  })
-  
-  // Mark as sent
-  await db.donation.update({
-    where: { id: donationId },
-    data: { receiptEmailed: true }
-  })
-}
-```
-
-**BullMQ Queues**:
-
-```typescript
-// services/worker/queues/email.ts
-import { Queue, Worker } from 'bullmq'
-import { Redis } from 'ioredis'
-
-const connection = new Redis(process.env.REDIS_URL)
-
-export const emailQueue = new Queue('emails', { connection })
-
-// Add job
-export async function queueEmail(data: EmailJob) {
-  await emailQueue.add('send', data, {
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
-    }
-  })
-}
-
-// Worker
-const worker = new Worker('emails', async (job) => {
-  switch (job.data.type) {
-    case 'donation-receipt':
-      await sendDonationReceipt(job.data.donationId)
-      break
-    case 'welcome':
-      await sendWelcomeEmail(job.data.memberId)
-      break
-    // ... más tipos
-  }
-}, { connection })
-
-worker.on('failed', (job, err) => {
-  console.error(`Job ${job.id} failed:`, err)
-  // Alert monitoring system
-})
+@shared_task
+def send_donation_receipt(donation_id):
+    from finance.models import Donation
+    donation = Donation.objects.get(id=donation_id)
+    
+    send_mail(
+        subject=f'Recibo de donación - ${donation.amount}',
+        message=f'Gracias por tu donación...',
+        from_email='noreply@sgchurch.app',
+        recipient_list=[donation.member.email],
+    )
 ```
 
 ---
 
-## Background Jobs
+## Tareas en Segundo Plano
 
-**BullMQ para tareas programadas**:
+### Celery + Redis
 
-```typescript
-// services/worker/jobs/birthday-reminders.ts
-import { QueueScheduler } from 'bullmq'
+```python
+# core/celery.py
+from celery import Celery
 
-// Ejecutar diario a las 8am
-const scheduler = new QueueScheduler('birthday-reminders', { connection })
+app = Celery('sg_church')
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
 
-export async function sendBirthdayReminders() {
-  const today = new Date()
-  
-  // Query across all tenants
-  const tenants = await db.tenant.findMany()
-  
-  for (const tenant of tenants) {
-    const dbTenant = getDbForSchema(tenant.schemaName)
-    
-    const membersWithBirthday = await dbTenant.member.findMany({
-      where: {
-        dateOfBirth: {
-          gte: startOfDay(today),
-          lte: endOfDay(today),
-        },
-        status: 'ACTIVE',
-      }
-    })
-    
-    for (const member of membersWithBirthday) {
-      await queueEmail({
-        type: 'birthday',
-        memberId: member.id,
-        tenantId: tenant.id,
-      })
-    }
-  }
-}
-
-// Cron job (alternative: use cron in server)
-import cron from 'node-cron'
-
-cron.schedule('0 8 * * *', async () => {
-  await sendBirthdayReminders()
-})
-```
-
-**Otros background jobs**:
-- Generación de reportes anuales (enero)
-- Limpiar sesiones expiradas
-- Sincronizar con servicios externos
-- Procesar uploads masivos de datos
-
----
-
-## Almacenamiento de Archivos
-
-### Supabase Storage (Fase 1) → S3 (Escala)
-
-**Estructura de buckets**:
-```
-sg-church-prod/
-├── avatars/
-│   └── {tenant-id}/
-│       └── {member-id}.jpg
-├── baptism-photos/
-│   └── {tenant-id}/
-│       └── {baptism-id}/
-│           ├── photo1.jpg
-│           └── photo2.jpg
-├── course-materials/
-│   └── {tenant-id}/
-│       └── {course-id}/
-│           └── lesson1.pdf
-└── receipts/
-    └── {tenant-id}/
-        └── {year}/
-            └── {receipt-id}.pdf
-```
-
-**Upload desde cliente**:
-```typescript
-'use client'
-
-export function AvatarUpload() {
-  const uploadAvatar = async (file: File) => {
-    // 1. Get signed upload URL
-    const { uploadUrl, key } = await fetch('/api/storage/upload-url', {
-      method: 'POST',
-      body: JSON.stringify({
-        filename: file.name,
-        contentType: file.type,
-        folder: 'avatars'
-      })
-    }).then(r => r.json())
-    
-    // 2. Upload directly to S3/Supabase
-    await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {  'Content-Type': file.type }
-    })
-    
-    // 3. Save key to database
-    await trpc.members.updateAvatar.mutate({ key })
-  }
-  
-  return <input type="file" onChange={(e) => uploadAvatar(e.target.files[0])} />
-}
-```
-
-**Image optimization**:
-- Next.js Image component para CDN automático
-- Supabase transforma imágenes on-the-fly: `?width=200&height=200`
-- Cloudflare Images como alternativa
-
----
-
-## Caching Strategy
-
-### Cache Layers
-
-```
-┌───────────────────┐
-│  CDN (Cloudflare) │  Static assets, images
-└────────┬──────────┘
-         │
-┌────────▼──────────┐
-│  Next.js Cache    │  Page cache, data cache
-└────────┬──────────┘
-         │
-┌────────▼──────────┐
-│  Redis            │  Query results, sessions
-└────────┬──────────┘
-         │
-┌────────▼──────────┐
-│  PostgreSQL       │  Source of truth
-└───────────────────┘
-```
-
-### Redis Caching
-
-```typescript
-// lib/cache.ts
-import { Redis } from 'ioredis'
-
-const redis = new Redis(process.env.REDIS_URL)
-
-export async function getCached<T>(
-  key: string,
-  fetcher: () => Promise<T>,
-  ttl: number = 300 // 5 min default
-): Promise<T> {
-  // Try cache first
-  const cached = await redis.get(key)
-  if (cached) return JSON.parse(cached)
-  
-  // Fetch and cache
-  const data = await fetcher()
-  await redis.setex(key, ttl, JSON.stringify(data))
-  
-  return data
-}
-
-// Usage
-export async function getChurchSettings(tenantId: string) {
-  return getCached(
-    `tenant:${tenantId}:settings`,
-    () => db.tenant.findUnique({ where: { id: tenantId } }),
-    3600 // 1 hour TTL
-  )
-}
-```
-
-**Invalidación**:
-```typescript
-// On update
-await db.tenant.update({ where: { id }, data: { ... } })
-await redis.del(`tenant:${id}:settings`) // Invalidate cache
+# tasks.py
+@app.task
+def process_donation(donation_id):
+    # Procesar donación
+    pass
 ```
 
 ---
@@ -1222,73 +678,19 @@ await redis.del(`tenant:${id}:settings`) // Invalidate cache
 ### Horizontal Scaling Path
 
 **Fase 1 (0-100 iglesias)**:
-- Single Next.js instance (Vercel)
-- Supabase hosted PostgreSQL
-- Redis Cloud free tier
+- Single Django instance
+- PostgreSQL gestionado (Supabase/Neon)
+- Redis Cloud
 
 **Fase 2 (100-1,000 iglesias)**:
-- Multiple Next.js instances (Vercel auto-scales)
-- AWS RDS PostgreSQL (read replicas)
-- Upstash Redis (serverless)
-- Cloudflare CDN
+- Multiple Django instances (Gunicorn + Nginx)
+- PostgreSQL con read replicas
+- Celery workers separados
 
 **Fase 3 (1,000+ iglesias)**:
-- Database sharding (shard by tenant ID)
-- Dedicated DB for top 10% largest churches
-- Separate worker cluster for background jobs
-- Geographic distribution (multi-region)
-
-### Performance Targets
-
-| Métrica | Target | Estrategia |
-|---------|--------|-----------|
-| Page Load (P95) | < 2s | Server components, CDN |
-| API Response (P95) | < 500ms | Database indexing, Redis cache |
-| Donation Processing | < 3s | Async webhooks, optimized Stripe calls |
-| Report Generation | < 5s | Background jobs for large reports |
-| Member Search | < 200ms | Full-text search indexes, pagination |
-
-### Database Optimization
-
-**Indexes críticos**:
-```sql
--- Members
-CREATE INDEX idx_members_email ON members(email);
-CREATE INDEX idx_members_name ON members(last_name, first_name);
-CREATE INDEX idx_members_family ON members(family_id);
-
--- Donations
-CREATE INDEX idx_donations_member_date ON donations(member_id, created_at DESC);
-CREATE INDEX idx_donations_created ON donations(created_at DESC);
-
--- Transactions
-CREATE INDEX idx_transactions_date ON transactions(date DESC);
-CREATE INDEX idx_transactions_account ON transactions(account_id, date DESC);
-
--- Audit logs
-CREATE INDEX idx_audit_entity ON audit_logs(entity, entity_id);
-CREATE INDEX idx_audit_created ON audit_logs(created_at DESC);
-```
-
-**Connection Pooling**:
-```typescript
-// lib/db.ts
-import { PrismaClient } from '@prisma/client'
-import { Pool } from 'pg'
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20, // Max connections
-})
-
-export const db = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL + '?pgbouncer=true'
-    }
-  }
-})
-```
+- Database sharding
+- CDN para static files
+- Workers dedicados
 
 ---
 
@@ -1296,18 +698,15 @@ export const db = new PrismaClient({
 
 | Aspecto | Decisión | Justificación |
 |---------|----------|---------------|
-| **Arquitectura** | Monolito modular | Simplicidad, type safety |
+| **Backend** | Django 5 | ORM, Admin, Seguridad |
+| **Frontend** | Django Templates + Bootstrap | Simplicidad, SEO |
+| **API** | DRF | Estándar profesional |
 | **Multi-tenancy** | Schema-per-tenant | Balance aislamiento/costo |
-| **Frontend** | Next.js 14 App Router | Server Components, SEO, DX |
-| **Backend** | Next.js API + tRPC | Type safety end-to-end |
-| **Database** | PostgreSQL + Prisma | Confiabilidad, ORM moderno |
-| **Auth** | NextAuth.js v5 | Integrado, flexible |
-| **Payments** | Stripe Connect | Best-in-class API |
-| **Files** | Supabase Storage | Incluido, migration path a S3 |
-| **Email** | Resend + React Email | Modern DX, templates en React |
-| **Cache** | Redis | Estándar de la industria |
-| **Jobs** | BullMQ | Confiable, monitoring built-in |
-| **Hosting** | Vercel | Zero-config, auto-scaling |
+| **Database** | PostgreSQL | Confiabilidad |
+| **Auth** | Django Auth + DRF | Integrado |
+| **Payments** | Stripe Connect | Best-in-class |
+| **Jobs** | Celery | Integración Django |
+| **Hosting** | Render/VPS | Simplicidad, costo |
 
 ---
 

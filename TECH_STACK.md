@@ -5,14 +5,15 @@ Documentación completa de todas las tecnologías, herramientas y servicios util
 ## Tabla de Contenidos
 
 - [Resumen Ejecutivo](#resumen-ejecutivo)
-- [Frontend](#frontend)
 - [Backend](#backend)
+- [Frontend](#frontend)
 - [Base de Datos](#base-de-datos)
+- [API REST](#api-rest)
 - [Autenticación y Autorización](#autenticación-y-autorización)
 - [Pagos y Procesamiento](#pagos-y-procesamiento)
 - [Almacenamiento y Archivos](#almacenamiento-y-archivos)
 - [Email y Comunicaciones](#email-y-comunicaciones)
-- [Background Jobs](#background-jobs)
+- [Tareas en Segundo Plano](#tareas-en-segundo-plano)
 - [Infraestructura y Hosting](#infraestructura-y-hosting)
 - [Monitoreo y Analytics](#monitoreo-y-analytics)
 - [Herramientas de Desarrollo](#herramientas-de-desarrollo)
@@ -22,402 +23,163 @@ Documentación completa de todas las tecnologías, herramientas y servicios util
 
 ## Resumen Ejecutivo
 
-### Decisión Clave: Stack Full-TypeScript
+### Decisión Clave: Python Django + REST API
 
 **Ventajas**:
-- ✅ Type safety end-to-end (desde DB hasta UI)
-- ✅ Excelente developer experience (IntelliSense, refactoring)
-- ✅ Menos bugs en producción
-- ✅ Código más mantenible
-- ✅ Comunidad grande y activa
+- ✅ Framework maduro y estable (18+ años)
+- ✅ ORM potente con migrate automático
+- ✅ Admin panel incluido
+- ✅ Django REST Framework (estándar profesional)
+- ✅ Seguridad robusta built-in
+- ✅ Perfecto para APIs REST
+- ✅ Gran comunidad y documentación
 
 ### Stack Principal
 
 ```
 ┌──────────────────────────────────────┐
 │         FRONTEND                     │
-│  Next.js 14 + React 18 + TypeScript  │
-│  Tailwind CSS + shadcn/ui            │
+│  HTML5 + CSS3 + JavaScript (ES6+)   │
+│  Bootstrap 5 + Vanilla JS            │
 └──────────────┬───────────────────────┘
-               │
-               ▼
+                │
+                ▼
 ┌──────────────────────────────────────┐
 │         BACKEND                      │
-│  Next.js API Routes + tRPC           │
-│  NextAuth.js v5 (Auth)               │
+│  Python 3.x + Django 5.x             │
+│  Django REST Framework               │
 └──────────────┬───────────────────────┘
-               │
-        ┌──────┴──────┬───────────┐
-        │             │           │
-┌───────▼─────┐ ┌────▼────┐ ┌────▼────┐
-│ PostgreSQL  │ │  Redis  │ │  S3/    │
-│ + Prisma    │ │ + BullMQ│ │ Supabase│
-└─────────────┘ └─────────┘ └─────────┘
+                │
+         ┌──────┴──────┬───────────┐
+         │             │           │
+ ┌───────▼─────┐ ┌────▼────┐ ┌────▼────┐
+ │ PostgreSQL  │ │  Redis  │ │  S3/    │
+ │ + Django    │ │ + Celery│ │   AWS   │
+ │    ORM      │ │         │ │         │
+ └─────────────┘ └─────────┘ └─────────┘
 ```
-
----
-
-## Frontend
-
-### Framework Principal
-
-#### **Next.js 14+** 
-![Next.js](https://img.shields.io/badge/Next.js-14+-black)
-
-**Versión**: 14.1+ (App Router)
-
-**Por qué Next.js**:
-- ✅ **React Server Components**: Renderizado en servidor para performance
-- ✅ **App Router**: File-based routing moderno
-- ✅ **API Routes**: Backend y frontend en mismo proyecto
-- ✅ **Image Optimization**: Automático con `next/image`
-- ✅ **SEO-friendly**: SSR/SSG out of the box
-- ✅ **TypeScript**: First-class support
-- ✅ **Vercel Deploy**: Zero-config deployment
-
-**Configuración**:
-```javascript
-// next.config.js
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-  images: {
-    domains: ['your-bucket.supabase.co'],
-  },
-  experimental: {
-    serverActions: true,
-  },
-}
-
-module.exports = nextConfig
-```
-
-**Alternativas consideradas**:
-- ❌ Remix: Menos maduro, comunidad más pequeña
-- ❌ Vite + React Router: Requiere más configuración
-- ❌ Astro: No ideal para apps altamente dinámicas
-
----
-
-### UI Framework
-
-#### **React 18+**
-![React](https://img.shields.io/badge/React-18+-61DAFB)
-
-**Versión**: 18.2+
-
-**Características usadas**:
-- ✅ Server Components (Next.js integration)
-- ✅ Suspense para lazy loading
-- ✅ Error Boundaries
-- ✅ Concurrent rendering
-- ✅ Automatic batching
-
----
-
-### Styling
-
-#### **Tailwind CSS 3+**
-![Tailwind](https://img.shields.io/badge/Tailwind-3+-38B2AC)
-
-**Versión**: 3.4+
-
-**Por qué Tailwind**:
-- ✅ Utility-first = desarrollo rápido
-- ✅ Purge CSS automático = bundle pequeño
-- ✅ Design system consistente
-- ✅ Dark mode built-in
-- ✅ Responsive design fácil
-
-**Configuración**:
-```javascript
-// tailwind.config.ts
-import type { Config } from 'tailwindcss'
-
-const config: Config = {
-  darkMode: 'class',
-  content: [
-    './app/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          50: '#f0f9ff',
-          // ... color palette
-        },
-      },
-    },
-  },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/typography'),
-  ],
-}
-```
-
-#### **shadcn/ui**
-
-**Por qué shadcn/ui**:
-- ✅ Componentes copiables (no npm package = control total)
-- ✅ Accesibilidad (Radix UI primitives)
-- ✅ Customizable completamente
-- ✅ TypeScript out of the box
-- ✅ Diseño moderno y profesional
-
-**Componentes clave**:
-- `Dialog`, `Popover`, `DropdownMenu` (modals e interacciones)
-- `Form` (con React Hook Form integration)
-- `Table`, `DataTable` (grids)
-- `Card`, `Tabs`, `Badge` (layouts)
-- `Button`, `Input`, `Select` (forms)
-
-**Instalación**:
-```bash
-npx shadcn-ui@latest init
-npx shadcn-ui@latest add button dialog form table
-```
-
----
-
-### Form Management
-
-#### **React Hook Form 7+**
-![React Hook Form](https://img.shields.io/badge/React_Hook_Form-7+-EC5990)
-
-**Versión**: 7.50+
-
-**Por qué**:
-- ✅ Performance (uncontrolled components)
-- ✅ Menos re-renders
-- ✅ Excelente DX
-- ✅ Integración con Zod para validación
-
-**Ejemplo**:
-```typescript
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-
-const memberSchema = z.object({
-  firstName: z.string().min(1, 'Required'),
-  lastName: z.string().min(1, 'Required'),
-  email: z.string().email().optional(),
-})
-
-function MemberForm() {
-  const form = useForm({
-    resolver: zodResolver(memberSchema),
-  })
-  
-  return <form onSubmit={form.handleSubmit(onSubmit)}>...</form>
-}
-```
-
-#### **Zod 3+**
-![Zod](https://img.shields.io/badge/Zod-3+-3E67B1)
-
-**Versión**: 3.22+
-
-**Por qué**:
-- ✅ TypeScript-first schema validation
-- ✅ Inferencia automática de tipos
-- ✅ Compartible entre frontend y backend
-- ✅ Excellent error messages
-
----
-
-### State Management
-
-#### **TanStack Query (React Query) 5+**
-
-**Versión**: 5.20+
-
-**Por qué**:
-- ✅ Server state management (cache, refetch)
-- ✅ Optimistic updates
-- ✅ Automatic garbage collection
-- ✅ Integración perfecta con tRPC
-
-**Nota**: Con tRPC, no necesitamos otro state manager global (Zustand, Redux) en la mayoría de casos.
-
-#### **Zustand 4+** (opcional)
-
-**Versión**: 4.5+
-
-**Uso**:
-- Client-side state simple (UI state, theme)
-- Alternativa ligera a Redux
-
-```typescript
-import { create } from 'zustand'
-
-const useStore = create((set) => ({
-  theme: 'light',
-  toggleTheme: () => set((state) => ({ 
-    theme: state.theme === 'light' ? 'dark' : 'light' 
-  })),
-}))
-```
-
----
-
-### Data Tables
-
-#### **TanStack Table v8**
-
-**Versión**: 8.11+
-
-**Por qué**:
-- ✅ Headless (control total del UI)
-- ✅ TypeScript-first
-- ✅ Sorting, filtering, pagination built-in
-- ✅ Server-side data support
-- ✅ Column visibility, resizing
-
-**Ejemplo con shadcn/ui**:
-```bash
-npx shadcn-ui@latest add data-table
-```
-
----
-
-### Charts y Visualización
-
-#### **Recharts 2+**
-
-**Versión**: 2.10+
-
-**Por qué**:
-- ✅ Componentes React nativos
-- ✅ Fácil de usar
-- ✅ Responsive
-- ✅ Suficiente para dashboards financieros
-
-**Tipos de gráficos usados**:
-- Line Chart (tendencias de donaciones)
-- Bar Chart (asistencia por servicio)
-- Pie Chart (distribución demográfica)
-- Area Chart (ingresos vs gastos)
-
-**Alternativas**:
-- Apache ECharts: Más potente pero más complejo
-- Chart.js: No es React-native
-
----
-
-### Rich Text Editing
-
-#### **Tiptap 2+**
-
-**Versión**: 2.1+
-
-**Por qué**:
-- ✅ Extensible (prosemirror-based)
-- ✅ TypeScript support
-- ✅ Excelente UX
-- ✅ Markdown support
-
-**Uso**: Editor de contenido de lecciones en LMS
 
 ---
 
 ## Backend
 
-### API Layer
+### Framework Principal
 
-#### **tRPC 10+**
-![tRPC](https://img.shields.io/badge/tRPC-10+-2596BE)
+#### **Django 5.x**
+![Django](https://img.shields.io/badge/Django-5.x-092E20)
 
-**Versión**: 10.45+
+**Versión**: 5.0+
 
-**Por qué tRPC**:
-- ✅ **Type safety end-to-end**: Frontend sabe exactamente qué devuelve backend
-- ✅ **No code generation**: Los tipos se infieren automáticamente
-- ✅ **Excelente DX**: Autocomplete en frontend
-- ✅ **Más rápido que GraphQL** para proyectos TypeScript full-stack
+**Por qué Django**:
+- ✅ **ORM incluido**: Modelos, migraciones, queries
+- ✅ **Admin panel**: Panel de administración automático
+- ✅ **Seguridad**: Protección CSRF, XSS, SQL injection built-in
+- ✅ **Forms**: Sistema de formularios robusto
+- ✅ **Auth**: Sistema de autenticación completo
+- ✅ **Middleware**: Arquitectura extensible
+- ✅ **Internationalization**: i18n integrado
 
-**Estructura**:
-```typescript
-// server/routers/_app.ts
-import { router } from '../trpc'
-import { membersRouter } from './members'
-import { financeRouter } from './finance'
-import { coursesRouter } from './courses'
+**Configuración básica**:
+```python
+# settings.py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'corsheaders',
+    'members',
+    'finance',
+    'education',
+]
 
-export const appRouter = router({
-  members: membersRouter,
-  finance: financeRouter,
-  courses: coursesRouter,
-})
-
-export type AppRouter = typeof appRouter
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
 ```
 
-**Cliente en frontend**:
-```typescript
-// lib/trpc.ts
-import { createTRPCReact } from '@trpc/react-query'
-import type { AppRouter } from '@/server/routers/_app'
-
-export const trpc = createTRPCReact<AppRouter>()
-
-// En componente:
-const members = trpc.members.list.useQuery()
-//    ^? const members: Member[]  ← Fully typed!
-```
-
-**Alternativas**:
-- ❌ GraphQL: Más verboso, necesita codegen
-- ❌ REST: No type-safe sin herramientas adicionales
-- ❌ gRPC: Overkill para web app
+**Alternativas consideradas**:
+- ❌ Flask: Muy minimal, requiere más setup
+- ❌ FastAPI: Más moderno pero menos maduro para proyectos grandes
+- ❌ Pyramid: Comunidad más pequeña
 
 ---
 
 ### Runtime
 
-#### **Node.js 20+**
-![Node.js](https://img.shields.io/badge/Node.js-20+-339933)
+#### **Python 3.12+**
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB)
 
-**Versión**: 20.11+ LTS
+**Versión**: 3.12+ LTS
 
-**Por qué Node 20**:
+**Por qué Python 3.12**:
 - ✅ Performance improvements
-- ✅ Native test runner
-- ✅ Mejor soporte para ES modules
-- ✅ LTS hasta 2026
+- ✅ Better error messages
+- ✅ Mayor velocidad que versiones anteriores
+- ✅ Soporte hasta 2028
 
 ---
 
-### Type System
+## Frontend
 
-#### **TypeScript 5+**
-![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6)
+### Tecnologías
 
-**Versión**: 5.3+
+#### **HTML5**
+- Semántico (header, nav, main, footer)
+- Accesibilidad (ARIA labels)
+- SEO-friendly
 
-**Configuración estricta**:
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "exactOptionalPropertyTypes": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-  }
-}
+#### **CSS3**
+- **Bootstrap 5**: Framework CSS responsive
+- Custom properties (variables CSS)
+- Flexbox y Grid layout
+- Animaciones CSS
+
+#### **JavaScript (ES6+)**
+- Vanilla JavaScript (sin framework)
+- Fetch API para llamadas AJAX
+- Webpack/Vite para bundling
+- ES Modules
+
+**Estructura de templates**:
+```html
+<!-- templates/base.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SG Church{% endblock %}</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% include 'partials/navbar.html' %}
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
 ```
+
+**Alternativas consideradas**:
+- ❌ React/Vue: Overkill para este proyecto
+- ❌ Tailwind: Bootstrap es más rápido de aprender para el equipo
 
 ---
 
@@ -441,158 +203,197 @@ const members = trpc.members.list.useQuery()
 
 **Extensiones usadas**:
 ```sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";        -- UUIDs
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements"; -- Query analysis
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";           -- Fuzzy search
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 ```
-
-**Alternativas**:
-- ❌ MySQL: No tiene schemas (tendríamos que usar multiple DBs)
-- ❌ MongoDB: No relacional, no ideal para contabilidad
-- ❌ SQL Server: Paid, vendor lock-in
 
 ---
 
 ### ORM
 
-#### **Prisma 5+**
-![Prisma](https://img.shields.io/badge/Prisma-5+-2D3748)
+#### **Django ORM**
 
-**Versión**: 5.9+
+**Por qué Django ORM**:
+- ✅ **Integración nativa**: Sin librerías externas
+- ✅ **Migrations**: Versionadas y aplicables automáticamente
+- ✅ **Query Builder**: API fluida para queries complejas
+- ✅ **Relaciones**: Fácil trabajo con FK, M2M
+- ✅ **Admin**: Panel de admin automático
 
-**Por qué Prisma**:
-- ✅ **Type-safe queries**: Genera tipos TypeScript desde schema
-- ✅ **Excelente DX**: Prisma Studio para explorar DB
-- ✅ **Migrations**: Versionadas y aplicables
-- ✅ **Auto-completion**: IntelliSense en queries
-- ✅ **Relation handling**: Fácil trabajar con JOINs
+**Modelo ejemplo**:
+```python
+# models.py
+from django.db import models
+from django.contrib.auth.models import User
 
-**Schema ejemplo**:
-```prisma
-model Member {
-  id        String   @id @default(uuid())
-  firstName String
-  lastName  String
-  email     String?  @unique
-  
-  donations Donation[]
-  
-  @@index([lastName, firstName])
-}
+class Member(models.Model):
+    STATUS_CHOICES = [
+        ('visitor', 'Visitante'),
+        ('attendee', 'Asistente'),
+        ('member', 'Miembro'),
+        ('inactive', 'Inactivo'),
+    ]
+    
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(unique=True, null=True, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    member_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='visitor')
+    photo = models.ImageField(upload_to='members/photos/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['last_name', 'first_name']
+        indexes = [
+            models.Index(fields=['last_name', 'first_name']),
+            models.Index(fields=['email']),
+            models.Index(fields=['member_status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+    
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
 ```
 
 **Alternativas**:
-- Drizzle ORM: Más nuevo, menos maduro
-- TypeORM: Más verboso, decorators
-- Kysely: Query builder, no ORM completo
+- ❌ SQLAlchemy: Más flexible pero más complejo
+- ❌ Peewee: Muy minimal
+- ❌ Prisma: Solo para Node.js
 
 ---
 
-### Caching
+## API REST
 
-#### **Redis 7+**
-![Redis](https://img.shields.io/badge/Redis-7+-DC382D)
+### Django REST Framework (DRF)
+![DRF](https://img.shields.io/badge/Django_REST_Framework-3.14+-092E20)
 
-**Versión**: 7.2+
+**Versión**: 3.14+
 
-**Usos**:
-- ✅ Query result caching
-- ✅ Session storage
-- ✅ Rate limiting
-- ✅ BullMQ job queues
-- ✅ Pub/Sub para real-time features
+**Por qué DRF**:
+- ✅ **Estándar de la industria**: Más usado en Python
+- ✅ **Serializers**: Conversión JSON automática
+- ✅ **ViewSets**: CRUD rápido
+- ✅ **Authentication**: Token, Session, JWT
+- ✅ **Permissions**: Control de acceso granular
+- ✅ **Throttling**: Rate limiting
+- ✅ **Documentation**: Auto-generated Swagger
 
-**Cliente**:
-```typescript
-import { Redis } from 'ioredis'
+**Serializer ejemplo**:
+```python
+# serializers.py
+from rest_framework import serializers
+from .models import Member
 
-const redis = new Redis(process.env.REDIS_URL)
+class MemberSerializer(serializers.ModelSerializer):
+    full_name = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = Member
+        fields = ['id', 'first_name', 'last_name', 'full_name', 
+                  'email', 'phone', 'date_of_birth', 'member_status', 
+                  'created_at']
+        read_only_fields = ['id', 'created_at']
 ```
 
-**Hosting**:
-- Desarrollo: Local Redis
-- Producción: **Upstash** (serverless) o **Redis Cloud**
+**ViewSet ejemplo**:
+```python
+# views.py
+from rest_framework import viewsets, permissions
+from .models import Member
+from .serializers import MemberSerializer
+
+class MemberViewSet(viewsets.ModelViewSet):
+    queryset = Member.objects.all()
+    serializer_class = MemberSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return Member.objects.filter(
+            tenant=self.request.user.tenant
+        )
+```
+
+**URLs con router**:
+```python
+# urls.py
+from rest_framework import routers
+from .views import MemberViewSet
+
+router = routers.DefaultRouter()
+router.register(r'members', MemberViewSet)
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
+```
+
+**API disponible**:
+- `GET /api/members/` - Listar miembros
+- `POST /api/members/` - Crear miembro
+- `GET /api/members/{id}/` - Ver miembro
+- `PUT /api/members/{id}/` - Actualizar miembro
+- `DELETE /api/members/{id}/` - Eliminar miembro
 
 ---
 
 ## Autenticación y Autorización
 
-### Auth Provider
+### Django Authentication
 
-#### **NextAuth.js v5 (Auth.js)**
-![NextAuth](https://img.shields.io/badge/NextAuth.js-v5-blue)
-
-**Versión**: 5.0.0-beta+
+#### **Django Auth + django-allauth**
+![Django](https://img.shields.io/badge/Django_Auth-Built--in-092E20)
 
 **Por qué**:
-- ✅ Integración nativa con Next.js
-- ✅ Multiple providers (Credentials, OAuth)
-- ✅ Session management
-- ✅ JWT o database sessions
-- ✅ CSRF protection
-- ✅ gratuito y open source
+- ✅ Integrado en Django
+- ✅ Manejo de usuarios, grupos, permisos
+- ✅ Password management incluido
+- ✅ django-allauth para OAuth (Google, etc.)
 
-**Providers configurados**:
-```typescript
-import NextAuth from 'next-auth'
-import Credentials from 'next-auth/providers/credentials'
-import Google from 'next-auth/providers/google'
+**Configuración**:
+```python
+# settings.py
+AUTH_USER_MODEL = 'members.User'
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    Credentials({
-      credentials: { email: {}, password: {} },
-      authorize: async (credentials) => {
-        // Verify credentials
-      },
-    }),
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-  ],
-})
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# django-allauth
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
+            'secret': os.environ.get('GOOGLE_SECRET'),
+            'key': ''
+        }
+    }
+}
 ```
 
-**Alternativas**:
-- Clerk: Más fácil pero paid
-- Auth0: Paid, vendor lock-in
-- Supabase Auth: Buena opción si usamos Supabase DB
+### Permissions (DRF)
 
----
+```python
+# permissions.py
+from rest_framework import permissions
 
-### Authorization
+class IsChurchAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.role == 'CHURCH_ADMIN'
 
-#### **CASL 6+**
-
-**Versión**: 6.6+
-
-**Por qué**:
-- ✅ Isomorphic (funciona en frontend y backend)
-- ✅ Attribute-based access control (ABAC)
-- ✅ Type-safe con TypeScript
-- ✅ UI conditional rendering fácil
-
-**Ejemplo**:
-```typescript
-import { defineAbility } from '@casl/ability'
-
-export const defineAbilitiesFor = (user: User) => {
-  return defineAbility((can, cannot) => {
-    if (user.role === 'CHURCH_ADMIN') {
-      can('manage', 'all')
-    }
-    
-    if (user.role === 'TREASURER') {
-      can('manage', 'Transaction')
-      can('read', 'Member')
-    }
-    
-    // Field-level permissions
-    can('read', 'Member', ['firstName', 'lastName'])
-    cannot('read', 'Member', ['ssn']) // unless admin
-  })
-}
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.user == request.user or request.user.is_staff
 ```
 
 ---
@@ -610,61 +411,102 @@ export const defineAbilitiesFor = (user: User) => {
 - ✅ **Subscriptions**: Para donaciones recurrentes
 - ✅ **Compliance**: PCI DSS handled
 - ✅ **Webhooks**: Eventos en tiempo real
-- ✅ **Dashboard**: Excelente UX para iglesias
-- ✅ **Customer Portal**: Manejo de suscripciones self-service
 
-**Librerías**:
-```json
-{
-  "stripe": "^14.0.0",
-  "@stripe/stripe-js": "^2.4.0",
-  "@stripe/react-stripe-js": "^2.4.0"
-}
+**Librería**:
+```
+stripe>=7.0.0
 ```
 
-**Arquitectura**:
-- **Platform Account**: SG Church
-- **Connected Accounts**: Una por iglesia (tenant)
-- **Payment flow**: Donante → Connected Account directo
+**Backend**:
+```python
+# payments/views.py
+import stripe
+from django.conf import settings
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
-**Alternativas**:
-- PayPal: Menos developer-friendly, alta brand recognition
-- Square: Más enfocado en punto de venta físico
-- Plaid: Para ACH, considerar en Fase 3
+@api_view(['POST'])
+def create_checkout_session(request):
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    
+    session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {'name': 'Donación'},
+                'unit_amount': int(request.data['amount'] * 100),
+            },
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url=request.data['success_url'],
+        cancel_url=request.data['cancel_url'],
+        metadata={'tenant_id': request.user.tenant.id}
+    )
+    return Response({'session_id': session.id})
+```
+
+**Webhooks**:
+```python
+# payments/webhooks.py
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import stripe
+
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError:
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError:
+        return HttpResponse(status=400)
+    
+    if event['type'] == 'checkout.session.completed':
+        # Procesar donación
+        handle_donation(event['data']['object'])
+    
+    return HttpResponse(status=200)
+```
 
 ---
 
 ## Almacenamiento y Archivos
 
-### Object Storage
+### Storage
 
-#### **Supabase Storage** (Fase 1) → **AWS S3** (Escala)
+#### **AWS S3 + django-storages**
 
-**Por qué Supabase inicialmente**:
-- ✅ Incluido si usamos Supabase DB
-- ✅ CDN integrado
-- ✅ Image transformations on-the-fly
-- ✅ Signed URLs para uploads directos
-- ✅ Gratis hasta 100GB
+**Por qué**:
+- ✅ Durable y escalable
+- ✅ CDN integrado (CloudFront)
+- ✅ Coste eficiente a escala
 
-**Migración a S3**:
-- Cuando crezca (>500GB)
-- S3 + CloudFront CDN
-- Más económico a escala
+**Configuración**:
+```python
+# settings.py
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-**Cliente**:
-```typescript
-import { createClient } from '@supabase/supabase-js'
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = 'us-east-1'
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+AWS_DEFAULT_ACL = 'private'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+```
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-)
-
-// Upload
-const { data, error } = await supabase.storage
-  .from('avatars')
-  .upload(`${tenantId}/${memberId}.jpg`, file)
+**Modelo con archivo**:
+```python
+class Document(models.Model):
+    member = models.ForeignKey(Member, on_delete=models.CASCADE)
+    file = models.FileField(upload_to='documents/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 ```
 
 ---
@@ -673,121 +515,89 @@ const { data, error } = await supabase.storage
 
 ### Transactional Email
 
-#### **Resend** (Desarrollo) → **AWS SES** (Escala)
+#### **Django + SendGrid/Resend**
 
-**Por qué Resend**:
-- ✅ **Developer-first**: API moderna
-- ✅ **React Email**: Templates en React
-- ✅ **Delivery tracking**: Opens, clicks
-- ✅ **Generous free tier**: 3,000 emails/mes
+**Por qué**:
+- ✅ Integración simple con Django
+- ✅ Envío de emails transaccionales
+- ✅ Tracking de aperturas y clicks
 
-**React Email**:
-```typescript
-// packages/email-templates/donation-receipt.tsx
-import { Html, Text, Button } from '@react-email/components'
-
-export function DonationReceipt({ donation }) {
-  return (
-    <Html>
-      <Text>Thank you for your ${donation.amount} donation!</Text>
-      <Button href={`${baseUrl}/donations/${donation.id}`}>
-        View Receipt
-      </Button>
-    </Html>
-  )
-}
-
-// Send
-import { Resend } from 'resend'
-import { DonationReceipt } from '@repo/email-templates'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
-await resend.emails.send({
-  from: 'noreply@sgchurch.app',
-  to: member.email,
-  subject: 'Donation Receipt',
-  react: DonationReceipt({ donation }),
-})
+**Configuración**:
+```python
+# settings.py
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = 'noreply@sgchurch.app'
 ```
 
-**Migración a SES**:
-- Cuando > 10K emails/día
-- 10x más barato ($0.10 per 1K)
-- Requiere más setup (DKIM, SPF)
+**Enviar email**:
+```python
+from django.core.mail import send_mail
 
-**Alternativas**:
-- SendGrid: Más establecido, free tier 100/día
-- Postmark: Excelente deliverability, más caro
-- Mailgun: Menos moderno
+def send_donation_receipt(donation):
+    send_mail(
+        subject=f'Recibo de donación - {donation.amount}',
+        message=f'Gracias por tu donación de ${donation.amount}',
+        from_email='noreply@sgchurch.app',
+        recipient_list=[donation.member.email],
+        html_message=render_to_string('emails/receipt.html', {'donation': donation})
+    )
+```
 
 ---
 
-### SMS
+## Tareas en Segundo Plano
 
-#### **Twilio**
+### Celery + Redis
 
-**Versión**: API v2010-04-01
-
-**Por qué**:
-- ✅ Industry standard
-- ✅ Reliable delivery
-- ✅ Compliance tools (opt-out handling)
-- ✅ International support
-
-**Costo**: ~$0.0075 USD per SMS (US)
-
-**Alternativas**:
-- Telnyx: Más barato ($0.004)
-- Vonage: Similar pricing
-
----
-
-## Background Jobs
-
-### Queue System
-
-#### **BullMQ 5+**
-![BullMQ](https://img.shields.io/badge/BullMQ-5+-E0234E)
-
-**Versión**: 5.1+
+#### **Celery 5.x**
+![Celery](https://img.shields.io/badge/Celery-5.x-003F8B)
 
 **Por qué**:
-- ✅ Built on Redis
-- ✅ Job retries con exponential backoff
-- ✅ Job prioritization
-- ✅ Scheduled/delayed jobs (cron)
-- ✅ Rate limiting
-- ✅ Web UI (Bull Board)
+- ✅ Integración perfecta con Django
+- ✅ Scheduling con beat
+- ✅ Retry automático
+- ✅ Monitoreo con Flower
 
-**Ejemplo**:
-```typescript
-import { Queue, Worker } from 'bullmq'
-
-const emailQueue = new Queue('emails', {
-  connection: redis
-})
-
-// Add job
-await emailQueue.add('send-receipt', {
-  donationId: '123',
-  email: 'user@example.com'
-}, {
-  attempts: 3,
-  backoff: { type: 'exponential', delay: 2000 }
-})
-
-// Worker
-new Worker('emails', async (job) => {
-  if (job.name === 'send-receipt') {
-    await sendDonationReceipt(job.data)
-  }
-}, { connection: redis })
+**Configuración**:
+```python
+# settings.py
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 ```
 
-**Alternativas**:
-- Agenda: MongoDB-based
-- pg-boss: PostgreSQL-based (considera si no queremos Redis)
+**Tarea**:
+```python
+# tasks.py
+from celery import shared_task
+from django.core.mail import send_mail
+
+@shared_task
+def send_donation_email(donation_id):
+    from .models import Donation
+    donation = Donation.objects.get(id=donation_id)
+    send_mail(
+        'Recibo de donación',
+        f'Gracias por tu donación de ${donation.amount}',
+        'noreply@sgchurch.app',
+        [donation.member.email]
+    )
+```
+
+**Llamar tarea**:
+```python
+from .tasks import send_donation_email
+
+# En views.py
+send_donation_email.delay(donation.id)
+```
 
 ---
 
@@ -795,87 +605,30 @@ new Worker('emails', async (job) => {
 
 ### Application Hosting
 
-#### **Vercel**
-![Vercel](https://img.shields.io/badge/Vercel-000000)
+#### **Render / Railway / VPS**
+![Render](https://img.shields.io/badge/Render-46E3B7)
 
 **Por qué**:
-- ✅ **Zero-config**: Deploy desde Git push
-- ✅ **Edge network**: CDN global automático
-- ✅ **Serverless functions**: Escala automático
-- ✅ **Preview deployments**: Por cada PR
-- ✅ **Analytics**: Web Vitals built-in
-- ✅ **Free tier**: Generoso para comenzar
-
-**Pricing**:
-- Free: $0 (hobby projects)
-- Pro: $20/mes por miembro (para equipo)
+- ✅ Soporte nativo para Django
+- ✅ Deploy desde Git
+- ✅ SSL automático
+- ✅ PostgreSQL incluido
 
 **Alternativas**:
-- Railway: Más económico a escala, menos features
-- AWS Amplify: Más control, más complejo
-- Netlify: Similar a Vercel
+- AWS EC2: Más control, más complejo
+- DigitalOcean App Platform: Similar a Render
+- VPS (Linode, DigitalOcean Droplet): Máxima flexibilidad
 
 ---
 
 ### Database Hosting
 
-#### **Supabase** (Fase 1) → **AWS RDS** (Escala)
-
-**Por qué Supabase**:
-- ✅ **All-in-one**: PostgreSQL + Storage + Auth
-- ✅ **Generous free tier**: 500MB, 2GB bandwidth
-- ✅ **Daily backups**: Automáticos  
-- ✅ **Dashboard**: Fácil de usar
-- ✅ **Realtime**: Pub/sub built-in
-
-**Pricing**:
-- Free: $0
-- Pro: $25/mes (8GB DB, sin pausar)
-- Team: Desde $599/mes
-
-**Migración a RDS**:
-- Cuando > 100 tenants o necesitemos multi-region
-- AWS RDS con read replicas
-- Más control sobre performance tuning
-
-**Alternativas**:
-- Neon: Serverless PostgreSQL, branching
-- PlanetScale: MySQL-as-a-Service
-- Railway: PostgreSQLincluido
-
----
-
-### Redis Hosting
-
-#### **Upstash**
+#### **Supabase / Neon / Railway**
 
 **Por qué**:
-- ✅ **Serverless**: Pay per request
-- ✅ **Generous free tier**: 10K requests/día
-- ✅ **Global edge**: Multi-region
-- ✅ **Zero maintenance**
-
-**Pricing**:
-- Free: 10K requests/día
-- Pay-as-you-go: $0.20 per 100K requests
-
-**Alternativas**:
-- Redis Cloud: Free 30MB, luego $5/mes
-- Railway: Redis incluido en plan
-
----
-
-### CDN y Edge
-
-#### **Cloudflare**
-
-**Por qué**:
-- ✅ **Free tier**: Unlimited bandwidth
-- ✅ **DDoS protection**: Automático
-- ✅ **WAF**: Web Application Firewall
-- ✅ **DNS**: Rápido y gratis
-- ✅ **SSL**: Gratis
-- ✅ **R2 Storage**: S3-compatible, más barato
+- ✅ PostgreSQL gestionado
+- ✅ Backups automáticos
+- ✅ Fácil setup
 
 ---
 
@@ -886,165 +639,89 @@ new Worker('emails', async (job) => {
 #### **Sentry**
 ![Sentry](https://img.shields.io/badge/Sentry-362D59)
 
-**Por qué**:
-- ✅ Error tracking automático
-- ✅ Source maps para stacktraces legibles
-- ✅ Release tracking
-- ✅ Performance monitoring
-- ✅ Alerts (Slack, email)
+**Configuración**:
+```python
+# settings.py
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
-**Free tier**: 5K events/mes
+sentry_sdk.init(
+    dsn=os.environ.get('SENTRY_DSN'),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=0.1,
+)
+```
 
-### Web Analytics
+### Logging
 
-#### **Vercel Analytics** + **Plausible**
-
-**Vercel Analytics**:
-- Web Vitals (CLS, FID, LCP)
-- Incluido gratis con Vercel
-
-**Plausible**:
-- Privacy-focused (GDPR compliant)
-- No cookies
-- Lightweight (<1KB script)
-
-**Alternativas**:
-- PostHog: Product analytics, open source
-- Umami: Self-hosted, privacy-focused
-- Google Analytics: Más completo pero privacy concerns
-
-### Application Monitoring
-
-#### **Vercel Speed Insights** + **Custom Dashboard**
-
-**Métricas custom**:
-- Stripe webhook latency
-- Background job success rate
-- Database query times
-- Email delivery rate
+```python
+# logging.py
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/error.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+        },
+    },
+}
+```
 
 ---
 
 ## Herramientas de Desarrollo
 
-### Package Manager
+### Python Environment
 
-#### **pnpm 8+**
-![pnpm](https://img.shields.io/badge/pnpm-8+-F69220)
+#### **uv / pipenv / venv**
 
-**Por qué pnpm**:
-- ✅ **Rápido**: Hasta 2x más rápido que npm
-- ✅ **Eficiente**: Usa hard links (ahorra espacio)
-- ✅ **Workspace support**: Perfecto para monorepos
-- ✅ **Strict**: Menos dependency hell
+**Por qué uv**:
+- ✅ Mucho más rápido que pip
+- ✅ Gestión de dependencias moderna
+- ✅ Entornos virtuales livianos
 
----
-
-### Monorepo
-
-#### **Turborepo**
-![Turborepo](https://img.shields.io/badge/Turborepo-EF4444)
-
-**Por qué**:
-- ✅ **Build caching**: Incremental builds rápidos
-- ✅ **Parallel execution**: Corre tasks en paralelo
-- ✅ **Remote caching**: Compartir cache con equipo
-- ✅ **Simple config**: Menos verboso que Nx
-
-**Estructura**:
-```
-turborepo.json:
-{
-  "pipeline": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {}
-  }
-}
-```
-
----
-
-### Code Quality
-
-#### **ESLint 8+**
-
-**Configuración**:
-```json
-{
-  "extends": [
-    "next/core-web-vitals",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ],
-  "rules": {
-    "@typescript-eslint/no-unused-vars": "error",
-    "@typescript-eslint/no-explicit-any": "warn"
-  }
-}
-```
-
-#### **Prettier 3+**
-
-**Config**:
-```json
-{
-  "semi": false,
-  "singleQuote": true,
-  "tabWidth": 2,
-  "trailingComma": "es5",
-  "printWidth": 100
-}
-```
-
-#### **Husky + lint-staged**
-
-Pre-commit hooks:
-```json
-{
-  "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
-  "*.{json,md}": ["prettier --write"]
-}
-```
+**Alternativas**:
+- pipenv: Más lento pero estable
+- poetry: Excelente pero diferente paradigma
 
 ---
 
 ### Testing
 
-#### **Vitest** (Unit/Integration)
+#### **pytest + pytest-django**
+![pytest](https://img.shields.io/badge/pytest-0A9ED9)
 
-**Por qué**:
-- ✅ Más rápido que Jest
-- ✅ Compatible con Vite ecosystem
-- ✅ TypeScript out of the box
-- ✅ Watch mode excelente
+**Configuración**:
+```python
+# pytest.ini
+[pytest]
+DJANGO_SETTINGS_MODULE = sg_church.settings
+python_files = tests.py test_*.py *_tests.py
 
-#### **Playwright** (E2E)
+# requirements.txt
+pytest>=7.0.0
+pytest-django>=4.5.0
+pytest-cov>=4.0.0
+```
 
-**Por qué**:
-- ✅ Multi-browser (Chromium, Firefox, WebKit)
-- ✅ Codegen para generar tests
-- ✅ Parallel execution
-- ✅ Trace viewer para debugging
+**Test ejemplo**:
+```python
+# members/tests.py
+import pytest
+from django.urls import reverse
 
-**Ejemplo**:
-```typescript
-import { test, expect } from '@playwright/test'
-
-test('onboarding flow', async ({ page }) => {
-  await page.goto('/register')
-  await page.fill('[name="churchName"]', 'First Baptist')
-  await page.fill('[name="email"]', 'admin@church.com')
-  await page.click('button[type="submit"]')
-  
-  await expect(page).toHaveURL('/dashboard')
-})
+@pytest.mark.django_db
+def test_member_list_view(client):
+    response = client.get('/members/')
+    assert response.status_code == 200
 ```
 
 ---
@@ -1053,9 +730,9 @@ test('onboarding flow', async ({ page }) => {
 
 #### **GitHub Actions**
 
-**Workflow**:
 ```yaml
-name: CI
+name: Django CI
+
 on: [push, pull_request]
 
 jobs:
@@ -1063,27 +740,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: 20
-          cache: 'pnpm'
+          python-version: '3.12'
       
-      - run: pnpm install
-      - run: pnpm lint
-      - run: pnpm test
-      - run: pnpm build
-  
-  deploy:
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.ORG_ID }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run tests
+        run: pytest
+      
+      - name: Check code style
+        run: flake8 .
 ```
 
 ---
@@ -1094,88 +765,74 @@ jobs:
 
 | Herramienta | Versión Mínima | Versión Recomendada |
 |-------------|----------------|---------------------|
-| Node.js | 20.0.0 | 20.11+ LTS |
-| pnpm | 8.0.0 | 8.15+ |
-| PostgreSQL | 15.0 | 16.1+ |
+| Python | 3.11.0 | 3.12+ |
+| Django | 5.0 | 5.1+ |
+| PostgreSQL | 14.0 | 16.1+ |
 | Redis | 6.2 | 7.2+ |
-| TypeScript | 5.0 | 5.3+ |
-| Next.js | 14.0 | 14.1+ |
-| React | 18.0 | 18.2+ |
+| DRF | 3.14 | 3.15+ |
 
-### Navegadores Soportados
+### Dependencias Principales
 
-```json
-// package.json
-{
-  "browserslist": [
-    "last 2 Chrome versions",
-    "last 2 Firefox versions",
-    "last 2 Safari versions",
-    "last 2 Edge versions"
-  ]
-}
 ```
-
-**Mobile**:
-- iOS Safari 15+
-- Chrome Android (últimas 2 versiones)
-
----
-
-## Decisiones Tecnológicas - Resumen
-
-| Aspecto | Tecnología | Alternativa Principal | Por Qué Elegimos |
-|---------|-----------|----------------------|------------------|
-| **Framework** | Next.js 14 | Remix | SSR, App Router, ecosystem |
-| **Backend API** | tRPC | GraphQL | Type safety sin codegen |
-| **Database** | PostgreSQL | MySQL | Multi-schema support |
-| **ORM** | Prisma | Drizzle | Madurez, DX, tooling |
-| **Auth** | NextAuth.js | Clerk | Open source, flexible |
-| **Payments** | Stripe | PayPal | Best API, Connect model |
-| **Storage** | Supabase → S3 | Cloudflare R2 | All-in-one → cost at scale |
-| **Email** | Resend → SES | SendGrid | Modern DX → cost |
-| **Hosting** | Vercel | Railway | Zero-config, edge |
-| **Cache/Jobs** | Redis + BullMQ | pg-boss | Performance, features |
+Django>=5.0,<6.0
+djangorestframework>=3.14,<4.0
+psycopg2-binary>=2.9,<3.0
+celery>=5.3,<6.0
+redis>=5.0,<6.0
+django-cors-headers>=4.0,<5.0
+django-allauth>=0.61,<1.0
+django-storages>=1.14,<2.0
+boto3>=1.34,<2.0
+stripe>=7.0,<8.0
+gunicorn>=21.0,<22.0
+whitenoise>=6.0,<7.0
+```
 
 ---
 
 ## Costos Estimados (Mensual)
 
 ### Fase 1 (10 iglesias, <1,000 miembros totales)
-- Vercel: **$0** (Free tier)
-- Supabase: **$0** (Free tier)
-- Upstash Redis: **$0** (Free tier)
-- Resend: **$0** (Free tier)
-- **Total: $0/mes** ✅
+- **VPS/Render**: **$0-20** (Free tier o $15/mes)
+- **PostgreSQL**: **$0** (incluido en hosting o $0-15)
+- **Redis**: **$0** (Free tier Upstash)
+- **Dominio + SSL**: **$10-15**
+- **Stripe fees**: Solo pasan a iglesias
+- **Total: ~$15-50/mes** ✅
 
 ### Fase 2 (50 iglesias, 5,000 miembros)
-- Vercel Pro: **$20/mes**
-- Supabase Pro: **$25/mes**
-- Upstash: **~$10/mes**
-- Resend: **~$20/mes**
-- Twilio SMS: **~$50/mes**
-- **Total: ~$125/mes**
+- **VPS/Render**: **$25-50/mes**
+- **PostgreSQL**: **$20-50/mes**
+- **Redis**: **$0-10/mes**
+- **Dominio + SSL**: **$15**
+- **Sentry**: **$0-20/mes**
+- **Total: ~$80-145/mes**
 
 ### Fase 3 (200 iglesias, 20,000 miembros)
-- Vercel Team: **$100/mes**
-- AWS RDS (db.t3.medium): **~$50/mes**
-- Redis Cloud: **~$30/mes**
-- AWS SES: **~$10/mes**
-- S3 + CloudFront: **~$20/mes**
-- Twilio: **~$200/mes**
-- **Total: ~$410/mes**
-
-### Fase 4 (500+ iglesias, 50,000+ miembros)
-- Vercel Enterprise: **$500-1,000/mes**
-- AWS RDS (larger instance + replicas): **~$500/mes**
-- Redis: **~$100/mes**
-- Email/SMS: **~$500/mes**
-- Monitoring: **~$100/mes**
-- **Total: ~$2,000-2,500/mes**
-
-**Sostenibilidad**: Con 500 iglesias, 4-5 donaciones de $500/año cubren costos operacionales.
+- **VPS/Dedicated**: **$100-200/mes**
+- **PostgreSQL (managed)**: **$50-100/mes**
+- **Redis**: **$20-50/mes**
+- **CDN + Storage**: **$30-50/mes**
+- **Total: ~$200-400/mes**
 
 ---
 
-**Última actualización**: Febrero 15, 2026
+## Resumen de Decisiones
+
+| Aspecto | Tecnología | Alternativa Principal | Por Qué Elegimos |
+|---------|-----------|----------------------|------------------|
+| **Backend** | Django 5 | Flask, FastAPI | ORM, Admin, Seguridad |
+| **Frontend** | HTML/CSS/JS | React, Vue | Simplicidad, mantenimiento |
+| **API** | DRF | Graphene, Ninja | Estándar profesional |
+| **Database** | PostgreSQL | MySQL | Multi-schema, JSONB |
+| **ORM** | Django ORM | SQLAlchemy | Integrado, Admin built-in |
+| **Auth** | Django Auth | JWTonly | Integrado, Admin |
+| **Payments** | Stripe | PayPal | Best API, Connect |
+| **Email** | SendGrid | SES | Easier setup |
+| **Jobs** | Celery | Dramatiq | Integración Django |
+| **Hosting** | Render/VPS | AWS | Simplicidad, costo |
+
+---
+
+**Última actualización**: Marzo 27, 2026
 **Mantenido por**: Equipo Técnico SG Church

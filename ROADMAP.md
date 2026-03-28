@@ -30,10 +30,10 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 #### Sprint 1-2: Setup Inicial (Semanas 1-4)
 - [x] **Configuración del Proyecto**
   - [x] Inicializar monorepo con Turborepo
-  - [x] Setup Next.js 14 con App Router
+  - [x] Setup Django 5 con Python 3.12
   - [x] Configurar TypeScript, ESLint, Prettier
   - [x] Instalar Tailwind CSS + shadcn/ui base
-  - [x] Configurar Prisma con PostgreSQL
+  - [x] Configurar Django ORM con PostgreSQL
   - [ ] Setup CI/CD con GitHub Actions
 
 - [ ] **Infraestructura Multi-Tenant**
@@ -48,7 +48,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 #### Sprint 3-4: Autenticación (Semanas 5-8)
 - [ ] **NextAuth.js Setup**
   - [ ] Configurar providers (Credentials, Google OAuth)
-  - [ ] Integrar PrismaAdapter
+  - [ ] Configurar Django Auth
   - [ ] Implementar sistema de roles (RBAC)
   - [ ] Crear biblioteca CASL para permisos
   - [ ] Páginas de login/register/forgot-password
@@ -67,8 +67,8 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 #### Sprint 5-7: Gestión de Membresía (Semanas 9-14)
 - [ ] **CRUD de Miembros**
-  - [ ] Schema Prisma para Members, Families, Tags
-  - [ ] Formulario create/edit con React Hook Form + Zod
+  - [ ] Model Django para Members, Families, Tags
+  - [ ] Formulario create/edit con Django Forms
   - [ ] Vista de lista con TanStack Table
     - [ ] Filtros (status, tags, familia)
     - [ ] Búsqueda full-text
@@ -133,7 +133,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 #### Sprint 11-12: Sistema de Notificaciones (Semanas 21-24)
 - [ ] **Email Infrastructure**
   - [ ] Configurar Resend API
-  - [ ] Setup React Email para templates
+  - [ ] Configurar templates de email con Django
   - [ ] BullMQ queue para emails
   - [ ] Worker para procesar email queue
   - [ ] Templates:
@@ -426,7 +426,7 @@ Funciones que diferencian la plataforma y mejoran engagement.
 
 #### Sprint 35-37: Progressive Web App (Semanas 69-74)
 - [ ] **PWA Setup**
-  - [ ] Configurar Next.js PWA plugin
+  - [ ] Progressive Web App (PWA) con manifest
   - [ ] Manifest.json (nombre, iconos, colores)
   - [ ] Service worker para offline
     - [ ] Caché de páginas críticas
@@ -527,7 +527,7 @@ Optimizar performance, abrir API pública, soportar internacionalización y esca
 - [ ] **Frontend Optimization**
   - [ ] Code splitting agresivo
   - [ ] Lazy load de componentes pesados
-  - [ ] Image optimization (Next.js Image + CDN)
+  - [ ] Image optimization (django-imagekit + CDN)
   - [ ] Prefetch de rutas críticas
 
 - [ ] **Infrastructure**
@@ -583,7 +583,7 @@ Optimizar performance, abrir API pública, soportar internacionalización y esca
 **Entregable**: Plataforma multi-idioma
 
 #### Sprint 49-50: Mobile Native Apps (Semanas 97-100)
-- [ ] **React Native App**
+- [ ] **Mobile App** (Flutter/React Native)
   - [ ] Setup con Expo
   - [ ] Compartir código con web (packages)
   - [ ] Pantallas principales:
@@ -806,13 +806,13 @@ Una feature está "Done" cuando:
 ### Equipo Estimado
 
 **Fase 1 (MVP)**:
-- 1-2 Full-Stack Developers (Next.js, React, PostgreSQL)
+- 1-2 Full-Stack Developers (Django, Python, PostgreSQL)
 - 1 Designer/UI Dev (part-time)
 - 1 Product Manager (25% time)
 
 **Fases 2-3**:
 - 2-3 Full-Stack Developers
-- 1 Mobile Developer (React Native)
+- 1 Mobile Developer (Flutter/React Native)
 - 1 Designer
 - 1 Product Manager (50% time)
 - 1 QA Engineer (part-time)

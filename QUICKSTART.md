@@ -1,28 +1,27 @@
 # Quick Start Guide - SG Church
 
-Esta guía te ayudará a comenzar con el desarrollo de SG Church en cuestión de minutos.
+Esta guía te ayudará a comenzar con el desarrollo de SG Church en minutos.
 
 ## 📋 Prerequisitos
 
 Antes de comenzar, asegúrate de tener instalado:
 
-- **Node.js**: v20.0.0 o superior
-- **pnpm**: v8.0.0 o superior
-- **PostgreSQL**: v16.0 o superior
-- **Redis**: v7.0 o superior (opcional en desarrollo)
+- **Python**: 3.11+ (recomendado: 3.12)
+- **PostgreSQL**: 14+ (recomendado: 16)
+- **Redis**: 6+ (para Celery en desarrollo local)
 - **Git**: Para control de versiones
+- **uv** o **pip**: Gestor de paquetes Python
 
 ### Instalación de Prerequisitos
 
 #### Linux (Ubuntu/Debian)
-```bash
-# Node.js (via nvm)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-nvm install 20
-nvm use 20
 
-# pnpm
-npm install -g pnpm
+```bash
+# Python 3.12
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt install python3.12 python3.12-venv python3.12-dev
 
 # PostgreSQL
 sudo apt update
@@ -30,123 +29,193 @@ sudo apt install postgresql postgresql-contrib
 
 # Redis
 sudo apt install redis-server
+
+# Herramientas de desarrollo
+sudo apt install build-essential libpq-dev
 ```
 
 #### macOS
+
 ```bash
-# Homebrew (si no está instalado)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Node.js
-brew install node@20
-
-# pnpm
-npm install -g pnpm
+# Python (vía pyenv - recomendado)
+brew install pyenv
+pyenv install 3.12.0
 
 # PostgreSQL
 brew install postgresql@16
+brew services start postgresql@16
 
 # Redis
 brew install redis
+brew services start redis
+
+# uv (gestor de paquetes moderno)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-## 🚀 Inicio Rápido (Proyecto Completo - Próximamente)
+#### Windows
 
-> **Nota**: El código aún no está implementado. Esta guía estará disponible una vez que se apruebe la planificación y se implemente la Fase 1.
+```bash
+# Instalar Python desde python.org
+# Descargar e instalar PostgreSQL desde postgresql.org
+# Instalar Redis desde redis.io o usar WSL
+```
+
+---
+
+## 🚀 Inicio Rápido
 
 ### 1. Clonar el Repositorio
+
 ```bash
 git clone https://github.com/your-org/sg-church.git
 cd sg-church
 ```
 
-### 2. Instalar Dependencias
+### 2. Crear Entorno Virtual
+
 ```bash
-pnpm install
+# Con uv (recomendado - más rápido)
+uv venv
+source .venv/bin/activate  # Linux/Mac
+# En Windows: .venv\Scripts\activate
+
+# O con pip
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
 ```
 
-### 3. Configurar Variables de Entorno
+### 3. Instalar Dependencias
+
+```bash
+# Con uv (más rápido)
+uv pip install -r requirements.txt
+
+# O con pip
+pip install -r requirements.txt
+```
+
+### 4. Configurar Variables de Entorno
+
 ```bash
 # Copiar el archivo de ejemplo
-cp .env.example .env.local
+cp .env.example .env
 
 # Editar con tus valores
-nano .env.local
+nano .env
 ```
 
 **Variables mínimas requeridas para desarrollo:**
-```bash
-# Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/sg_church?schema=public"
 
-# NextAuth
-NEXTAUTH_SECRET="your-super-secret-key-here"
-NEXTAUTH_URL="http://localhost:3000"
+```env
+# Django
+DEBUG=True
+SECRET_KEY=tu-secret-key-aqui-muy-larga
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Database
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/sgchurch
+
+# Redis
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+
+# Email (desarrollo - usa console backend)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+# Stripe (test mode)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-### 4. Configurar Base de Datos
+### 5. Configurar Base de Datos
+
 ```bash
-# Generar cliente Prisma
-pnpm db:generate
+# Crear la base de datos
+createdb sgchurch
 
 # Ejecutar migraciones
-pnpm db:migrate
+python manage.py migrate
+
+# (Opcional) Crear superusuario
+python manage.py createsuperuser
 
 # (Opcional) Poblar con datos de prueba
-pnpm db:seed
+python manage.py loaddata fixtures/sample_data.json
 ```
 
-### 5. Iniciar Servidor de Desarrollo
+### 6. Iniciar Servidor de Desarrollo
+
 ```bash
-pnpm dev
+# Servidor Django
+python manage.py runserver
+
+# En otra terminal: Iniciar Celery (para tareas async)
+celery -A sg_chorld worker -l info
 ```
 
-La aplicación estará disponible en: http://localhost:3000
+La aplicación estará disponible en: http://localhost:8000
+
+Admin Django: http://localhost:8000/admin
+
+---
 
 ## 🛠️ Comandos Disponibles
 
 ### Desarrollo
+
 ```bash
-pnpm dev              # Iniciar todos los servicios en modo desarrollo
-pnpm dev:web          # Solo la aplicación web
-pnpm dev:worker       # Solo el worker de trabajos en segundo plano
+python manage.py runserver              # Iniciar servidor
+python manage.py runserver 8080         # Puerto específico
+python manage.py shell                  # Shell interactivo
 ```
 
 ### Base de Datos
+
 ```bash
-pnpm db:generate      # Generar cliente Prisma
-pnpm db:migrate       # Ejecutar migraciones pendientes
-pnpm db:migrate:create # Crear nueva migración
-pnpm db:seed          # Poblar base de datos con datos de prueba
-pnpm db:studio        # Abrir Prisma Studio (GUI para DB)
+python manage.py makemigrations        # Crear migraciones
+python manage.py migrate                 # Ejecutar migraciones
+python manage.py showmigrations          # Ver estado de migraciones
+python manage.py migrate <app> zero     # Revertir migraciones
+
+python manage.py dbshell                # Shell de PostgreSQL
+python manage.py dumpdata > backup.json  # Exportar datos
+python manage.py loaddata backup.json    # Importar datos
+```
+
+### Django Admin
+
+```bash
+python manage.py createsuperuser         # Crear superusuario
+python manage.py changepassword <user>  # Cambiar contraseña
+python manage.py shell                   # Shell de Django
 ```
 
 ### Testing
+
 ```bash
-pnpm test             # Ejecutar tests unitarios
-pnpm test:watch       # Tests en modo watch
-pnpm test:e2e         # Ejecutar tests E2E con Playwright
-pnpm test:coverage    # Generar reporte de cobertura
+pytest                                   # Ejecutar tests
+pytest -v                                # Verbose
+pytest --cov=.                           # Con coverage
+pytest --cov-report=html                 # Reporte HTML
+pytest -k "test_member"                  # Tests específicos
 ```
 
-### Build y Deploy
+### Comandos Personalizados
+
 ```bash
-pnpm build            # Compilar todo el proyecto
-pnpm start            # Iniciar en modo producción
-pnpm lint             # Ejecutar linter
-pnpm format           # Formatear código con Prettier
-pnpm type-check       # Verificar tipos TypeScript
+python manage.py create_tenant <name> <subdomain>  # Crear tenant
+python manage.py list_tenants                       # Listar tenants
+python manage.py generate_fixtures                   # Generar datos de prueba
 ```
 
-### Utilidades
-```bash
-pnpm clean            # Limpiar builds y node_modules
-pnpm --filter web build  # Compilar solo la app web
-```
+---
 
 ## 📁 Estructura del Proyecto
 
 ### Estructura Actual (Documentación)
+
 ```
 SG_Church/
 ├── docs/                    # Documentación detallada
@@ -158,149 +227,108 @@ SG_Church/
 │   ├── ISSUE_TEMPLATE/     # Plantillas de issues
 │   └── pull_request_template.md
 │
-├── ARCHITECTURE.md         # Arquitectura del sistema
-├── CHANGELOG.md            # Historial de cambios
-├── CONTRIBUTING.md         # Guía de contribución
-├── DATABASE.md             # Esquema de base de datos
-├── LICENSE                 # Licencia MIT
-├── README.md               # Documentación principal
-├── ROADMAP.md              # Plan de desarrollo
-├── SECURITY.md             # Política de seguridad
-├── TECH_STACK.md           # Stack tecnológico
+├── sg_church/              # Proyecto Django
+│   ├── settings/          # Configuración
+│   ├── core/              # App core
+│   ├── tenants/           # Multi-tenancy
+│   ├── members/           # Gestión de miembros
+│   ├── finance/           # Finanzas
+│   ├── education/         # LMS
+│   └── api/               # API REST
 │
-├── .env.example            # Plantilla de variables de entorno
-├── .gitignore              # Archivos ignorados por Git
-├── .prettierrc             # Configuración de Prettier
-├── package.json            # Dependencias y scripts
-├── tsconfig.json           # Configuración TypeScript
-└── turbo.json              # Configuración Turborepo
+├── templates/              # Templates HTML
+├── static/                # CSS, JS, imágenes
+├── requirements.txt        # Dependencias Python
+├── manage.py              # CLI de Django
+└── pytest.ini             # Configuración de tests
 ```
 
-### Estructura Planeada (Código)
+---
 
-Una vez que comience el desarrollo, el proyecto se expandirá a:
+## 🐛 Solución de Problemas
 
-```
-SG_Church/
-├── apps/                           # Aplicaciones
-│   ├── web/                        # App Next.js principal
-│   │   ├── app/                   # App Router
-│   │   ├── components/            # Componentes React
-│   │   ├── lib/                   # Utilidades
-│   │   ├── public/                # Assets estáticos
-│   │   └── middleware.ts          # Next.js middleware
-│   │
-│   └── mobile/ (Fase 4)           # React Native app
-│
-├── packages/                       # Paquetes compartidos
-│   ├── ui/                        # Componentes UI (shadcn/ui)
-│   ├── database/                  # Prisma schema y cliente
-│   ├── api/                       # Routers tRPC
-│   ├── auth/                      # Lógica de autenticación
-│   ├── email/                     # Templates de email
-│   └── config/                    # Configs compartidas
-│
-├── services/                       # Servicios backend
-│   ├── worker/                    # BullMQ worker
-│   └── api/ (Fase 4)             # API standalone
-│
-└── tests/                          # Tests E2E e integración
+### Error de conexión a PostgreSQL
+
+```bash
+# Verificar que PostgreSQL esté corriendo
+sudo systemctl status postgresql  # Linux
+brew services list               # macOS
+
+# Iniciar PostgreSQL
+sudo systemctl start postgresql  # Linux
+brew services start postgresql@16  # macOS
+
+# Crear base de datos
+createdb sgchurch
 ```
 
-### Convenciones de Nombres
+### Error con Python
 
-| Tipo | Formato | Ejemplo |
-|------|---------|---------|
-| Componentes | PascalCase | `MemberCard.tsx` |
-| Utilidades | camelCase | `formatDate.ts` |
-| Tipos | PascalCase + `.types.ts` | `Member.types.ts` |
-| Rutas API | kebab-case | `create-member.ts` |
-| Tests | Mismo + `.test.ts` | `member.test.ts` |
+```bash
+# Verificar versión de Python
+python --version
 
-### Alias de Import
-
-```typescript
-// En apps/web
-import { Button } from '@/components/ui/button'
-import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
-
-// En todo el monorepo
-import { Button } from '@sg-church/ui'
-import { prisma } from '@sg-church/database'
-import { memberRouter } from '@sg-church/api'
+# Usar pyenv para cambiar versión
+pyenv versions
+pyenv local 3.12.0
 ```
 
-## 🎯 Próximos Pasos en el Desarrollo
+### Error con Redis
 
-Una vez aprobada la planificación, se implementará:
+```bash
+# Verificar que Redis esté corriendo
+redis-cli ping
 
-1. **Estructura del Monorepo**
-   - `apps/web/` - Aplicación Next.js principal
-   - `packages/` - Paquetes compartidos (UI, API, Database, etc.)
-   - `services/` - Servicios backend (Worker, etc.)
+# Iniciar Redis
+redis-server
+```
 
-2. **Configuración Inicial**
-   - Setup de Next.js 14 con App Router
-   - Configuración de Prisma
-   - Setup de tRPC
-   - Configuración de NextAuth.js
+### Error de migraciones
 
-3. **Primera Funcionalidad (Sprint 1)**
-   - Sistema de autenticación
-   - Registro de iglesias (tenants)
-   - Dashboard básico
-   - Gestión de usuarios
+```bash
+# Si hay problemas con migraciones
+python manage.py migrate --fake-initial
+python manage.py showmigrations
+```
+
+---
 
 ## 📖 Recursos Útiles
 
 ### Documentación Esencial
 - [README Principal](./README.md) - Visión general del proyecto
 - [Arquitectura](./ARCHITECTURE.md) - Decisiones técnicas
-- [Roadmap](./ROADMAP.md) - Plan de desarrollo por fases
+- [Stack Tecnológico](./TECH_STACK.md) - Tecnologías usadas
 - [Contributing](./CONTRIBUTING.md) - Cómo contribuir
 
 ### Enlaces Externos
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [tRPC Documentation](https://trpc.io/docs)
-- [NextAuth.js Documentation](https://next-auth.js.org)
+- [Documentación Django](https://docs.djangoproject.com)
+- [Django REST Framework](https://www.django-rest-framework.org)
+- [Documentación PostgreSQL](https://www.postgresql.org/docs/)
+- [Bootstrap 5](https://getbootstrap.com/docs/5.3/)
 
-## ❓ Problemas Comunes
+---
 
-### Error de conexión a PostgreSQL
-```bash
-# Verificar que PostgreSQL esté corriendo
-sudo systemctl status postgresql
+## 🎯 Próximos Pasos en el Desarrollo
 
-# Iniciar PostgreSQL
-sudo systemctl start postgresql
-```
+Una vez aprobada la planificación, se implementará:
 
-### Puerto 3000 ya en uso
-```bash
-# Matar el proceso en el puerto 3000
-lsof -ti:3000 | xargs kill -9
+1. **Setup del Proyecto**
+   - Crear proyecto Django
+   - Configurar apps (members, finance, education)
+   - Setup de Django REST Framework
 
-# O usar un puerto diferente
-PORT=3001 pnpm dev
-```
+2. **Configuración Inicial**
+   - Modelado de datos (Tenant, Member, Family, etc.)
+   - Sistema de autenticación
+   - Admin Django
 
-### Error de permisos en PostgreSQL
-```bash
-# Crear usuario y base de datos
-sudo -u postgres psql
-CREATE DATABASE sg_church;
-CREATE USER sg_church_user WITH PASSWORD 'password';
-GRANT ALL PRIVILEGES ON DATABASE sg_church TO sg_church_user;
-\q
-```
+3. **Primera Funcionalidad (Sprint 1)**
+   - Registro de iglesias (tenants)
+   - Gestión básica de miembros
+   - Dashboard
 
-### Prisma genera error de schema
-```bash
-# Limpiar y regenerar
-pnpm db:generate --force
-```
+---
 
 ## 🤝 Obtener Ayuda
 
@@ -308,38 +336,26 @@ Si tienes problemas:
 
 1. **Revisa la [FAQ](./docs/FAQ.md)** - Respuestas a preguntas comunes
 2. **Busca en [Issues](https://github.com/your-org/sg-church/issues)** - Problemas conocidos
-3. **Pregunta en [Discussions](https://github.com/your-org/sg-church/discussions)** - Foro de la comunidad
+3. **Pregunta en [Discussions](https://github.com/your-org/sg-church/discussions)** - Foro
 4. **Email**: support@sgchurch.app
 
-## 🎓 Aprender Más
-
-### Tutoriales Recomendados
-- [Next.js App Router Tutorial](https://nextjs.org/learn)
-- [Prisma Getting Started](https://www.prisma.io/docs/getting-started)
-- [tRPC with Next.js](https://trpc.io/docs/quickstart)
-- [PostgreSQL Tutorial](https://www.postgresqltutorial.com/)
-
-### Conceptos Clave
-- **Multi-Tenancy**: [Comprender schema-per-tenant](./ARCHITECTURE.md#multi-tenancy-strategy)
-- **tRPC**: [APIs Type-Safe](./ARCHITECTURE.md#api-layer-trpc)
-- **Prisma**: [ORM y Migraciones](./DATABASE.md)
+---
 
 ## 📝 Estado Actual
 
 > ⚠️ **IMPORTANTE**: Este proyecto está actualmente en **fase de planificación**.
-> 
-> Toda la documentación está completa y lista para revisión. El código se implementará una vez que se apruebe la planificación.
-> 
-> **Documentos completados:**
-> - ✅ Planificación completa (ROADMAP con 4 fases)
-> - ✅ Arquitectura técnica definida
-> - ✅ Esquema de base de datos diseñado
-> - ✅ Stack tecnológico seleccionado
-> - ✅ Guías de contribución y seguridad
-> - ✅ Templates de GitHub
-> - ✅ Configuración de proyecto (TypeScript, Turborepo, etc.)
-> 
-> **Próximo paso**: Revisión y aprobación de la planificación
+>
+> Se ha actualizado el stack tecnológico de Next.js a Django + DRF.
+> El código se implementará una vez que se apruebe la planificación.
+
+**Documentos completados:**
+- ✅ Stack tecnológico (Django + DRF)
+- ✅ Arquitectura definida
+- ✅ Esquema de base de datos diseñado
+- ✅ Guías de contribución y seguridad
+- ✅ Templates de GitHub
+
+**Próximo paso**: Iniciar implementación del código
 
 ---
 

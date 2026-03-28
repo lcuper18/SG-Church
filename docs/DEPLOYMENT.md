@@ -85,7 +85,7 @@ Guía completa para deployar SG Church a producción.
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 
--- El resto se aplicará via Prisma migrations
+-- El resto se aplicará via Django migrations
 ```
 
 #### Configurar Storage

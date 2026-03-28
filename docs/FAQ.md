@@ -20,9 +20,10 @@ Yes! SG Church is open source (MIT License), so you can self-host on your own in
 ## Technical Questions
 
 ### What tech stack does SG Church use?
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Django 5, Python 3.12, Django REST Framework
+- **Frontend**: HTML5, CSS3, Bootstrap 5, JavaScript
 - **Backend**: tRPC, Node.js, NextAuth.js v5
-- **Database**: PostgreSQL 16+ with Prisma ORM
+- **Database**: PostgreSQL 16+ with Django ORM
 - **Infrastructure**: Vercel (hosting), Supabase (database), Redis, BullMQ
 - **Payments**: Stripe Connect
 
@@ -38,7 +39,7 @@ Phase 4 includes a public API for integrations. In earlier phases, you can use w
 Phase 4 includes full internationalization (i18n) support. Initially, we support Spanish and English, with plans to add more languages based on community contributions.
 
 ### Does SG Church have mobile apps?
-Yes! Phase 3 includes a Progressive Web App (PWA) that works offline and can be installed on mobile devices. Phase 4 adds native iOS and Android apps built with React Native.
+Yes! Phase 3 includes a Progressive Web App (PWA) that works offline and can be installed on mobile devices. Phase 4 adds native iOS and Android apps built with Flutter or React Native.
 
 ## Features Questions
 

@@ -1,8 +1,8 @@
 # SG Church - Plataforma SaaS de Gestión Integral para Iglesias
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Next.js](https://img.shields.io/badge/Next.js-14+-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)
+![Django](https://img.shields.io/badge/Django-5.x-092E20)
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-336791)
 
 ## 🙏 Visión
@@ -60,16 +60,16 @@ SG Church es una plataforma SaaS **gratuita** diseñada para ayudar a iglesias d
 - **Escalable** desde 10 hasta 10,000+ miembros por iglesia
 
 ### Stack Tecnológico
-- **Frontend**: Next.js 14 (App Router) + React 18 + TypeScript
-- **UI**: Tailwind CSS + shadcn/ui + Radix UI
-- **Backend**: Next.js API Routes + tRPC (type-safe APIs)
-- **Base de Datos**: PostgreSQL 16 + Prisma ORM
-- **Autenticación**: NextAuth.js v5
+- **Backend**: Python 3.12 + Django 5.x
+- **API**: Django REST Framework (REST APIs)
+- **Frontend**: HTML5 + CSS3 + JavaScript (Vanilla + Bootstrap 5)
+- **Base de Datos**: PostgreSQL 16 + Django ORM
+- **Autenticación**: Django Auth + django-allauth
 - **Pagos**: Stripe Connect
-- **Almacenamiento**: Supabase Storage / AWS S3
-- **Email**: Resend / SendGrid
-- **Cache/Queues**: Redis + BullMQ
-- **Hosting**: Vercel (web) + Supabase/AWS (backend)
+- **Almacenamiento**: AWS S3
+- **Email**: SendGrid / Resend
+- **Tareas async**: Redis + Celery
+- **Hosting**: Render / VPS
 
 Ver [TECH_STACK.md](./TECH_STACK.md) para detalles completos.
 
@@ -77,21 +77,19 @@ Ver [TECH_STACK.md](./TECH_STACK.md) para detalles completos.
 
 ```
 SG_Church/
-├── apps/
-│   └── web/                    # Aplicación Next.js principal
-│       ├── app/                # App Router de Next.js 14
-│       ├── components/         # Componentes React
-│       └── lib/                # Utilidades y configuración
-├── packages/
-│   ├── database/               # Esquema Prisma y migraciones
-│   ├── validators/             # Schemas Zod compartidos
-│   ├── ui/                     # Componentes UI reutilizables
-│   ├── email-templates/        # Templates React Email
-│   └── config/                 # Configuración compartida
-├── services/
-│   └── worker/                 # Background jobs (BullMQ)
-├── docs/                       # Documentación del proyecto
-└── tests/                      # Tests E2E e integración
+├── sg_church/                  # Proyecto Django
+│   ├── settings/              # Configuración
+│   ├── core/                  # App core
+│   ├── tenants/               # Multi-tenancy
+│   ├── members/               # Gestión de miembros
+│   ├── finance/               # Finanzas
+│   ├── education/             # LMS
+│   └── api/                   # API REST
+├── templates/                  # Templates HTML
+├── static/                    # CSS, JS, imágenes
+├── requirements.txt            # Dependencias Python
+├── manage.py                  # CLI de Django
+└── pytest.ini                 # Tests
 ```
 
 Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para decisiones arquitectónicas detalladas.
@@ -100,8 +98,9 @@ Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para decisiones arquitectónicas detall
 
 ### Prerrequisitos
 
-- **Node.js** 20+ (recomendado: 20.11+)
-- **pnpm** 8+ (package manager)
+- **Python** 3.11+ (recomendado: 3.12)
+- **PostgreSQL** 14+ (recomendado: 16)
+- **Redis** 6+ (para Celery)
 - **PostgreSQL** 16+ (o cuenta en Supabase)
 - **Redis** 7+ (para queues y cache)
 - **Cuenta Stripe** (modo test para desarrollo)
@@ -201,7 +200,7 @@ Ver [DEPLOYMENT.md](./docs/DEPLOYMENT.md) para configuración de producción.
 - [ ] Optimización de performance
 - [ ] API pública
 - [ ] Internacionalización (i18n)
-- [ ] Mobile apps nativas (React Native)
+- [ ] Mobile apps nativas (Flutter/React Native)
 
 Ver [ROADMAP.md](./ROADMAP.md) para detalles completos de cada fase.
 
@@ -263,7 +262,7 @@ Este proyecto está licenciado bajo la [Licencia MIT](./LICENSE).
 
 - A todas las iglesias que confían en SG Church
 - A los contribuidores open source
-- A las comunidades de Next.js, React, y PostgreSQL
+- A las comunidades de Django, Python, y PostgreSQL
 - A Dios por la inspiración y guía para este proyecto
 
 ---

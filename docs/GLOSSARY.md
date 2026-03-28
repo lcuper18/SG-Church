@@ -11,7 +11,7 @@ A user role with full access to all church data and settings. Admins can manage 
 A set of endpoints that allow external systems to interact with SG Church programmatically.
 
 ### App Router
-Next.js 13+ routing system based on the file system, replacing the older Pages Router.
+Django URL routing system based on URL patterns defined in urls.py.
 
 ### ATR (Average Transaction Response)
 Metric measuring API response times.
@@ -30,8 +30,8 @@ Process of determining what resources a user can access (permissions).
 ### Baptism
 A Christian sacrament or ordinance. In SG Church, records of baptisms are stored in the Sacraments module.
 
-### BullMQ
-Queue library for Node.js used for background job processing.
+### Celery
+Distributed task queue for Python used for background job processing.
 
 ### Budget
 Financial plan allocating expected income and expenses across categories.
@@ -88,7 +88,7 @@ Collection of members organized by ministry, small group, or other category.
 Process of designing software to support multiple languages and locales.
 
 ### ISR (Incremental Static Regeneration)
-Next.js feature for updating static pages after deployment.
+Django concept for caching and invalidating rendered pages.
 
 ## L
 
@@ -123,13 +123,13 @@ Architecture pattern where a single application instance serves multiple churche
 
 ## N
 
-### NextAuth.js
-Authentication library for Next.js applications.
+### Django Auth
+Built-in authentication framework for Django applications.
 
 ## O
 
 ### ORM (Object-Relational Mapping)
-Technology that maps database tables to code objects. SG Church uses Prisma as its ORM.
+Technology that maps database tables to code objects. SG Church uses Django ORM.
 
 ## P
 
@@ -139,8 +139,8 @@ Security standard for organizations that handle credit card information.
 ### Permission
 Specific action a user is allowed to perform (e.g., "create member", "view reports").
 
-### Prisma
-TypeScript ORM used for database access and migrations.
+### Django ORM
+Object-Relational Mapper included with Django for database operations.
 
 ### PWA (Progressive Web App)
 Web application that can work offline and be installed on mobile devices.
@@ -170,8 +170,8 @@ In-memory data store used for caching and queue management.
 ### Role
 Set of permissions assigned to users (e.g., Admin, Staff, Member).
 
-### RSC (React Server Components)
-React components that render on the server, reducing client JavaScript.
+### Template Rendering
+Server-side rendering of HTML templates in Django.
 
 ## S
 
