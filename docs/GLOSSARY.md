@@ -207,8 +207,11 @@ Individual church instance in the multi-tenant system.
 ### Transaction
 Financial record of money moving between accounts.
 
+### Django REST Framework
+Web framework for building REST APIs in Django.
+
 ### tRPC
-TypeScript framework for building type-safe APIs.
+TypeScript framework for building type-safe APIs (not used in this project).
 
 ### Turborepo
 Build system for managing monorepos.
@@ -240,7 +243,7 @@ In monorepo context, a package or application within the repository.
 ## Z
 
 ### zod
-TypeScript-first schema validation library used with tRPC.
+Schema validation library (used with tRPC, not in this project - Django Forms used instead).
 
 ---
 

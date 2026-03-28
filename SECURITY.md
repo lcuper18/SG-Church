@@ -93,10 +93,10 @@ Consideraremos implementar un programa monetario en Fase 3 cuando tengamos fundi
 
 #### Code Security
 
-- ✅ **Input validation**: Validar todo input con Zod
-- ✅ **SQL Injection**: Usamos Prisma (queries parametrizadas)
-- ✅ **XSS Prevention**: React escapa output automáticamente
-- ✅ **CSRF Protection**: NextAuth.js maneja CSRF tokens
+- ✅ **Input validation**: Validar todo input con Django Forms y serializers
+- ✅ **SQL Injection**: Usamos Django ORM (queries parametrizadas automáticamente)
+- ✅ **XSS Prevention**: Django templates escapan output automáticamente
+- ✅ **CSRF Protection**: Django maneja CSRF tokens automáticamente
 - ✅ **Sanitize HTML**: Si permitimos HTML, usar DOMPurify
 
 #### Authentication & Authorization
@@ -152,10 +152,10 @@ export async function getMembers(ctx: Context) {
 
 ```bash
 # Check vulnerabilities regularmente
-pnpm audit
+pip-audit
 
 # Update dependencies
-pnpm update
+pip install -U -r requirements.txt
 
 # Automated scanning
 # GitHub Dependabot: Enabled
@@ -198,7 +198,7 @@ export async function POST(req: Request) {
   - Referrer-Policy: strict-origin-when-cross-origin
 - ✅ **CORS**: Configurado restrictivamente
 - ✅ **Rate limiting**: API endpoints protegidos
-- ✅ **Input sanitization**: Zod validation en todos los endpoints
+- ✅ **Input sanitization**: Django Forms validation en todos los endpoints
 
 ### Database Security
 

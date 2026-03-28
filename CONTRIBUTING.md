@@ -96,7 +96,9 @@ Hay varios tipos de contribuciones de código:
 Asegúrate de tener instalado:
 
 - **Node.js** 20+ ([descarga](https://nodejs.org/))
-- **pnpm** 8+ (instalar: `npm install -g pnpm`)
+- **uv** (instalar: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **PostgreSQL** 14+
+- **Redis** 6+ (para Celery)
 - **Git** ([descarga](https://git-scm.com/))
 - **PostgreSQL** 16+ ([descarga](https://www.postgresql.org/download/))
   - Alternativa: Cuenta en [Supabase](https://supabase.com) (gratis)
@@ -117,7 +119,7 @@ git remote add upstream https://github.com/your-org/sg-church.git
 ### Instalar Dependencias
 
 ```bash
-pnpm install
+pip install -r requirements.txt
 ```
 
 Esto instalará todas las dependencias de todos los paquetes en el monorepo.
@@ -167,12 +169,12 @@ createdb sgchurch_dev
 
 2. **Ejecutar migraciones**:
 ```bash
-pnpm db:migrate
+python manage.py migrate
 ```
 
 3. **Seedear datos de prueba** (opcional):
 ```bash
-pnpm db:seed
+python manage.py loaddata fixtures/sample_data.json
 ```
 
 Esto creará un tenant de prueba con datos de ejemplo.
@@ -180,27 +182,30 @@ Esto creará un tenant de prueba con datos de ejemplo.
 ### Iniciar Servidor de Desarrollo
 
 ```bash
-# Inicia todos los servicios
-pnpm dev
+# Iniciar servidor Django
+python manage.py runserver
 
-# O inicia servicios individuales
-pnpm dev:web      # Solo Next.js app
-pnpm dev:worker   # Solo background workers
+# En otra terminal: Iniciar Celery worker (para tareas async)
+celery -A sg_church worker -l info
+
+# O iniciar Celery beat (para tareas programadas)
+celery -A sg_church beat -l info
 ```
 
-La app estará disponible en `http://localhost:3000`
+La app estará disponible en `http://localhost:8000`
+Admin Django: `http://localhost:8000/admin`
 
 ### Verificar Setup
 
 ```bash
 # Ejecutar tests
-pnpm test
+pytest
 
 # Ejecutar linter
-pnpm lint
+flake8 .
 
-# Build para verificar que compila
-pnpm build
+# Verificar que migrations están al día
+python manage.py showmigrations
 ```
 
 Si todo pasa ✅, estás listo para contribuir!
@@ -255,7 +260,7 @@ Usamos [Conventional Commits](https://www.conventionalcommits.org/):
 # Ejemplos
 feat(members): add bulk delete functionality
 fix(donations): correct receipt email template
-docs(api): update tRPC router documentation
+docs: update API documentation
 refactor(auth): extract permission logic to utility
 test(members): add unit tests for family relationships
 ```
@@ -308,18 +313,20 @@ function getMember(id: any) {  // any, no return type
 }
 ```
 
-### React Components
+### Django Views
 
-- **Functional components**: Usa function declarations
-- **TypeScript props**: Siempre tipea props
-- **Server Components**: Por defecto (Next.js App Router)
-- **Client Components**: Solo cuando necesario (`'use client'`)
+- **Function-based views (FBV)**: Para casos simples
+- **Class-based views (CBV)**: Para casos complejos
+- **Django Forms**: Siempre usar para validación
+- **REST API**: Usar ViewSets de DRF
 
-```typescript
-// ✅ Good - Server Component
-interface MemberCardProps {
-  member: Member
-  showEmail?: boolean
+```python
+# ✅ Good - Class-based view
+class MemberListView(ListView):
+    model = Member
+    template_name = 'members/list.html'
+    context_object_name = 'members'
+```
 }
 
 export function MemberCard({ member, showEmail = false }: MemberCardProps) {
@@ -361,7 +368,7 @@ feature/
 ├── lib/
 │   ├── validations.ts         # Zod schemas
 │   └── utils.ts               # Utility functions
-└── page.tsx                   # Next.js page
+└── page.html                 # Django template
 ```
 
 ### Imports Order
@@ -453,8 +460,8 @@ feat(members): add bulk delete with confirmation dialog
 
 - Implement multi-select in MemberList component
 - Add confirmation modal with member count
-- Create tRPC mutation for bulk delete
-- Add optimistic updates to cache
+- Add Django view for bulk delete
+- Add form validation
 
 Closes #123
 ```
@@ -466,9 +473,9 @@ Closes #123
 ### Antes de Crear el PR
 
 - [ ] ✅ Sync con upstream/main (no merge conflicts)
-- [ ] ✅ Tests pasan (`pnpm test`)
-- [ ] ✅ Linter pasa (`pnpm lint`)
-- [ ] ✅ Build exitoso (`pnpm build`)
+- [ ] ✅ Tests pasan (`pytest`)
+- [ ] ✅ Linter pasa (`flake8`)
+- [ ] ✅ Migrations actualizadas (`python manage.py showmigrations`)
 - [ ] ✅ Commits siguen convención
 - [ ] ✅ Documentación actualizada si aplica
 - [ ] ✅ Código auto-documentado o comentado
@@ -632,20 +639,17 @@ Screenshots, mockups, etc.
 
 ### Recursos de Aprendizaje
 
-**Next.js**:
-- [Next.js Docs](https://nextjs.org/docs)
-- [Next.js Learn](https://nextjs.org/learn)
+**Django**:
+- [Django Docs](https://docs.djangoproject.com)
+- [Django Tutorial](https://docs.djangoproject.com/en/5.0/intro/)
 
-**tRPC**:
-- [tRPC Docs](https://trpc.io/docs)
-- [tRPC Quickstart](https://trpc.io/docs/quickstart)
+**Django REST Framework**:
+- [DRF Docs](https://www.django-rest-framework.org)
+- [DRF Tutorial](https://www.django-rest-framework.org/tutorial/quickstart/)
 
-**Prisma**:
-- [Prisma Docs](https://www.prisma.io/docs)
-- [Prisma Schema Reference](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference)
-
-**TypeScript**:
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
+**Python**:
+- [Python Docs](https://docs.python.org/3/)
+- [Real Python](https://realpython.com)
 
 ---
 

@@ -70,8 +70,8 @@ Related to #
 <!-- If applicable, list migration commands -->
 ```bash
 # Example:
-pnpm db:migrate:create
-pnpm db:migrate
+python manage.py makemigrations
+python manage.py migrate
 ```
 
 ## Checklist

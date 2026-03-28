@@ -113,20 +113,20 @@ git clone https://github.com/tu-org/sg-church.git
 cd sg-church
 
 # Instalar dependencias
-pnpm install
+pip install -r requirements.txt
 
 # Configurar variables de entorno
 cp apps/web/.env.example apps/web/.env.local
 # Editar .env.local con tus credenciales
 
 # Ejecutar migraciones de base de datos
-pnpm db:migrate
+python manage.py migrate
 
 # Sembrar datos de desarrollo (opcional)
-pnpm db:seed
+python manage.py loaddata fixtures/sample_data.json
 
 # Iniciar servidor de desarrollo
-pnpm dev
+python manage.py runserver
 ```
 
 La aplicación estará disponible en `http://localhost:3000`
@@ -208,16 +208,13 @@ Ver [ROADMAP.md](./ROADMAP.md) para detalles completos de cada fase.
 
 ```bash
 # Tests unitarios
-pnpm test
+pytest
 
-# Tests de integración
-pnpm test:integration
+# Tests con coverage
+pytest --cov=. --cov-report=html
 
-# Tests E2E con Playwright
-pnpm test:e2e
-
-# Coverage
-pnpm test:coverage
+# Tests específicos
+pytest -k "test_member"
 ```
 
 ## 🤝 Contribuir

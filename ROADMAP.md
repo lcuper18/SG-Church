@@ -88,7 +88,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
     - [ ] UI para mapear columnas
     - [ ] Preview antes de importar
     - [ ] Detección de duplicados
-    - [ ] Procesamiento async con BullMQ
+    - [ ] Procesamiento async con Celery
   - [ ] Exportación a CSV/Excel
   - [ ] Directorio público de miembros (con privacidad)
 
@@ -134,7 +134,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 - [ ] **Email Infrastructure**
   - [ ] Configurar Resend API
   - [ ] Configurar templates de email con Django
-  - [ ] BullMQ queue para emails
+  - [ ] Celery queue para emails
   - [ ] Worker para procesar email queue
   - [ ] Templates:
     - [ ] Welcome email (nuevo miembro)
@@ -346,7 +346,7 @@ Expandir funcionalidades para cubrir las necesidades operativas diarias de una i
 #### Sprint 28: SMS Notifications (Semanas 55-56)
 - [ ] **Integración Twilio**
   - [ ] Setup account y API keys
-  - [ ] BullMQ queue para SMS
+  - [ ] Celery queue para SMS
   - [ ] Worker para enviar SMS
   - [ ] Logging (sms_logs)
 

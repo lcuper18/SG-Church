@@ -1147,7 +1147,7 @@ WHERE m.member_status = 'member'
 GROUP BY m.id;
 ```
 
-#### Evitar N+1 Queries (Use JOINs o Prisma includes)
+#### Evitar N+1 Queries (Usa select_related o prefetch_related)
 ```typescript
 // BAD: N+1
 const members = await db.member.findMany()
@@ -1178,11 +1178,11 @@ const members = await db.member.findMany({
 
 ## Migraciones
 
-### Prisma Migrations
+### Django Migrations
 
 #### Crear nueva migración
 ```bash
-pnpm db:migrate:create --name add_learning_paths
+python manage.py makemigrations --name add_learning_paths
 ```
 
 #### Aplicar migraciones a un schema específico
@@ -1193,7 +1193,7 @@ import { execSync } from 'child_process'
 async function migrateTenant(schemaName: string) {
   process.env.DATABASE_URL = `${BASE_URL}?schema=${schemaName}`
   
-  execSync('pnpm prisma migrate deploy', {
+  subprocess.run(['python', 'manage.py', 'migrate', '--database=tenant'])
     stdio: 'inherit',
     env: process.env
   })
@@ -1208,7 +1208,7 @@ for (const tenant of tenants) {
 
 #### Rollback (Manual)
 ```sql
--- Prisma no tiene rollback automático
+-- Django migrations pueden hacer rollback con migrate <app> zero
 -- Crear migración manual que revierte cambios
 BEGIN;
   -- Revert changes
@@ -1283,21 +1283,30 @@ aws rds restore-db-instance-to-point-in-time \
 
 ### Connection Pooling
 
-```typescript
-// lib/db.ts con PgBouncer
-import { PrismaClient } from '@prisma/client'
+Django maneja connection pooling automáticamente. Para producción con PgBouncer:
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
+```python
+# settings/production.py
 
-export const db = globalForPrisma.prisma || new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL + '?pgbouncer=true&connection_limit=1'
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'sgchurch',
+        'USER': 'sgchurch_user',
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'CONN_MAX_AGE': 60,  # Connection pooling
+        'OPTIONS': {
+            'sslmode': 'require',
+        }
     }
-  }
-})
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+# Si usas PgBouncer:
+# 'OPTIONS': {
+#     'connect_timeout': 10,
+# }
 ```
 
 ### Vacuum y Analyze

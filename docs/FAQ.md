@@ -22,9 +22,8 @@ Yes! SG Church is open source (MIT License), so you can self-host on your own in
 ### What tech stack does SG Church use?
 - **Backend**: Django 5, Python 3.12, Django REST Framework
 - **Frontend**: HTML5, CSS3, Bootstrap 5, JavaScript
-- **Backend**: tRPC, Node.js, NextAuth.js v5
 - **Database**: PostgreSQL 16+ with Django ORM
-- **Infrastructure**: Vercel (hosting), Supabase (database), Redis, BullMQ
+- **Infrastructure**: Render/VPS (hosting), PostgreSQL, Redis + Celery
 - **Payments**: Stripe Connect
 
 See [TECH_STACK.md](../TECH_STACK.md) for complete details.
