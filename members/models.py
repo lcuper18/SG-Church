@@ -144,7 +144,7 @@ class Member(models.Model):
     notes = models.TextField(blank=True)
 
     # Tags
-    tags = models.JSONField(default=list, blank=True)
+    tags = models.ManyToManyField("Tag", blank=True, related_name="members")
 
     # User account (optional - for member portal access)
     user = models.OneToOneField(
@@ -235,3 +235,35 @@ class Family(models.Model):
     @property
     def member_count(self):
         return self.members.count()
+
+
+class Tag(models.Model):
+    """
+    Tags for categorizing members.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # Tenant (church)
+    tenant = models.ForeignKey(
+        "tenants.Tenant", on_delete=models.CASCADE, related_name="tags"
+    )
+
+    # Tag information
+    name = models.CharField(max_length=50)
+    color = models.CharField(
+        max_length=7, default="#3B82F6", help_text="Hex color code (e.g., #3B82F6)"
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "tags"
+        verbose_name = "Tag"
+        verbose_name_plural = "Tags"
+        ordering = ["name"]
+        unique_together = ["tenant", "name"]
+
+    def __str__(self):
+        return self.name

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Datos de la Iglesia - Onboarding{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Progress Steps -->
+            <div class="mb-4">
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar" role="progressbar" style="width: 25%;"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span class="text-primary fw-bold">Iglesia</span>
+                    <span class="text-muted">Admin</span>
+                    <span class="text-muted">Configuración</span>
+                    <span class="text-muted">Listo</span>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h4 class="mb-0">Datos de la Iglesia</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nombre de la Iglesia *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="denomination" class="form-label">Denominación</label>
+                                <select class="form-select" id="denomination" name="denomination">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="catholic">Católica</option>
+                                    <option value="baptist">Bautista</option>
+                                    <option value="methodist">Metodista</option>
+                                    <option value="presbyterian">Presbiteriana</option>
+                                    <option value="lutheran">Luterana</option>
+                                    <option value="anglican">Anglicana</option>
+                                    <option value="evangelical">Evangélica</option>
+                                    <option value="pentecostal">Pentecostal</option>
+                                    <option value="charismatic">Carismática</option>
+                                    <option value="nondenominational">No denominacional</option>
+                                    <option value="other">Otra</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="country" class="form-label">País</label>
+                                <select class="form-select" id="country" name="country">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="US">Estados Unidos</option>
+                                    <option value="MX">México</option>
+                                    <option value="CO">Colombia</option>
+                                    <option value="AR">Argentina</option>
+                                    <option value="CL">Chile</option>
+                                    <option value="PE">Perú</option>
+                                    <option value="BR">Brasil</option>
+                                    <option value="ES">España</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="city" name="city">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state" class="form-label">Estado/Provincia</label>
+                                <input type="text" class="form-control" id="state" name="state">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="phone" name="phone">
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Continuar <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

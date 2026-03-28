@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Editar{% else %}Nueva{% endblock %} Familia - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'family_list' %}">Familias</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% if object %}Editar{% else %}Nueva{% endif %}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h4 class="mb-0">
+                        {% if object %}Editar{% else %}Nueva{% endif %} Familia
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nombre de la Familia *</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ form.name.value|default:'' }}" required placeholder="e.g., Familia García">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="head_of_family" class="form-label">Cabeza de Familia</label>
+                            <select class="form-select" id="head_of_family" name="head_of_family">
+                                <option value="">Seleccionar...</option>
+                                {% for member in form.head_of_family.queryset %}
+                                <option value="{{ member.id }}" {% if form.head_of_family.value == member.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ member.full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3 text-muted">Dirección</h5>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="address" name="address" rows="2">{{ form.address.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="city" name="city" value="{{ form.city.value|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="state" class="form-label">Estado</label>
+                                <input type="text" class="form-control" id="state" name="state" value="{{ form.state.value|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="postal_code" class="form-label">Código Postal</label>
+                                <input type="text" class="form-control" id="postal_code" name="postal_code" value="{{ form.postal_code.value|default:'' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="home_phone" class="form-label">Teléfono de Casa</label>
+                            <input type="text" class="form-control" id="home_phone" name="home_phone" value="{{ form.home_phone.value|default:'' }}">
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'family_list' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if object %}Guardar Cambios{% else %}Crear Familia{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Editar{% else %}Nueva{% endblock %} Etiqueta - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h4 class="mb-0">
+                        {% if object %}Editar{% else %}Nueva{% endif %} Etiqueta
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ form.name.value|default:'' }}" required placeholder="e.g., Líder de jóvenes">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="color" class="form-label">Color</label>
+                            <div class="input-group">
+                                <input type="color" class="form-control form-control-color" id="color" name="color" value="{{ form.color.value|default:'#3B82F6' }}">
+                                <input type="text" class="form-control" id="color_hex" value="{{ form.color.value|default:'#3B82F6' }}">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                {% if object %}Guardar Cambios{% else %}Crear Etiqueta{% endif %}
+                            </button>
+                            <a href="{% url 'tag_list' %}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Sync color input with text input
+    document.getElementById('color').addEventListener('input', function(e) {
+        document.getElementById('color_hex').value = e.target.value;
+    });
+    document.getElementById('color_hex').addEventListener('input', function(e) {
+        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+            document.getElementById('color').value = e.target.value;
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

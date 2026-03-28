@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}¡Bienvenido!{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <!-- Progress Steps -->
+            <div class="mb-4">
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 100%;"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span class="text-success fw-bold">Iglesia</span>
+                    <span class="text-success fw-bold">Admin</span>
+                    <span class="text-success fw-bold">Configuración</span>
+                    <span class="text-success fw-bold">Listo</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="bg-success bg-opacity-10 d-inline-flex p-4 rounded-circle">
+                    <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+            </div>
+
+            <h1 class="mb-3">¡Configuración Completada!</h1>
+            <p class="lead text-muted mb-4">
+                Tu iglesia ha sido configurada exitosamente. Ahora puedes comenzar a usar SG Church.
+            </p>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Próximos Pasos</h5>
+                    <div class="row mt-3">
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'member_create' %}" class="text-decoration-none">
+                                <div class="p-3 border rounded">
+                                    <i class="bi bi-person-plus text-primary fs-2"></i>
+                                    <p class="mb-0 mt-2">Agregar Miembro</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'dashboard' %}" class="text-decoration-none">
+                                <div class="p-3 border rounded">
+                                    <i class="bi bi-speedometer2 text-primary fs-2"></i>
+                                    <p class="mb-0 mt-2">Ver Dashboard</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="#" class="text-decoration-none">
+                                <div class="p-3 border rounded">
+                                    <i class="bi bi-cash text-primary fs-2"></i>
+                                    <p class="mb-0 mt-2">Configurar Donaciones</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">
+                Ir al Dashboard <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -38,22 +38,32 @@
                                 <i class="bi bi-people"></i> Miembros
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'family_list' %}">
+                                <i class="bi bi-collection"></i> Familias
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'tag_list' %}">
+                                <i class="bi bi-tags"></i> Etiquetas
+                            </a>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                {{ user.username }}
+                                {{ user.get_full_name|default:user.username }}
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="#">Perfil</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                                <li><a class="dropdown-item" href="{% url 'account_logout' %}">Cerrar Sesión</a></li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
+                            <a class="nav-link" href="{% url 'account_login' %}">Iniciar Sesión</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-light ms-2" href="{% url 'signup' %}">Registrar Iglesia</a>
+                            <a class="btn btn-light ms-2" href="{% url 'onboarding_start' %}">Registrar Iglesia</a>
                         </li>
                     {% endif %}
                 </ul>

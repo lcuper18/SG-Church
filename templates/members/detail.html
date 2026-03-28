@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.full_name }} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'member_list' %}">Miembros</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ member.full_name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Member Info -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body text-center">
+                    {% if member.photo %}
+                    <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" class="rounded-circle mb-3" width="120" height="120" style="object-fit: cover;">
+                    {% else %}
+                    <div class="bg-secondary bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px;">
+                        <i class="bi bi-person text-secondary" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                    <h4>{{ member.full_name }}</h4>
+                    <span class="badge bg-{% if member.member_status == 'member' %}success{% elif member.member_status == 'visitor' %}warning{% elif member.member_status == 'attendee' %}info{% else %}secondary{% endif %} fs-6">
+                        {{ member.get_member_status_display }}
+                    </span>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'member_update' member.pk %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'member_delete' member.pk %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Info -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Información de Contacto</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <i class="bi bi-envelope me-2"></i>
+                        {{ member.email|default:"-" }}
+                    </p>
+                    <p class="mb-2">
+                        <i class="bi bi-telephone me-2"></i>
+                        {{ member.phone|default:"-" }}
+                    </p>
+                    {% if member.address %}
+                    <p class="mb-0">
+                        <i class="bi bi-geo-alt me-2"></i>
+                        {{ member.address }}<br>
+                        {{ member.city|default:"" }} {{ member.state|default:"" }} {{ member.postal_code|default:"" }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Details -->
+        <div class="col-md-8">
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="memberTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
+                        Información
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="family-tab" data-bs-toggle="tab" data-bs-target="#family" type="button" role="tab">
+                        Familia
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="donations-tab" data-bs-toggle="tab" data-bs-target="#donations" type="button" role="tab">
+                        Donaciones
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="memberTabsContent">
+                <!-- Info Tab -->
+                <div class="tab-pane fade show active" id="info" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="text-muted" width="40%">Fecha de Nacimiento</td>
+                                    <td>{{ member.date_of_birth|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Género</td>
+                                    <td>{{ member.get_gender_display|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Estado Civil</td>
+                                    <td>{{ member.get_marital_status_display|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Fecha de Membresía</td>
+                                    <td>{{ member.membership_date|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Etiquetas</td>
+                                    <td>
+                                        {% if member.tags.all %}
+                                        {% for tag in member.tags.all %}
+                                        <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+                                        {% endfor %}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if member.notes %}
+                                <tr>
+                                    <td class="text-muted">Notas</td>
+                                    <td>{{ member.notes }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Family Tab -->
+                <div class="tab-pane fade" id="family" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            {% if member.family %}
+                            <h5>{{ member.family.name }}</h5>
+                            <p class="text-muted">Cabeza de familia: {{ member.family.head_of_family|default:"-" }}</p>
+                            <hr>
+                            <h6>Otros miembros:</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for fam_member in member.family.members.all %}
+                                {% if fam_member.pk != member.pk %}
+                                <li class="list-group-item">
+                                    <a href="{% url 'member_detail fam_member.pk %}">{{ fam_member.full_name }}</a>
+                                    <span class="text-muted">- {{ fam_member.get_member_status_display }}</span>
+                                </li>
+                                {% endif %}
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="text-muted">No pertenece a ninguna familia.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Donations Tab -->
+                <div class="tab-pane fade" id="donations" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            {% if donations %}
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Monto</th>
+                                            <th>Campaña</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for donation in donations %}
+                                        <tr>
+                                            <td>{{ donation.donation_date|date:"d/m/Y" }}</td>
+                                            <td>${{ donation.amount }}</td>
+                                            <td>{{ donation.get_campaign_display }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if donation.status == 'completed' %}success{% else %}warning{% endif %}">
+                                                    {{ donation.get_status_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No hay donaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

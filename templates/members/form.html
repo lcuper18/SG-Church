@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Miembro - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'member_list' %}">Miembros</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% if object %}Editar{% else %}Nuevo{% endif %} Miembro
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h4 class="mb-0">
+                        {% if object %}Editar{% else %}Nuevo{% endif %} Miembro
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <h5 class="mb-3 text-muted">Información Personal</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ form.first_name.value|default:'' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Apellido *</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ form.last_name.value|default:'' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ form.email.value|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="phone" name="phone" value="{{ form.phone.value|default:'' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="date_of_birth" class="form-label">Fecha de Nacimiento</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">Género</label>
+                                <select class="form-select" id="gender" name="gender">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="male" {% if form.gender.value == 'male' %}selected{% endif %}>Masculino</option>
+                                    <option value="female" {% if form.gender.value == 'female' %}selected{% endif %}>Femenino</option>
+                                    <option value="other" {% if form.gender.value == 'other' %}selected{% endif %}>Otro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="marital_status" class="form-label">Estado Civil</label>
+                                <select class="form-select" id="marital_status" name="marital_status">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="single" {% if form.marital_status.value == 'single' %}selected{% endif %}>Soltero/a</option>
+                                    <option value="married" {% if form.marital_status.value == 'married' %}selected{% endif %}>Casado/a</option>
+                                    <option value="divorced" {% if form.marital_status.value == 'divorced' %}selected{% endif %}>Divorciado/a</option>
+                                    <option value="widowed" {% if form.marital_status.value == 'widowed' %}selected{% endif %}>Viudo/a</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="photo" class="form-label">Foto</label>
+                                <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3 text-muted">Información de Membresía</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="member_status" class="form-label">Estado</label>
+                                <select class="form-select" id="member_status" name="member_status">
+                                    <option value="visitor" {% if form.member_status.value == 'visitor' %}selected{% endif %}>Visitante</option>
+                                    <option value="attendee" {% if form.member_status.value == 'attendee' %}selected{% endif %}>Asistente</option>
+                                    <option value="member" {% if form.member_status.value == 'member' %}selected{% endif %}>Miembro</option>
+                                    <option value="inactive" {% if form.member_status.value == 'inactive' %}selected{% endif %}>Inactivo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="membership_date" class="form-label">Fecha de Membresía</label>
+                                <input type="date" class="form-control" id="membership_date" name="membership_date" value="{{ form.membership_date.value|default:'' }}">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3 text-muted">Familia</h5>
+                        <div class="mb-3">
+                            <label for="family" class="form-label">Familia</label>
+                            <select class="form-select" id="family" name="family">
+                                <option value="">Sin familia</option>
+                                {% for family in form.family.queryset %}
+                                <option value="{{ family.id }}" {% if form.family.value == family.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ family.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3 text-muted">Dirección</h5>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="address" name="address" rows="2">{{ form.address.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="city" name="city" value="{{ form.city.value|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="state" class="form-label">Estado</label>
+                                <input type="text" class="form-control" id="state" name="state" value="{{ form.state.value|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="postal_code" class="form-label">Código Postal</label>
+                                <input type="text" class="form-control" id="postal_code" name="postal_code" value="{{ form.postal_code.value|default:'' }}">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3 text-muted">Notas</h5>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'member_list' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if object %}Guardar Cambios{% else %}Crear Miembro{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

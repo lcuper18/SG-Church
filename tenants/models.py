@@ -15,6 +15,38 @@ class Tenant(models.Model):
     Each tenant has its own database schema.
     """
 
+    DENOMINATION_CHOICES = [
+        ("catholic", "Catholic"),
+        ("baptist", "Baptist"),
+        ("methodist", "Methodist"),
+        ("presbyterian", "Presbyterian"),
+        ("lutheran", "Lutheran"),
+        ("anglican", "Anglican"),
+        ("evangelical", "Evangelical"),
+        ("pentecostal", "Pentecostal"),
+        ("charismatic", "Charismatic"),
+        ("nondenominational", "Non-denominational"),
+        ("other", "Other"),
+    ]
+
+    CURRENCY_CHOICES = [
+        ("USD", "US Dollar"),
+        ("EUR", "Euro"),
+        ("MXN", "Mexican Peso"),
+        ("COP", "Colombian Peso"),
+        ("ARS", "Argentine Peso"),
+        ("BRL", "Brazilian Real"),
+        ("GBP", "British Pound"),
+        ("CAD", "Canadian Dollar"),
+        ("AUD", "Australian Dollar"),
+    ]
+
+    DATE_FORMAT_CHOICES = [
+        ("DD/MM/YYYY", "DD/MM/YYYY"),
+        ("MM/DD/YYYY", "MM/DD/YYYY"),
+        ("YYYY-MM-DD", "YYYY-MM-DD"),
+    ]
+
     # Unique identifier
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -24,8 +56,18 @@ class Tenant(models.Model):
     subdomain = models.CharField(
         max_length=63,
         unique=True,
+        blank=True,
         help_text='Subdomain for this church (e.g., "miiglesia" for miiglesia.sgchurch.app)',
     )
+
+    # Church details (for onboarding)
+    denomination = models.CharField(
+        max_length=50, choices=DENOMINATION_CHOICES, blank=True
+    )
+    country = models.CharField(max_length=2, blank=True, help_text="ISO country code")
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    logo = models.ImageField(upload_to="church_logos/", null=True, blank=True)
 
     # Contact information
     email = models.EmailField()
@@ -37,8 +79,16 @@ class Tenant(models.Model):
     stripe_onboarding_complete = models.BooleanField(default=False)
 
     # Configuration
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default="USD")
+    timezone = models.CharField(max_length=50, default="America/New_York")
+    date_format = models.CharField(
+        max_length=20, choices=DATE_FORMAT_CHOICES, default="DD/MM/YYYY"
+    )
+    enable_families = models.BooleanField(default=True)
+    enable_tags = models.BooleanField(default=True)
     settings = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
+    onboarding_completed = models.BooleanField(default=False)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Familias - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0"><i class="bi bi-people"></i> Familias</h1>
+        </div>
+        <div>
+            <a href="{% url 'family_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nueva Familia
+            </a>
+        </div>
+    </div>
+
+    <!-- Families Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cabeza de Familia</th>
+                            <th>Miembros</th>
+                            <th>Teléfono</th>
+                            <th>Ciudad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for family in families %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'family_update' family.pk %}">{{ family.name }}</a>
+                            </td>
+                            <td>{{ family.head_of_family|default:"-" }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ family.member_count }}</span>
+                            </td>
+                            <td>{{ family.home_phone|default:"-" }}</td>
+                            <td>{{ family.city|default:"-" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'family_update' family.pk %}" class="btn btn-outline-primary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'family_delete' family.pk %}" class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No hay familias registradas.
+                                <a href="{% url 'family_create' %}" class="btn btn-sm btn-primary ms-2">
+                                    Agregar la primera familia
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
