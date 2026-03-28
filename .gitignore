@@ -9,30 +9,57 @@ coverage/
 *.lcov
 .nyc_output/
 
-# Next.js
-.next/
-out/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Production
-*.tsbuildinfo
-next-env.d.ts
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/staticfiles/
+/mediafiles/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
 
 # Misc
 .DS_Store
 *.pem
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
 
 # Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
 
 # Local env files
@@ -43,24 +70,6 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 
-# Vercel
-.vercel
-
-# Typescript
-*.tsbuildinfo
-
-# Turborepo
-.turbo
-
-# Prisma
-*.db
-*.db-journal
-
-# Testing
-playwright-report/
-test-results/
-playwright/.cache/
-
 # Sentry
 .sentryclirc
 
@@ -68,3 +77,13 @@ playwright/.cache/
 *.dump
 *.tar.gz
 backups/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover

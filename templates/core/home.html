@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}SG Church - Gestión Integral para Iglesias{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h1 class="display-4 mb-4">
+                Gestión Integral para Iglesias
+            </h1>
+            <p class="lead mb-4">
+                SG Church es una plataforma SaaS gratuita diseñada para ayudar a iglesias 
+                de todos los tamaños a gestionar eficientemente sus operaciones diarias.
+            </p>
+            <div class="d-flex gap-3">
+                <a href="{% url 'signup' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle"></i> Registrar Mi Iglesia
+                </a>
+                <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-lg">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">Características Principales</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Gestión de membresía completa
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Procesamiento de donaciones
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Contabilidad y reportes financieros
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Sistema de educación (LMS)
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Registro de sacramentos
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Comunicaciones por email y SMS
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Features Section -->
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="text-center">
+                <div class="feature-icon mb-3">
+                    <i class="bi bi-people display-4 text-primary"></i>
+                </div>
+                <h5>Gestión de Membresía</h5>
+                <p class="text-muted">
+                    Administra perfiles de miembros, familias, grupos y más.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-center">
+                <div class="feature-icon mb-3">
+                    <i class="bi bi-currency-dollar display-4 text-success"></i>
+                </div>
+                <h5>Donaciones Seguras</h5>
+                <p class="text-muted">
+                    Procesa donaciones únicas y recurrentes con Stripe.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-center">
+                <div class="feature-icon mb-3">
+                    <i class="bi bi-shield-check display-4 text-info"></i>
+                </div>
+                <h5>Datos Seguros</h5>
+                <p class="text-muted">
+                    Aislamiento completo de datos entre iglesias.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

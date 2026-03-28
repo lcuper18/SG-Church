@@ -1,0 +1,85 @@
+/* SG Church Custom Styles */
+
+:root {
+    --primary-color: #1a73e8;
+    --secondary-color: #5f6368;
+}
+
+/* Custom navbar */
+.navbar-brand {
+    font-weight: 600;
+}
+
+/* Feature icons */
+.feature-icon {
+    height: 80px;
+    width: 80px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Card styles */
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.card-shadow {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Table styles */
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+/* Button styles */
+.btn {
+    border-radius: 8px;
+}
+
+/* Form styles */
+.form-control, .form-select {
+    border-radius: 8px;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Status badges */
+.badge-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.badge-completed {
+    background-color: #28a745;
+}
+
+.badge-failed {
+    background-color: #dc3545;
+}
+
+/* Loading spinner */
+.spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}

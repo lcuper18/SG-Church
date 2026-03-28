@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Miembros - SG Church{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-people"></i> Miembros</h1>
+        <a href="#" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Miembro
+        </a>
+    </div>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar..." value="{{ request.GET.search|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="visitor" {% if request.GET.status == 'visitor' %}selected{% endif %}>Visitante</option>
+                        <option value="attendee" {% if request.GET.status == 'attendee' %}selected{% endif %}>Asistente</option>
+                        <option value="member" {% if request.GET.status == 'member' %}selected{% endif %}>Miembro</option>
+                        <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactivo</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Members Table -->
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Estado</th>
+                        <th>Fecha de Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td>
+                            <a href="#">{{ member.full_name }}</a>
+                        </td>
+                        <td>{{ member.email|default:'-' }}</td>
+                        <td>{{ member.phone|default:'-' }}</td>
+                        <td>
+                            <span class="badge bg-{% if member.member_status == 'member' %}success{% elif member.member_status == 'visitor' %}warning{% else %}secondary{% endif %}">
+                                {{ member.get_member_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ member.created_at|date:"d/m/Y" }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            No se encontraron miembros.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

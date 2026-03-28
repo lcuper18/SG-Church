@@ -1,0 +1,237 @@
+"""
+Member models for SG Church.
+"""
+
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.urls import reverse
+import uuid
+
+
+class User(AbstractUser):
+    """
+    Custom user model for SG Church.
+    Extends Django's AbstractUser with role-based access.
+    """
+
+    ROLE_CHOICES = [
+        ("admin", "Church Admin"),
+        ("pastor", "Pastor"),
+        ("treasurer", "Treasurer"),
+        ("teacher", "Teacher"),
+        ("volunteer", "Volunteer"),
+        ("member", "Member"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # Role and permissions
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="member")
+
+    # Tenant relationship (church this user belongs to)
+    tenant = models.ForeignKey(
+        "tenants.Tenant",
+        on_delete=models.CASCADE,
+        related_name="users",
+        null=True,
+        blank=True,
+    )
+
+    # Link to member profile (optional)
+    member_profile = models.OneToOneField(
+        "Member", on_delete=models.SET_NULL, null=True, blank=True, related_name="user"
+    )
+
+    class Meta:
+        db_table = "users"
+        verbose_name = "User"
+        verbose_name_plural = "Users"
+        ordering = ["username"]
+
+    def __str__(self):
+        return self.get_full_name() or self.username
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip() or self.username
+
+    @property
+    def is_church_admin(self):
+        return self.role == "admin" or self.is_superuser
+
+    @property
+    def can_manage_finance(self):
+        return self.role in ["admin", "treasurer"]
+
+    @property
+    def can_manage_members(self):
+        return self.role in ["admin", "pastor", "volunteer"]
+
+    @property
+    def can_manage_education(self):
+        return self.role in ["admin", "teacher"]
+
+
+class Member(models.Model):
+    """
+    Represents a church member.
+    """
+
+    STATUS_CHOICES = [
+        ("visitor", "Visitor"),
+        ("attendee", "Attendee"),
+        ("member", "Member"),
+        ("inactive", "Inactive"),
+    ]
+
+    GENDER_CHOICES = [
+        ("male", "Male"),
+        ("female", "Female"),
+        ("other", "Other"),
+    ]
+
+    MARITAL_STATUS_CHOICES = [
+        ("single", "Single"),
+        ("married", "Married"),
+        ("divorced", "Divorced"),
+        ("widowed", "Widowed"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # Tenant (church)
+    tenant = models.ForeignKey(
+        "tenants.Tenant", on_delete=models.CASCADE, related_name="members"
+    )
+
+    # Basic information
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(null=True, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+
+    # Demographics
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
+    marital_status = models.CharField(
+        max_length=20, choices=MARITAL_STATUS_CHOICES, blank=True
+    )
+
+    # Membership status
+    member_status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="visitor"
+    )
+    membership_date = models.DateField(null=True, blank=True)
+
+    # Family relationship
+    family = models.ForeignKey(
+        "Family",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+    )
+
+    # Address
+    address = models.TextField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+
+    # Photo
+    photo = models.ImageField(upload_to="members/photos/", null=True, blank=True)
+
+    # Notes
+    notes = models.TextField(blank=True)
+
+    # Tags
+    tags = models.JSONField(default=list, blank=True)
+
+    # User account (optional - for member portal access)
+    user = models.OneToOneField(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="member_profile",
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "members"
+        verbose_name = "Member"
+        verbose_name_plural = "Members"
+        ordering = ["last_name", "first_name"]
+        indexes = [
+            models.Index(fields=["last_name", "first_name"]),
+            models.Index(fields=["email"]),
+            models.Index(fields=["member_status"]),
+            models.Index(fields=["tenant", "member_status"]),
+        ]
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def get_absolute_url(self):
+        return reverse("member_detail", kwargs={"pk": self.pk})
+
+
+class Family(models.Model):
+    """
+    Represents a family unit within a church.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # Tenant (church)
+    tenant = models.ForeignKey(
+        "tenants.Tenant", on_delete=models.CASCADE, related_name="families"
+    )
+
+    # Family information
+    name = models.CharField(
+        max_length=255, help_text='Family name (e.g., "Garcia Family")'
+    )
+    head_of_family = models.ForeignKey(
+        Member,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="head_of_families",
+    )
+
+    # Address (shared by family members)
+    address = models.TextField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+
+    # Phone
+    home_phone = models.CharField(max_length=20, blank=True)
+
+    # Notes
+    notes = models.TextField(blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "families"
+        verbose_name = "Family"
+        verbose_name_plural = "Families"
+        ordering = ["name"]
+        unique_together = ["tenant", "name"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def member_count(self):
+        return self.members.count()

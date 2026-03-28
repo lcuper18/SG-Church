@@ -1,0 +1,1 @@
+# SG Church Django Project
