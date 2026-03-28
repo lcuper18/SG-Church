@@ -148,7 +148,7 @@
                                 {% for fam_member in member.family.members.all %}
                                 {% if fam_member.pk != member.pk %}
                                 <li class="list-group-item">
-                                    <a href="{% url 'member_detail fam_member.pk %}">{{ fam_member.full_name }}</a>
+                                    <a href="{% url 'member_detail' fam_member.pk %}">{{ fam_member.full_name }}</a>
                                     <span class="text-muted">- {{ fam_member.get_member_status_display }}</span>
                                 </li>
                                 {% endif %}
