@@ -4,245 +4,318 @@ Guía completa para deployar SG Church a producción.
 
 ## Tabla de Contenidos
 
-- [Opciones de Deployment](#opciones-de-deployment)
-- [Deployment Recomendado (Vercel + Supabase)](#deployment-recomendado-vercel--supabase)
-- [Deployment Alternativo (AWS)](#deployment-alternativo-aws)
+- [Opciones de Hosting](#opciones-de-hosting)
+- [Deployment en Render](#deployment-en-render)
+- [Deployment en VPS (DigitalOcean/Railway)](#deployment-en-vps-digitaloceanrailway)
+- [Deployment en AWS](#deployment-en-aws)
+- [Configuración de PostgreSQL](#configuración-de-postgresql)
+- [Configuración de Redis](#configuración-de-redis)
 - [Variables de Entorno](#variables-de-entorno)
-- [Database Setup](#database-setup)
-- [Migraciones](#migraciones)
-- [Monitoring](#monitoring)
+- [Configuración de Gunicorn](#configuración-de-gunicorn)
+- [Nginx como Reverse Proxy](#nginx-como-reverse-proxy)
+- [SSL con Let's Encrypt](#ssl-con-lets-encrypt)
+- [Celery Configuration](#celery-configuration)
+- [Monitoreo](#monitoreo)
 - [Backups](#backups)
 - [Troubleshooting](#troubleshooting)
 
 ---
 
-## Opciones de Deployment
+## Opciones de Hosting
 
-### Opción 1: Vercel + Supabase (Recomendado para MVP)
+### Comparación
 
-**Pros**:
-- ✅ Zero-config deployment
-- ✅ Free tier generoso
-- ✅ Auto-scaling
-- ✅ Great DX
+| Opción | Costo | Dificultad | Ideal para |
+|--------|-------|------------|------------|
+| **Render** | $15-25/mes | Fácil | MVP, startups |
+| **Railway** | $20-50/mes | Fácil | Startups |
+| **DigitalOcean Droplet** | $15-40/mes | Media | Control total |
+| **AWS EC2** | $20-100+/mes | Avanzado | Alta escala |
 
-**Cons**:
-- ⚠️ Vendor lock-in
-- ⚠️ Costos crecen con escala
+### Requisitos Mínimos
 
-**Ideal para**: Fase 1 y 2 (hasta 100 iglesias)
-
----
-
-### Opción 2: AWS ECS + RDS
-
-**Pros**:
-- ✅ Más control
-- ✅ Más económico a escala
-- ✅ Multi-region support
-
-**Cons**:
-- ⚠️ Requiere más conocimiento DevOps
-- ⚠️ Setup más complejo
-
-**Ideal para**: Fase 3 y 4 (100+ iglesias)
+- **CPU**: 1 vCPU
+- **RAM**: 1 GB (2 GB recomendado)
+- **Disk**: 20 GB SSD
+- **PostgreSQL**: Externo o incluido en el plan
+- **Redis**: Externo o incluido en el plan
 
 ---
 
-### Opción 3: Self-Hosted (Docker)
+## Deployment en Render
 
-**Pros**:
-- ✅ Control total
-- ✅ Privacidad máxima
-- ✅ Sin dependencia de providers
+Render es la opción recomendada para el MVP por su facilidad de setup.
 
-**Cons**:
-- ⚠️ Mantenimiento manual
-- ⚠️ Necesita expertise
+### 1. Crear Cuenta
 
-**Ideal para**: Iglesias grandes que quieren hosting propio
+1. Ir a [render.com](https://render.com)
+2. Crear cuenta gratuita
+3. Conectar repositorio de GitHub
 
----
+### 2. Crear PostgreSQL
 
-## Deployment Recomendado (Vercel + Supabase)
+1. Dashboard > New > PostgreSQL
+2. Configurar:
+   - **Name**: `sgchurch-db`
+   - **Database**: `sgchurch`
+   - **User**: `sgchurch`
+   - **Plan**: $7/mo (Standard)
+3. Copiar URL de conexión
 
-### 1. Setup de Supabase
+### 3. Crear Redis
 
-#### Crear Proyecto
+1. Dashboard > New > Redis
+2. Configurar:
+   - **Name**: `sgchurch-redis`
+   - **Plan**: $7/mo (Standard)
+3. Copiar URL de conexión
 
-1. Ir a [supabase.com](https://supabase.com)
-2. Click "New Project"
+### 4. Configurar Environment Variables
+
+Dashboard > Environment Variables:
+
+```env
+# Django
+DEBUG=False
+SECRET_KEY=your-very-long-secret-key
+ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+
+# Database
+DATABASE_URL=postgresql://sgchurch:password@host.render.internal:5432/sgchurch
+
+# Redis
+CELERY_BROKER_URL=redis://redis:password@redis.render.internal:6379/0
+CELERY_RESULT_BACKEND=redis://redis:password@redis.render.internal:6379/0
+
+# Email (SendGrid ejemplo)
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.sendgrid.net
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=apikey
+EMAIL_HOST_PASSWORD=SG.xxxxxx
+
+# Stripe
+STRIPE_SECRET_KEY=sk_live_xxxxx
+STRIPE_PUBLISHABLE_KEY=pk_live_xxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx
+
+# AWS S3 (para archivos)
+AWS_STORAGE_BUCKET_NAME=sgchurch-media
+AWS_ACCESS_KEY_ID=xxxxx
+AWS_SECRET_ACCESS_KEY=xxxxx
+AWS_S3_REGION_NAME=us-east-1
+AWS_S3_CUSTOM_DOMAIN=sgchurch-media.s3.amazonaws.com
+```
+
+### 5. Crear Web Service
+
+1. Dashboard > New > Web Service
+2. Conectar repositorio
 3. Configurar:
-   - **Name**: `sg-church-prod`
-   - **Database Password**: Generar seguro
-   - **Region**: Más cercana a tus usuarios
-   - **Plan**: Free (para comenzar)
+   - **Name**: `sgchurch`
+   - **Build Command**: `./build.sh`
+   - **Start Command**: `gunicorn sg_church.wsgi:application`
+   - **Plan**: $15/mo
 
-#### Configurar Database
+### 6. Build Script
 
-```sql
--- Habilitar extensiones
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
-
--- El resto se aplicará via Django migrations
-```
-
-#### Configurar Storage
-
-1. Storage > Create bucket
-2. Name: `avatars`
-3. Public: Yes (files will have signed URLs)
-4. Configurar políticas:
-
-```sql
--- Policy: Enable read access for authenticated users
-CREATE POLICY "Authenticated users can read avatars"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (bucket_id = 'avatars');
-
--- Policy: Enable upload for authenticated users (their tenant only)
-CREATE POLICY "Users can upload to their tenant folder"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.jwt() ->> 'tenant_id');
-```
-
-### 2. Setup de Stripe
-
-#### Crear Cuenta Stripe
-
-1. Ir a [stripe.com](https://stripe.com)
-2. Registrarse
-3. Activar cuenta (puede tomar 1-2 días)
-
-#### Configurar Stripe Connect
-
-1. Dashboard > Connect > Get Started
-2. Type: Platform or marketplace
-3. Configurar onboarding form
-4. Obtener keys:
-   - Publishable key: `pk_live_...`
-   - Secret key: `sk_live_...`
-
-#### Configurar Webhooks
-
-1. Dashboard > Developers > Webhooks
-2. Add endpoint: `https://tu-dominio.com/api/webhooks/stripe`
-3. Events a escuchar:
-   - `checkout.session.completed`
-   - `customer.subscription.created`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
-   - `invoice.paid`
-   - `invoice.payment_failed`
-4. Copiar **Webhook signing secret**: `whsec_...`
-
-### 3. Setup de Vercel
-
-#### Instalar Vercel CLI
+Crear `build.sh` en raíz del proyecto:
 
 ```bash
-npm install -g vercel
+#!/bin/bash
+set -e
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Recompilar assets estáticos
+python manage.py collectstatic --noinput
+
+# Ejecutar migraciones
+python manage.py migrate --noinput
 ```
 
-#### Login y Link Project
+### 7. Dominio Personalizado
 
-```bash
-# Login
-vercel login
-
-# Link project (desde root del repo)
-vercel link
-```
-
-#### Configurar Variables de Entorno
-
-```bash
-# Producción
-vercel env add DATABASE_URL production
-vercel env add NEXTAUTH_SECRET production
-vercel env add STRIPE_SECRET_KEY production
-# ... todas las variables
-
-# Preview (para PRs)
-vercel env add DATABASE_URL preview
-# ... etc
-```
-
-O manualmente en dashboard:
-1. Project Settings > Environment Variables
-2. Agregar todas las variables (ver sección [Variables de Entorno](#variables-de-entorno))
-
-#### Deploy
-
-```bash
-# Deploy production
-vercel --prod
-
-# O push a main branch (auto-deploy si configurado)
-git push origin main
-```
-
-### 4. Configurar Dominio
-
-#### En Vercel
-
-1. Project Settings > Domains
-2. Add domain: `sgchurch.app`
+1. Dashboard > Your Web Service > Settings > Custom Domains
+2. Agregar dominio
 3. Configurar DNS según instrucciones
 
-#### En tu DNS provider
+---
 
-Agregar records:
+## Deployment en VPS (DigitalOcean/Railway)
 
-```
-Type: A
-Name: @
-Value: 76.76.21.21
+### DigitalOcean Droplet
 
-Type: CNAME
-Name: www
-Value: cname.vercel-dns.com
-```
+#### 1. Crear Droplet
 
-Vercel automáticamente provisiona SSL certificate.
+1. Crear Droplet con:
+   - **Image**: Ubuntu 22.04 LTS
+   - **Size**: $15/mo (1GB RAM)
+   - **Region**: Más cercana a usuarios
 
-### 5. Ejecutar Migraciones
+#### 2. Setup Inicial
 
 ```bash
-# Desde local, apuntando a producción
-DATABASE_URL="tu-supabase-url" pnpm db:migrate
+# Conectar via SSH
+ssh root@your-droplet-ip
 
-# O create migration y deploy automáticamente ejecuta
-pnpm db:migrate:deploy
+# Actualizar sistema
+apt update && apt upgrade -y
+
+# Instalar dependencias
+apt install -y python3.12 python3.12-venv python3.12-dev
+apt install -y postgresql postgresql-contrib
+apt install -y redis-server
+apt install -y nginx certbot python3-certbot-nginx
+apt install -y build-essential libpq-dev
+
+# Crear usuario deployment
+adduser deploy
+usermod -aG sudo deploy
 ```
 
-### 6. Seed Tenant de Demo (Opcional)
+#### 3. Configurar PostgreSQL
 
 ```bash
-DATABASE_URL="prod-url" pnpm db:seed
+# Cambiar a usuario postgres
+sudo -u postgres psql
+
+# Crear base de datos y usuario
+CREATE DATABASE sgchurch;
+CREATE USER sgchurch_user WITH PASSWORD 'your-strong-password';
+GRANT ALL PRIVILEGES ON DATABASE sgchurch TO sgchurch_user;
+ALTER USER sgchurch_user CREATEDB;
+
+\q
+```
+
+#### 4. Configurar Aplicación
+
+```bash
+# Cambiar a usuario deployment
+su - deploy
+cd ~
+
+# Clonar repositorio
+git clone https://github.com/your-org/sg-church.git
+cd sg-church
+
+# Crear entorno virtual
+python3.12 -m venv venv
+source venv/bin/activate
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Configurar variables de entorno
+cp .env.example .env
+nano .env
+```
+
+#### 5. Configurar Gunicorn
+
+Crear `gunicorn.conf.py`:
+
+```python
+# gunicorn.conf.py
+import multiprocessing
+
+bind = "127.0.0.1:8000"
+workers = multiprocessing.cpu_count() * 2 + 1
+worker_class = "sync"
+worker_connections = 1000
+max_requests = 1000
+max_requests_jitter = 50
+timeout = 30
+keepalive = 2
+
+# Logging
+accesslog = "/var/log/sgchurch/access.log"
+errorlog = "/var/log/sgchurch/error.log"
+loglevel = "info"
+
+# Python
+pythonpath = "/home/deploy/sg-church"
+```
+
+#### 6. Configurar Systemd
+
+Crear `/etc/systemd/system/sgchurch.service`:
+
+```ini
+[Unit]
+Description=SG Church Django Application
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=notify
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/sg-church
+Environment="PATH=/home/deploy/sg-church/venv/bin"
+ExecStart=/home/deploy/sg-church/venv/bin/gunicorn sg_church.wsgi:application -c /home/deploy/sg-church/gunicorn.conf.py
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+# Habilitar yiciar servicio
+sudo systemctl daemon-reload
+sudo systemctl enable sgchurch
+sudo systemctl start sgchurch
+```
+
+#### 7. Configurar Celery
+
+Crear `/etc/systemd/system/celery.service`:
+
+```ini
+[Unit]
+Description=Celery Worker for SG Church
+After=network.target redis.service
+
+[Service]
+Type=forking
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/sg-church
+Environment="PATH=/home/deploy/sg-church/venv/bin"
+ExecStart=/home/deploy/sg-church/venv/bin/celery -A sg_chorld worker --loglevel=info --logfile=/var/log/sgchurch/celery.log --pidfile=/var/run/celery.pid
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 ---
 
-## Deployment Alternativo (AWS)
+## Deployment en AWS
 
-### Arquitectura AWS
+### Arquitectura
 
 ```
 ┌──────────────────────┐
 │  CloudFront (CDN)    │
+│  (Static files, SSL) │
 └──────────┬───────────┘
            │
 ┌──────────▼───────────┐
-│  ALB                 │
+│  Application Load     │
+│  Balancer (ALB)       │
 └──────────┬───────────┘
            │
 ┌──────────▼───────────┐
-│  ECS Fargate         │
-│  (Next.js containers)│
+│  EC2 Auto Scaling    │
+│  (Django + Gunicorn)│
 └──────────┬───────────┘
            │
     ┌──────┴──────┐
@@ -254,433 +327,487 @@ DATABASE_URL="prod-url" pnpm db:seed
 └────────┘  └─────────┘
 ```
 
-### Terraform Setup (Infraestructura como Código)
-
-```hcl
-# infrastructure/terraform/main.tf
-
-provider "aws" {
-  region = "us-east-1"
-}
-
-# VPC
-module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
-  
-  name = "sgchurch-vpc"
-  cidr = "10.0.0.0/16"
-  
-  azs             = ["us-east-1a", "us-east-1b"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
-  
-  enable_nat_gateway = true
-  enable_dns_hostnames = true
-}
-
-# RDS PostgreSQL
-resource "aws_db_instance" "postgres" {
-  identifier           = "sgchurch-db"
-  engine               = "postgres"
-  engine_version       = "16.1"
-  instance_class       = "db.t3.medium"
-  allocated_storage    = 100
-  storage_encrypted    = true
-  
-  db_name  = "sgchurch"
-  username = "sgchurch_admin"
-  password = var.db_password
-  
-  multi_az               = true
-  backup_retention_period = 30
-  
-  vpc_security_group_ids = [aws_security_group.db.id]
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  
-  skip_final_snapshot = false
-  final_snapshot_identifier = "sgchurch-final-snapshot"
-}
-
-# ElastiCache Redis
-resource "aws_elasticache_cluster" "redis" {
-  cluster_id           = "sgchurch-redis"
-  engine               = "redis"
-  node_type            = "cache.t3.micro"
-  num_cache_nodes      = 1
-  parameter_group_name = "default.redis7"
-  engine_version       = "7.0"
-  port                 = 6379
-  
-  subnet_group_name = aws_elasticache_subnet_group.main.name
-  security_group_ids = [aws_security_group.redis.id]
-}
-
-# ECS Cluster
-resource "aws_ecs_cluster" "main" {
-  name = "sgchurch-cluster"
-}
-
-# ECS Task Definition
-resource "aws_ecs_task_definition" "app" {
-  family                   = "sgchurch-app"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "512"
-  memory                   = "1024"
-  
-  container_definitions = jsonencode([{
-    name  = "sgchurch-web"
-    image = "${aws_ecr_repository.app.repository_url}:latest"
-    
-    portMappings = [{
-      containerPort = 3000
-      protocol      = "tcp"
-    }]
-    
-    environment = [
-      { name = "NODE_ENV", value = "production" },
-      { name = "DATABASE_URL", value = "postgresql://..." }
-      # ... más env vars
-    ]
-    
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        "awslogs-group"         = "/ecs/sgchurch"
-        "awslogs-region"        = "us-east-1"
-        "awslogs-stream-prefix" = "ecs"
-      }
-    }
-  }])
-}
-
-# S3 para storage
-resource "aws_s3_bucket" "storage" {
-  bucket = "sgchurch-storage"
-}
-
-resource "aws_s3_bucket_versioning" "storage" {
-  bucket = aws_s3_bucket.storage.id
-  
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-```
-
-### Deploy con Terraform
+### RDS PostgreSQL
 
 ```bash
-cd infrastructure/terraform
+# Usar AWS Console o CLI
+aws rds create-db-instance \
+  --db-instance-identifier sgchurch-db \
+  --db-instance-class db.t3.micro \
+  --engine postgres \
+  --engine-version 16.1 \
+  --allocated-storage 20 \
+  --db-name sgchurch \
+  --master-username sgchurch \
+  --master-user-password 'your-password' \
+  --backup-retention-period 30 \
+  --multi-az
+```
 
-# Initialize
-terraform init
+### ElastiCache Redis
 
-# Plan
-terraform plan -out=tfplan
+```bash
+aws elasticache create-cache-cluster \
+  --cache-cluster-id sgchurch-redis \
+  --cache-node-type cache.t3.micro \
+  --engine redis \
+  --engine-version 7.0 \
+  --num-cache-nodes 1
+```
 
-# Apply
-terraform apply tfplan
+### ECS/Fargate (Alternativa)
+
+```json
+{
+  "family": "sgchurch",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "sgchurch",
+      "image": "your-registry/sgchurch:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {"name": "DEBUG", "value": "False"},
+        {"name": "DATABASE_URL", "value": "postgresql://..."}
+      ]
+    }
+  ]
+}
 ```
 
 ---
 
 ## Variables de Entorno
 
-### Producción (.env.production)
+### Producción (.env)
 
 ```env
-# Application
-NODE_ENV=production
-NEXT_PUBLIC_APP_URL=https://sgchurch.app
+# ===========================================
+# DJANGO
+# ===========================================
+DEBUG=False
+SECRET_KEY=your-very-long-random-secret-key-at-least-50-chars
+ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com,localhost
+CSRF_TRUSTED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 
-# Database
-DATABASE_URL=postgresql://user:pass@host:5432/sgchurch?schema=public&sslmode=require
-DATABASE_URL_UNPOOLED=  # Para migraciones (sin pooler)
+# ===========================================
+# DATABASE
+# ===========================================
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+# Para migraciones (opcional)
+DATABASE_URL_UNPOOLED=postgresql://user:password@host:5432/dbname
 
-# NextAuth
-NEXTAUTH_URL=https://sgchurch.app
-NEXTAUTH_SECRET=  # Generar con: openssl rand -base64 32
+# ===========================================
+# REDIS / CELERY
+# ===========================================
+CELERY_BROKER_URL=redis://:password@host:6379/0
+CELERY_RESULT_BACKEND=redis://:password@host:6379/0
 
-# Stripe
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+# ===========================================
+# EMAIL
+# ===========================================
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.sendgrid.net
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=apikey
+EMAIL_HOST_PASSWORD=SG.xxxxxxxx
+DEFAULT_FROM_EMAIL=noreply@yourdomain.com
 
-# Email (Resend o SES)
-RESEND_API_KEY=re_...
-# O para AWS SES:
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=us-east-1
-SES_FROM_EMAIL=noreply@sgchurch.app
+# ===========================================
+# STRIPE
+# ===========================================
+STRIPE_SECRET_KEY=sk_live_xxxxx
+STRIPE_PUBLISHABLE_KEY=pk_live_xxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx
 
-# SMS (Twilio)
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_PHONE_NUMBER=+1234567890
+# ===========================================
+# AWS S3 (Storage)
+# ===========================================
+AWS_STORAGE_BUCKET_NAME=sgchurch-media
+AWS_ACCESS_KEY_ID=AKIAxxxxx
+AWS_SECRET_ACCESS_KEY=xxxxx
+AWS_S3_REGION_NAME=us-east-1
+AWS_S3_CUSTOM_DOMAIN=sgchurch-media.s3.amazonaws.com
 
-# Redis
-REDIS_URL=redis://host:6379
+# ===========================================
+# SECURITY
+# ===========================================
+SECURE_SSL_REDIRECT=True
+SECURE_PROXY_SSL_HEADER=HTTP_X_FORWARDED_PROTO,https
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+SECURE_HSTS_SECONDS=31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+SECURE_HSTS_PRELOAD=True
+```
 
-# Storage (Supabase o S3)
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_KEY=eyJ...
+---
 
-# O para S3:
-AWS_S3_BUCKET=sgchurch-storage
-AWS_S3_REGION=us-east-1
+## Configuración de Gunicorn
+
+```python
+# gunicorn.conf.py
+import os
+import multiprocessing
+
+# Binding
+bind = "127.0.0.1:8000"
+
+# Workers (2-4 por core CPU)
+workers = multiprocessing.cpu_count() * 2 + 1
+
+# Worker class
+worker_class = "sync"  # o "gevent" para async
+
+# Timeouts
+timeout = 60
+keepalive = 5
+
+# Logging
+accesslog = "-"
+errorlog = "-"
+loglevel = "info"
+
+# Security
+limit_request_line = 4094
+limit_request_fields = 100
+limit_request_field_size = 8190
+
+# SSL (si se usa gunicorn directamente)
+# keyfile = "/path/to/key.pem"
+# certfile = "/path/to/cert.pem"
+```
+
+---
+
+## Nginx como Reverse Proxy
+
+```nginx
+# /etc/nginx/sites-available/sgchurch
+
+upstream sgchurch_app {
+    server 127.0.0.1:8000;
+}
+
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+    
+    # Redirect to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com www.yourdomain.com;
+    
+    # SSL Certificate
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+    
+    # Static files
+    location /static/ {
+        alias /home/deploy/sg-church/static/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Media files
+    location /media/ {
+        alias /home/deploy/sg-church/media/;
+        expires 7d;
+    }
+    
+    # Django app
+    location / {
+        proxy_pass http://sgchurch_app;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+```
+
+---
+
+## SSL con Let's Encrypt
+
+```bash
+# Instalar certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obtener certificado
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+
+# Renovar automáticamente
+sudo certbot renew --dry-run
+```
+
+Agregar a crontab:
+```
+0 0 * * * /usr/bin/certbot renew --quiet
+```
+
+---
+
+## Celery Configuration
+
+### Production Settings
+
+```python
+# settings/production.py
+
+# Broker
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
+
+# Serialization
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+
+# Timezone
+CELERY_TIMEZONE = 'America/New_York'
+USE_TZ = True
+
+# Task configuration
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+
+# Retry configuration
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4
 
 # Monitoring
-SENTRY_DSN=https://...@sentry.io/...
-NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
-
-# Analytics
-NEXT_PUBLIC_PLAUSIBLE_DOMAIN=sgchurch.app
+CELERY_SEND_TASK_SENT_EVENT = True
+CELERY_SEND_TASK_ERROR_EMAILS = True
 ```
 
----
+### Beat Schedule (Cron Jobs)
 
-## Migraciones
+```python
+# schedules.py
+from celery.schedules import crontab
 
-### Estrategia de Migraciones Multi-Tenant
-
-#### 1. Crear Nueva Migración
-
-```bash
-pnpm db:migrate:create --name add_learning_paths
-```
-
-#### 2. Aplicar a Todos los Tenants
-
-Crear script `scripts/migrate-all-tenants.ts`:
-
-```typescript
-import { PrismaClient } from '@prisma/client'
-import { execSync } from 'child_process'
-
-const db = new PrismaClient()
-
-async function migrateAllTenants() {
-  // Get all tenants
-  const tenants = await db.tenant.findMany()
-  
-  console.log(`Found ${tenants.length} tenants to migrate`)
-  
-  for (const tenant of tenants) {
-    console.log(`Migrating ${tenant.name} (${tenant.schemaName})...`)
+CELERY_BEAT_SCHEDULE = {
+    # Recordatorios de cumpleaños (diario a las 8am)
+    'send-birthday-reminders': {
+        'task': 'members.tasks.send_birthday_reminders',
+        'schedule': crontab(hour=8, minute=0),
+    },
     
-    try {
-      // Set DATABASE_URL with schema
-      const dbUrl = `${process.env.DATABASE_URL}?schema=${tenant.schemaName}`
-      
-      // Run migration
-      execSync('pnpm prisma migrate deploy', {
-        env: { ...process.env, DATABASE_URL: dbUrl },
-        stdio: 'inherit'
-      })
-      
-      console.log(`✅ ${tenant.name} migrated successfully`)
-    } catch (error) {
-      console.error(`❌ Failed to migrate ${tenant.name}:`, error)
-      process.exit(1)
-    }
-  }
-  
-  console.log('All tenants migrated successfully!')
+    # Limpiar sesiones expiradas (cada hora)
+    'cleanup-expired-sessions': {
+        'task': 'core.tasks.cleanup_expired_sessions',
+        'schedule': crontab(minute=0),
+    },
+    
+    # Generar reportes mensuales (1ro de cada mes)
+    'generate-monthly-reports': {
+        'task': 'finance.tasks.generate_monthly_reports',
+        'schedule': crontab(1, 0, month_of_year='1-12'),
+    },
 }
-
-migrateAllTenants()
-```
-
-Ejecutar:
-```bash
-DATABASE_URL="prod-url" tsx scripts/migrate-all-tenants.ts
-```
-
-#### 3. Rollback Strategy
-
-Para rollback, crear migration que revierte:
-
-```bash
-pnpm db:migrate:create --name revert_learning_paths
 ```
 
 ---
 
-## Monitoring
+## Monitoreo
 
-### Sentry Setup
+### Sentry (Error Tracking)
 
-```typescript
-// apps/web/instrumentation.ts
-import * as Sentry from '@sentry/nextjs'
-
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  tracesSampleRate: 0.1,  // 10% of requests
-  
-  beforeSend(event, hint) {
-    // Don't send certain errors
-    if (event.exception?.values?.[0]?.type === 'NotFoundError') {
-      return null
-    }
-    return event
-  },
-})
+```bash
+pip install sentry-sdk
 ```
 
-### Health Check Endpoint
+```python
+# settings/production.py
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
-```typescript
-// apps/web/app/api/health/route.ts
-import { db } from '@/lib/db'
-import { redis } from '@/lib/redis'
+sentry_sdk.init(
+    dsn=os.environ.get('SENTRY_DSN'),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=0.1,
+    send_default_pii=False,
+    environment='production',
+)
+```
 
-export async function GET() {
-  try {
-    // Check database  
-    await db.$queryRaw`SELECT 1`
+### Health Checks
+
+```python
+# health/views.py
+from django.http import JsonResponse
+from django.db import connection
+
+def health_check(request):
+    # Check database
+    try:
+        connection.ensure_connection()
+        db_status = 'healthy'
+    except Exception:
+        db_status = 'unhealthy'
     
-    // Check Redis
-    await redis.ping()
-    
-    return Response.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      services: {
-        database: 'up',
-        redis: 'up',
-      }
+    return JsonResponse({
+        'status': 'healthy' if db_status == 'healthy' else 'unhealthy',
+        'database': db_status,
     })
-  } catch (error) {
-    return Response.json({
-      status: 'unhealthy',
-      error: error.message,
-    }, { status: 503 })
-  }
-}
+
+# URLs
+# path('health/', health_check, name='health_check'),
 ```
 
-### Uptime Monitoring
+### Monitoring con Uptime Robot
 
-Configurar en UptimeRobot o similar:
-- URL: `https://sgchurch.app/api/health`
-- Interval: 5 minutes
-- Alertas vía email/SMS si down
+Agregar endpoint de health a uptime monitoring:
+- `https://yourdomain.com/health/`
 
 ---
 
 ## Backups
 
-### Automatic Backups (Supabase)
-
-- Daily automatic backups (included)
-- Point-in-time recovery (Pro plan)
-- Retention: 7 days (Free), 30 days (Pro)
-
-### Manual Backup Script
+### PostgreSQL Backup Script
 
 ```bash
 #!/bin/bash
-# scripts/backup-production.sh
+# /scripts/backup.sh
 
-DATE=$(date +%Y-%m-%d-%H%M)
-BACKUP_DIR="/backups/sgchurch"
+DATE=$(date +%Y-%m-%d_%H%M%S)
+BACKUP_DIR="/backups"
+DB_NAME="sgchurch"
+DB_USER="sgchurch_user"
 
-mkdir -p "$BACKUP_DIR"
+# Create backup
+pg_dump -U $DB_USER -h localhost $DB_NAME > "$BACKUP_DIR/db_$DATE.sql"
 
-# Backup public schema (tenants table)
-pg_dump "$DATABASE_URL" \
-  --schema=public \
-  --format=custom \
-  --file="$BACKUP_DIR/public_$DATE.dump"
-
-# Backup each tenant schema
-psql "$DATABASE_URL" -t -c "SELECT schema_name FROM public.tenants" | \
-while read schema; do
-  echo "Backing up $schema..."
-  pg_dump "$DATABASE_URL" \
-    --schema="$schema" \
-    --format=custom \
-    --file="$BACKUP_DIR/${schema}_$DATE.dump"
-done
-
-# Compress all backups
-tar -czf "$BACKUP_DIR/backup_$DATE.tar.gz" "$BACKUP_DIR"/*.dump
+# Compress
+gzip "$BACKUP_DIR/db_$DATE.sql"
 
 # Upload to S3
-aws s3 cp "$BACKUP_DIR/backup_$DATE.tar.gz" \
-  s3://sgchurch-backups/production/
+aws s3 cp "$BACKUP_DIR/db_$DATE.sql.gz" s3://sgchurch-backups/
 
-# Clean local files
-rm "$BACKUP_DIR"/*.dump
+# Keep only last 30 days
+find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete
 ```
 
-Configurar cron job:
-```cron
-# Daily backup at 3 AM
-0 3 * * * /path/to/scripts/backup-production.sh
+Agregar a crontab:
+```
+0 2 * * * /scripts/backup.sh
+```
+
+### Restaurar Backup
+
+```bash
+# Download from S3
+aws s3 cp s3://sgchurch-backups/db_2024-01-15.sql.gz /tmp/
+
+# Decompress
+gunzip /tmp/db_2024-01-15.sql.gz
+
+# Restore
+psql -U sgchurch_user -d sgchurch < /tmp/db_2024-01-15.sql
 ```
 
 ---
 
 ## Troubleshooting
 
-### Issue: Deploy Fails
+### Error: Database Connection Refused
 
-**Error**: `Build exceeded maximum duration`
+```bash
+# Verificar que PostgreSQL esté corriendo
+sudo systemctl status postgresql
 
-**Solución**:
-```json
-// vercel.json
-{
-  "builds": [
-    {
-      "src": "apps/web/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "maxDuration": 60
-      }
-    }
-  ]
-}
+# Verificar credenciales
+psql -U sgchurch_user -h localhost -d sgchurch
+
+# Revisar logs
+sudo tail -f /var/log/postgresql/postgresql-16-main.log
 ```
 
-### Issue: Database Connection Timeout
+### Error: Bad Gateway (502)
 
-**Error**: `P1001: Can't reach database server`
+```bash
+# Verificar que Gunicorn esté corriendo
+sudo systemctl status sgchurch
 
-**Solución**:
-1. Verificar security groups (AWS) o allowlist (Supabase)
-2. Agregar Vercel IPs a whitelist
-3. Usar connection pooling (PgBouncer)
+# Ver logs de Gunicorn
+sudo tail -f /var/log/sgchurch/error.log
 
-### Issue: Out of Memory
-
-**Error**: `JavaScript heap out of memory`
-
-**Solución**:
-```json
-// package.json
-{
-  "scripts": {
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build"
-  }
-}
+# Restart servicio
+sudo systemctl restart sgchurch
 ```
 
-### Issue: Stripe Webhook Failures
+### Error: CSRF Verification Failed
 
-**Error**: Webhook signature verification failed
+```bash
+# Agregar a settings
+CSRF_TRUSTED_ORIGINS=https://yourdomain.com
+ALLOWED_HOSTS=yourdomain.com
+```
 
-**Solución**:
-1. Verificar `STRIPE_WEBHOOK_SECRET` correcto
-2. Check que endpoint es HTTPS
-3. Ver logs en Stripe Dashboard > Webhooks
+### Error: Static Files Not Loading
+
+```bash
+# Recolectar static files
+python manage.py collectstatic --noinput
+
+# Verificar permisos
+ls -la /home/deploy/sg-church/static/
+
+# Verificar nginx config
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Error: Celery Tasks Not Running
+
+```bash
+# Verificar que Celery esté corriendo
+sudo systemctl status celery
+
+# Ver logs
+sudo tail -f /var/log/sgchurch/celery.log
+
+# Restart
+sudo systemctl restart celery
+```
 
 ---
 
-**¿Problemas?** Contacta support@sgchurch.app
+## Checklist de Production
+
+- [ ] DEBUG=False
+- [ ] SECRET_KEY segura (al menos 50 caracteres)
+- [ ] ALLOWED_HOSTS configurado
+- [ ] HTTPS habilitado (SSL certificate)
+- [ ] Database backups automatizados
+- [ ] Static files servidos correctamente
+- [ ] Celery workers corriendo
+- [ ] Health check endpoint configurado
+- [ ] Logging configurado
+- [ ] Monitoring (Sentry) configurado
+
+---
+
+**Última actualización**: Marzo 2026
