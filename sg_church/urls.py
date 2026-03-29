@@ -17,7 +17,7 @@ def health_check(request):
 
 
 # Override allauth URLs to use custom templates
-# Using simple include without namespace to avoid conflicts
+# Include both old names (account_*) for allauth compatibility and new names
 allauth_url_patterns = [
     path(
         "login/",
@@ -25,9 +25,19 @@ allauth_url_patterns = [
         name="login",
     ),
     path(
+        "login/",
+        LoginView.as_view(template_name="account/login.html"),
+        name="account_login",  # Alias for allauth compatibility
+    ),
+    path(
         "logout/",
         LogoutView.as_view(template_name="account/logout.html"),
         name="logout",
+    ),
+    path(
+        "logout/",
+        LogoutView.as_view(template_name="account/logout.html"),
+        name="account_logout",  # Alias for allauth
     ),
     path(
         "signup/",
@@ -35,9 +45,19 @@ allauth_url_patterns = [
         name="signup",
     ),
     path(
+        "signup/",
+        SignupView.as_view(template_name="account/signup.html"),
+        name="account_signup",  # Alias for allauth
+    ),
+    path(
         "password/reset/",
         PasswordResetView.as_view(),
         name="password_reset",
+    ),
+    path(
+        "password/reset/",
+        PasswordResetView.as_view(),
+        name="account_reset_password",  # Alias for allauth
     ),
 ]
 
