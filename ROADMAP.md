@@ -20,7 +20,7 @@ Plan de desarrollo por fases con timeline estimado, prioridades y entregables.
 | 1-2 | Setup Inicial | ✅ Completado | Django + DRF + Multi-tenant |
 | 3 | Gestión de Membresía | ✅ QA Verificado | Members, Families, Tags, Onboarding |
 | 4 | Donaciones y Finanzas | ✅ QA Verificado | Dashboard, Stripe, Reports |
-| 5 | Sistema de Notificaciones | ⏳ Próximo | Email + In-App notifications |
+| 5 | Sistema de Notificaciones | 🚧 En Progreso | Email + In-App notifications |
 
 ---
 
@@ -125,7 +125,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 **Entregable**: Sistema de donaciones y contabilidad funcional ✅
 
-#### Sprint 11-12: Sistema de Notificaciones (Semanas 21-24) 🚧 PRÓXIMO
+#### Sprint 11-12: Sistema de Notificaciones (Semanas 21-24) 🚧 EN PROGRESO
 - [ ] **Email Infrastructure**
   - [ ] Configurar Resend API
   - [ ] Configurar templates de email con Django
