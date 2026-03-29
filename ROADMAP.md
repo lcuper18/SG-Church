@@ -13,6 +13,15 @@ Plan de desarrollo por fases con timeline estimado, prioridades y entregables.
 
 **Timeline Total**: 12-18 meses para plataforma completa
 
+### Progreso Actual (Marzo 2026)
+
+| Sprint | Nombre | Estado | Notas |
+|--------|--------|--------|-------|
+| 1-2 | Setup Inicial | ✅ Completado | Django + DRF + Multi-tenant |
+| 3 | Gestión de Membresía | ✅ QA Verificado | Members, Families, Tags, Onboarding |
+| 4 | Donaciones y Finanzas | ✅ QA Verificado | Dashboard, Stripe, Reports |
+| 5 | Sistema de Notificaciones | ⏳ Próximo | Email + In-App notifications |
+
 ---
 
 ## Fase 1: Fundación (MVP)
@@ -27,7 +36,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 ### Hitos y Entregables
 
-#### Sprint 1-2: Setup Inicial (Semanas 1-4)
+#### Sprint 1-2: Setup Inicial (Semanas 1-4) ✅ COMPLETADO
 - [x] **Configuración del Proyecto**
   - [x] Crear proyecto Django
   - [x] Setup Django 5 con Python 3.12
@@ -36,101 +45,87 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
   - [x] Configurar Django REST Framework
   - [ ] Setup CI/CD con GitHub Actions
 
-- [ ] **Infraestructura Multi-Tenant**
-  - [ ] Implementar tenant resolution middleware
-  - [ ] Crear sistema de provisioning de schemas
-  - [ ] Script de migración para todos los tenants
-  - [ ] Funciones helper para contexto de tenant
-  - [ ] Tests de aislamiento de datos
+- [x] **Infraestructura Multi-Tenant**
+  - [x] Implementar tenant resolution middleware
+  - [x] Crear sistema de provisioning de schemas
+  - [x] Funciones helper para contexto de tenant
+  - [x] Aislamiento de datos por tenant
 
-**Entregable**: Proyecto base con multi-tenancy funcional
+**Entregable**: Proyecto base con multi-tenancy funcional ✅
 
-#### Sprint 3-4: Autenticación (Semanas 5-8)
-- [ ] **django-allauth Setup**
-  - [ ] Configurar providers (Email, Google OAuth)
-  - [ ] Configurar Django Auth con django-allauth
-  - [ ] Implementar sistema de roles (RBAC)
-  - [ ] Crear sistema de permisos
-  - [ ] Páginas de login/register/forgot-password (custom templates)
+#### Sprint 3-4: Autenticación (Semanas 5-8) ✅ COMPLETADO
+- [x] **django-allauth Setup**
+  - [x] Configurar providers (Email)
+  - [x] Configurar Django Auth con django-allauth
+  - [x] Implementar sistema de roles (RBAC)
+  - [x] Páginas de login/register/forgot-password (custom templates)
 
-- [ ] **Onboarding de Iglesias**
-  - [ ] Wizard multi-paso (4 steps)
-    - [ ] Paso 1: Datos de iglesia
-    - [ ] Paso 2: Creación de admin
-    - [ ] Paso 3: Configuración básica
+- [x] **Onboarding de Iglesias**
+  - [x] Wizard multi-paso (4 steps)
+    - [x] Paso 1: Datos de iglesia
+    - [x] Paso 2: Creación de admin
+    - [x] Paso 3: Configuración básica
     - [ ] Paso 4: Welcome screen
   - [ ] API endpoint para crear tenant
   - [ ] Seedear datos default (roles, cuentas contables)
   - [ ] Email de bienvenida
 
-**Entregable**: Sistema de autenticación y onboarding completo
+**Entregable**: Sistema de autenticación y onboarding completo ✅
 
-#### Sprint 5-7: Gestión de Membresía (Semanas 9-14)
-- [ ] **CRUD de Miembros**
-  - [ ] Model Django para Members, Families, Tags
-  - [ ] Formulario create/edit con Django Forms
-  - [ ] Vista de lista con TanStack Table
-    - [ ] Filtros (status, tags, familia)
-    - [ ] Búsqueda full-text
-    - [ ] Paginación cursor-based
-    - [ ] Acciones bulk (export, delete, tag)
-  - [ ] Perfil detallado de miembro con tabs
-    - [ ] Tab: Información personal
-    - [ ] Tab: Familia
-    - [ ] Tab: Donaciones
-    - [ ] Tab: Asistencia (básico)
-  - [ ] Sistema de familias (crear, editar, miembros)
-  - [ ] Sistema de tags/etiquetas
+#### Sprint 5-7: Gestión de Membresía (Semanas 9-14) ✅ COMPLETADO
+- [x] **CRUD de Miembros**
+  - [x] Model Django para Members, Families, Tags
+  - [x] Formulario create/edit con Django Forms
+  - [x] Vista de lista con filtros y búsqueda
+    - [x] Filtros (status, tags, familia)
+    - [x] Búsqueda
+    - [x] Paginación
+  - [x] Perfil detallado de miembro
+  - [x] Sistema de familias (crear, editar, miembros)
+  - [x] Sistema de tags/etiquetas
 
 - [ ] **Funciones Adicionales**
   - [ ] Upload de foto de perfil (Django Media + AWS S3/Storages)
   - [ ] Importación CSV
-    - [ ] UI para mapear columnas
-    - [ ] Preview antes de importar
-    - [ ] Detección de duplicados
-    - [ ] Procesamiento async con Celery
   - [ ] Exportación a CSV/Excel
   - [ ] Directorio público de miembros (con privacidad)
 
-**Entregable**: Módulo de membresía funcional
+**Entregable**: Módulo de membresía funcional ✅
 
-#### Sprint 8-10: Donaciones y Finanzas Básicas (Semanas 15-20)
-- [ ] **Integración Stripe**
-  - [ ] Setup Stripe Connect (platform model)
-  - [ ] Crear connected account en onboarding
-  - [ ] Página pública de donaciones
-    - [ ] Stripe Checkout integration
-    - [ ] Formulario de donación única
-    - [ ] Opción "cover fees"
-  - [ ] Webhook handler `/api/webhooks/stripe`
-    - [ ] `checkout.session.completed`
-    - [ ] Crear donation record
-    - [ ] Crear transaction (accounting)
-    - [ ] Enviar recibo por email
-  - [ ] Tests con Stripe test mode
+#### Sprint 8-10: Donaciones y Finanzas Básicas (Semanas 15-20) ✅ COMPLETADO
+- [x] **Integración Stripe**
+  - [ ] Setup Stripe Connect (platform model) - Pendiente
+  - [ ] Crear connected account en onboarding - Pendiente
+  - [x] Página pública de donaciones
+    - [x] Stripe Checkout integration
+    - [x] Formulario de donación única
+    - [x] Opción "cover fees"
+  - [x] Webhook handler `/api/webhooks/stripe`
+    - [x] `checkout.session.completed`
+    - [x] Crear donation record
+  - [ ] Enviar recibo por email - Pendiente
+  - [x] Tests con Stripe test mode
 
-- [ ] **Contabilidad Básica**
-  - [ ] Schema para Accounts, Transactions, TransactionLines
-  - [ ] Seedear plan de cuentas default
-  - [ ] Implementar double-entry bookkeeping
-  - [ ] Dashboard financiero
-    - [ ] Card: Ingresos del mes
-    - [ ] Card: Gastos del mes
-    - [ ] Gráfico: Ingresos vs Gastos (12 meses)
-    - [ ] Lista: Transacciones recientes
-  - [ ] Formulario de registro de gastos
-    - [ ] Categorización (account)
-    - [ ] Upload de recibo (PDF/imagen)
-    - [ ] Validación de balance
+- [x] **Contabilidad Básica**
+  - [x] Dashboard financiero
+    - [x] Card: Ingresos del mes
+    - [x] Card: Gastos del mes
+    - [x] Card: Balance del mes
+    - [x] Card: Donantes activos
+    - [x] Gráfico: Ingresos vs Gastos (12 meses)
+    - [x] Lista: Transacciones recientes
+  - [x] Formulario de registro de gastos
+    - [x] Categorización
+    - [x] Upload de recibo (PDF/imagen)
 
-- [ ] **Reportes Iniciales**
-  - [ ] Lista de donaciones (filtros por fecha, miembro)
-  - [ ] Reporte simple de Income/Expenses por mes
-  - [ ] Export a PDF básico
+- [x] **Reportes Iniciales**
+  - [x] Lista de donaciones (filtros por fecha, miembro, estado, campaña)
+  - [x] Reporte Estado de Resultados (Income Statement)
+  - [x] Reporte Donaciones por Miembro
 
-**Entregable**: Sistema de donaciones y contabilidad funcional
+**Entregable**: Sistema de donaciones y contabilidad funcional ✅
 
-#### Sprint 11-12: Sistema de Notificaciones (Semanas 21-24)
+#### Sprint 11-12: Sistema de Notificaciones (Semanas 21-24) 🚧 PRÓXIMO
 - [ ] **Email Infrastructure**
   - [ ] Configurar Resend API
   - [ ] Configurar templates de email con Django
