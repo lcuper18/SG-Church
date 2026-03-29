@@ -9,17 +9,14 @@ ALLOWED_HOSTS = ["*"]
 
 # Development-specific settings
 INSTALLED_APPS += [
-    "debug_toolbar",
     "django_extensions",
 ]
 
-MIDDLEWARE += [
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
-]
-
-# Django Debug Toolbar
-INTERNAL_IPS = [
-    "127.0.0.1",
+# Disable TenantMiddleware and debug_toolbar for local development
+MIDDLEWARE = [
+    m for m in MIDDLEWARE if "TenantMiddleware" not in m and "debug_toolbar" not in m
+] + [
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 # Email to console for development
