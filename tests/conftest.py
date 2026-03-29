@@ -4,36 +4,9 @@ Pytest configuration and fixtures for SG Church tests.
 
 import os
 import pytest
-import django
-from django.conf import settings
 
-
-# Configure Django settings before importing Django models
+# Configure Django settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sg_church.settings.test")
-
-
-def pytest_configure(config):
-    """Configure Django settings for pytest."""
-    from django.conf import settings as django_settings
-
-    # Override some settings for testing
-    if not hasattr(django_settings, "DATABASES") or not django_settings.DATABASES.get(
-        "default"
-    ):
-        django_settings.DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": ":memory:",
-            }
-        }
-
-    django.setup()
-
-
-@pytest.fixture(scope="session")
-def django_db_setup():
-    """Setup test database."""
-    pass  # pytest-django handles this automatically
 
 
 @pytest.fixture
@@ -45,6 +18,17 @@ def client():
 
 
 @pytest.fixture
+def client():
+    """Django test client."""
+    from django.test import Client
+
+    return Client()
+
+
+import uuid
+
+
+@pytest.fixture
 def admin_user(db):
     """Create an admin user for testing."""
     from django.contrib.auth import get_user_model
@@ -52,16 +36,17 @@ def admin_user(db):
 
     User = get_user_model()
 
-    # Create tenant
+    # Create unique tenant for this test
+    unique_id = uuid.uuid4().hex[:8]
     tenant = Tenant.objects.create(
         name="Test Church",
-        subdomain="testchurch",
+        subdomain=f"testchurch-{unique_id}",
         is_active=True,
     )
 
     # Create admin user
     user = User.objects.create_user(
-        email="admin@testchurch.com",
+        email=f"admin@testchurch-{unique_id}.com",
         password="testpassword123",
         first_name="Admin",
         last_name="User",
@@ -80,10 +65,11 @@ def regular_user(db):
 
     User = get_user_model()
 
-    # Create tenant
+    # Create unique tenant
+    unique_id = uuid.uuid4().hex[:8]
     tenant = Tenant.objects.create(
         name="Regular Church",
-        subdomain="regchurch",
+        subdomain=f"regchurch-{unique_id}",
         is_active=True,
     )
 
@@ -104,9 +90,10 @@ def tenant(db):
     """Create a tenant for testing."""
     from tenants.models import Tenant
 
+    unique_id = uuid.uuid4().hex[:8]
     return Tenant.objects.create(
         name="Test Church",
-        subdomain="testchurch",
+        subdomain=f"testchurch-{unique_id}",
         is_active=True,
         currency="USD",
     )
@@ -123,7 +110,7 @@ def member(db, tenant, admin_user):
         last_name="Doe",
         email="john.doe@test.com",
         phone="+1234567890",
-        status="active",
+        member_status="active",
     )
 
 

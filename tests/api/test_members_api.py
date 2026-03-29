@@ -44,7 +44,7 @@ class TestMembersAPI:
             first_name="Other",
             last_name="Member",
             email="other@test.com",
-            status="active",
+            member_status="active",
         )
 
         # Get members
@@ -82,7 +82,7 @@ class TestMembersAPI:
             "first_name": "Updated",
             "last_name": member.last_name,
             "email": member.email,
-            "status": member.status,
+            "member_status": member.member_status,
         }
         response = authenticated_api_client.patch(
             f"/api/v1/members/{member.pk}/",
@@ -106,7 +106,7 @@ class TestMembersAPI:
     def test_member_filter_by_status(self, authenticated_api_client, member):
         """Test filtering members by status."""
         response = authenticated_api_client.get(
-            f"/api/v1/members/?status={member.status}"
+            f"/api/v1/members/?member_status={member.member_status}"
         )
         assert response.status_code == status.HTTP_200_OK
 

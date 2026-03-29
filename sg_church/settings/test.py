@@ -7,11 +7,11 @@ It uses an in-memory SQLite database for fast test execution.
 
 from .base import *  # noqa: F401, F403
 
-# Use SQLite for tests (faster than PostgreSQL)
+# Use SQLite for tests (file-based for compatibility)
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+        "NAME": BASE_DIR / "test_db.sqlite3",
     }
 }
 
@@ -91,7 +91,9 @@ MEDIA_URL = "/media/"
 INSTALLED_APPS = [app for app in INSTALLED_APPS if app != "debug_toolbar"]
 
 MIDDLEWARE = [
-    middleware for middleware in MIDDLEWARE if "debug_toolbar" not in middleware
+    middleware
+    for middleware in MIDDLEWARE
+    if "debug_toolbar" not in middleware and "TenantMiddleware" not in middleware
 ] + [
     "allauth.account.middleware.AccountMiddleware",
 ]
