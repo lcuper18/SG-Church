@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 
 from .models import Notification
+from .serializers import NotificationSerializer
 
 
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -17,6 +18,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = NotificationSerializer
 
     def get_queryset(self):
         """Return only notifications for the current user's tenant."""

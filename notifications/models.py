@@ -13,7 +13,6 @@ class Notification(models.Model):
 
     TYPE_CHOICES = [
         ("donation_received", "Donación Recibida"),
-        ("donation_received", "Nueva Donación"),
         ("expense_created", "Gasto Creado"),
         ("expense_approved", "Gasto Aprobado"),
         ("expense_rejected", "Gasto Rechazado"),
