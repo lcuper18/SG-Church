@@ -3,7 +3,7 @@ Serializers for Members API.
 """
 
 from rest_framework import serializers
-from members.models import Member, Family
+from members.models import Member, Family, Tag
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -99,6 +99,28 @@ class FamilySerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_member_count(self, obj):
+        return obj.members.count()
+
+
+class TagSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Tag model.
+    """
+
+    member_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tag
+        fields = [
+            "id",
+            "name",
+            "color",
+            "member_count",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
 
     def get_member_count(self, obj):
         return obj.members.count()

@@ -100,12 +100,12 @@ def tenant(db):
 
 
 @pytest.fixture
-def member(db, tenant, admin_user):
-    """Create a member for testing."""
+def member(db, admin_user):
+    """Create a member for testing (same tenant as admin_user)."""
     from members.models import Member
 
     return Member.objects.create(
-        tenant=tenant,
+        tenant=admin_user.tenant,  # Use admin's tenant
         first_name="John",
         last_name="Doe",
         email="john.doe@test.com",

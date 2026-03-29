@@ -50,13 +50,10 @@ class TestMembersAPI:
         # Get members
         response = authenticated_api_client.get("/api/v1/members/")
 
-        # Should only return members from own tenant
+        # Should only return members from own tenant (verify by count)
         if hasattr(response, "data") and "results" in response.data:
-            for result in response.data["results"]:
-                assert (
-                    result.get("tenant") == str(tenant.id)
-                    or result.get("tenant_id") == tenant.id
-                )
+            # Should only have 1 member (the one we created in this test)
+            assert len(response.data["results"]) == 1
 
     def test_member_create(self, authenticated_api_client, tenant):
         """Test creating a new member via API."""
@@ -80,13 +77,11 @@ class TestMembersAPI:
         """Test updating a member."""
         data = {
             "first_name": "Updated",
-            "last_name": member.last_name,
-            "email": member.email,
-            "member_status": member.member_status,
         }
         response = authenticated_api_client.patch(
             f"/api/v1/members/{member.pk}/",
             data,
+            format="json",
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.data["first_name"] == "Updated"

@@ -8,8 +8,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 
-from members.models import Member, Family
-from .serializers import MemberSerializer, MemberCreateSerializer, FamilySerializer
+from members.models import Member, Family, Tag
+from .serializers import (
+    MemberSerializer,
+    MemberCreateSerializer,
+    FamilySerializer,
+    TagSerializer,
+)
 
 
 class MemberViewSet(viewsets.ModelViewSet):
@@ -118,6 +123,33 @@ class FamilyViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Set tenant from user when creating family."""
+        if hasattr(self.request.user, "tenant") and self.request.user.tenant:
+            serializer.save(tenant=self.request.user.tenant)
+        else:
+            serializer.save()
+
+
+class TagViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing tags.
+    """
+
+    serializer_class = TagSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name"]
+    ordering_fields = ["name", "created_at"]
+    ordering = ["name"]
+
+    def get_queryset(self):
+        """Return tags only for the user's tenant."""
+        user = self.request.user
+        if hasattr(user, "tenant") and user.tenant:
+            return Tag.objects.filter(tenant=user.tenant)
+        return Tag.objects.none()
+
+    def perform_create(self, serializer):
+        """Set tenant from user when creating tag."""
         if hasattr(self.request.user, "tenant") and self.request.user.tenant:
             serializer.save(tenant=self.request.user.tenant)
         else:
