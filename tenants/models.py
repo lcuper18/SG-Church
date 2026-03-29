@@ -64,18 +64,20 @@ class Tenant(models.Model):
     denomination = models.CharField(
         max_length=50, choices=DENOMINATION_CHOICES, blank=True
     )
-    country = models.CharField(max_length=2, blank=True, help_text="ISO country code")
+    country = models.CharField(
+        max_length=2, blank=True, null=True, help_text="ISO country code"
+    )
     city = models.CharField(max_length=100, blank=True)
-    state = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
     logo = models.ImageField(upload_to="church_logos/", null=True, blank=True)
 
     # Contact information
-    email = models.EmailField()
-    phone = models.CharField(max_length=20, blank=True)
-    address = models.TextField(blank=True)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
 
     # Stripe integration
-    stripe_account_id = models.CharField(max_length=64, blank=True)
+    stripe_account_id = models.CharField(max_length=64, blank=True, null=True)
     stripe_onboarding_complete = models.BooleanField(default=False)
 
     # Configuration
