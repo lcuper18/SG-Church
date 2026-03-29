@@ -1,0 +1,45 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Bienvenido a {{ church_name }}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h2 style="color: #1f2937; margin-bottom: 20px;">
+        ¡Bienvenido{{ member.first_name|yes:", "|add:member.first_name }}!
+    </h2>
+    
+    <p style="color: #4b5563; margin-bottom: 30px;">
+        Nos alegra mucho tenerte como parte de nuestra comunidad en 
+        <strong>{{ church_name }}</strong>.
+    </p>
+    
+    <p style="color: #4b5563; margin-bottom: 30px;">
+        A partir de ahora puedes acceder a tu perfil y gestionar tu información,
+        ver tus donaciones, y mantenerte conectado con la iglesia.
+    </p>
+    
+    <a href="{{ site_url|default:'http://localhost:8000' }}" class="btn btn-primary">
+        Ir a mi Perfil
+    </a>
+    
+    <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-top: 30px; text-align: left;">
+        <h3 style="color: #1f2937; font-size: 16px; margin-bottom: 15px;">¿Qué puedes hacer?</h3>
+        
+        <ul style="color: #4b5563; margin-left: 20px;">
+            <li style="margin-bottom: 8px;">Gestionar tu información personal</li>
+            <li style="margin-bottom: 8px;">Ver tu historial de donaciones</li>
+            <li style="margin-bottom: 8px;">Actualizar tu información de contacto</li>
+            <li style="margin-bottom: 8px;">Participar en actividades de la iglesia</li>
+        </ul>
+    </div>
+    
+    <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+        Si tienes alguna pregunta, no dudes en contactarnos.
+    </p>
+    
+    <p style="color: #4b5563; margin-top: 20px;">
+        Con cariño,<br>
+        <strong>El equipo de {{ church_name }}</strong>
+    </p>
+</div>
+{% endblock %}

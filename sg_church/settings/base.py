@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     "tenants",
     "members",
     "finance",
+    "emails",
+    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -184,6 +186,9 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 USE_TZ = True
 
+# Celery Beat Scheduler
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
 # Email
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
@@ -194,6 +199,10 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@sgchurch.app")
+EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "SG Church")
+
+# Resend API (Email provider)
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 
 # File Storage
 DEFAULT_FILE_STORAGE = os.environ.get(

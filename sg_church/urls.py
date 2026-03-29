@@ -51,6 +51,7 @@ urlpatterns = [
     # Local apps
     path("api/v1/", include("members.api.urls")),
     path("api/v1/", include("finance.api.urls")),
+    path("api/v1/", include("notifications.urls")),
     # Public donation pages
     path(
         "donate/",
