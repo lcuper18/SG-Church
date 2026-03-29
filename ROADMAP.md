@@ -20,7 +20,8 @@ Plan de desarrollo por fases con timeline estimado, prioridades y entregables.
 | 1-2 | Setup Inicial | ✅ Completado | Django + DRF + Multi-tenant |
 | 3 | Gestión de Membresía | ✅ QA Verificado | Members, Families, Tags, Onboarding |
 | 4 | Donaciones y Finanzas | ✅ QA Verificado | Dashboard, Stripe, Reports |
-| 5 | Sistema de Notificaciones | 🚧 En Progreso | Email + In-App notifications |
+| 5 | Sistema de Notificaciones | ✅ QA Verificado | Email + In-App notifications |
+| 6 | Deploy y Testing | ⏳ Próximo | Production deploy, E2E tests |
 
 ---
 
@@ -125,27 +126,27 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 **Entregable**: Sistema de donaciones y contabilidad funcional ✅
 
-#### Sprint 11-12: Sistema de Notificaciones (Semanas 21-24) 🚧 EN PROGRESO
-- [ ] **Email Infrastructure**
-  - [ ] Configurar Resend API
-  - [ ] Configurar templates de email con Django
-  - [ ] Celery queue para emails
-  - [ ] Worker para procesar email queue
-  - [ ] Templates:
-    - [ ] Welcome email (nuevo miembro)
-    - [ ] Donation receipt
-    - [ ] Password reset
-  - [ ] Logging de emails enviados (email_logs)
+#### Sprint 11-12: Sistema de Notificaciones (Semanas 21-24) ✅ COMPLETADO
+- [x] **Email Infrastructure**
+  - [x] Configurar Resend API
+  - [x] Configurar templates de email con Django
+  - [x] Celery queue para emails
+  - [x] Worker para procesar email queue
+  - [x] Templates:
+    - [x] Welcome email (nuevo miembro)
+    - [x] Donation receipt
+    - [x] Password reset
+  - [x] Logging de emails enviados (email_logs)
 
-- [ ] **Notificaciones In-App**
-  - [ ] Schema para notifications
-  - [ ] API para crear/marcar leído
-  - [ ] Componente UI de notificaciones (bell icon)
-  - [ ] Realtime updates (polling o WebSocket básico)
+- [x] **Notificaciones In-App**
+  - [x] Schema para notifications
+  - [x] API para crear/marcar leído
+  - [x] Componente UI de notificaciones (bell icon)
+  - [ ] Realtime updates (polling o WebSocket básico) - Pendiente
 
-**Entregable**: Sistema de notificaciones por email
+**Entregable**: Sistema de notificaciones por email ✅
 
-#### Sprint 13: Deploy y Testing (Semanas 25-26)
+#### Sprint 13: Deploy y Testing (Semanas 25-26) 🚧 PRÓXIMO
 - [ ] **Deployment a Producción**
   - [ ] Deploy app a Railway/Render/Dokploy
   - [ ] Setup PostgreSQL (Railway/Render/Supabase)
