@@ -223,8 +223,10 @@ class OnboardingCompleteView(View):
             tenant=tenant,
         )
 
-        # Log the user in
-        login(request, user)
+        # Log the user in (specify backend to avoid multiple backends error)
+        from django.contrib.auth.backends import ModelBackend
+
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
 
         # Clear session
         del request.session["onboarding_church"]
