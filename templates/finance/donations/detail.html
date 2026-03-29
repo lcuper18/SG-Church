@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Donación - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'donation_list' %}">Donaciones</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Detalle</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">Información de la Donación</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" width="40%">Fecha</td>
+                            <td>{{ donation.donation_date|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Monto</td>
+                            <td><strong>${{ donation.amount|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Moneda</td>
+                            <td>{{ donation.currency }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Campaña</td>
+                            <td>{{ donation.get_campaign_display }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tipo</td>
+                            <td>{{ donation.get_donation_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Estado</td>
+                            <td>
+                                <span class="badge bg-{% if donation.status == 'completed' %}success{% elif donation.status == 'pending' %}warning{% elif donation.status == 'failed' %}danger{% else %}secondary{% endif %}">
+                                    {{ donation.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">Información del Donante</h5>
+                </div>
+                <div class="card-body">
+                    {% if donation.member %}
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" width="40%">Miembro</td>
+                            <td>
+                                <a href="{% url 'member_detail' donation.member.pk %}">
+                                    {{ donation.member.full_name }}
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Email</td>
+                            <td>{{ donation.member.email|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Teléfono</td>
+                            <td>{{ donation.member.phone|default:"-" }}</td>
+                        </tr>
+                    </table>
+                    {% else %}
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" width="40%">Nombre</td>
+                            <td>{{ donation.donor_name|default:"Anónimo" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Email</td>
+                            <td>{{ donation.donor_email|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Anónimo</td>
+                            <td>{% if donation.anonymous %}Sí{% else %}No{% endif %}</td>
+                        </tr>
+                    </table>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if donation.stripe_payment_intent_id %}
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">Información de Pago</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" width="40%">Payment Intent ID</td>
+                            <td><code>{{ donation.stripe_payment_intent_id }}</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Método de Pago</td>
+                            <td>{{ donation.payment_method|default:"-" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if donation.notes %}
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">Notas</h5>
+                </div>
+                <div class="card-body">
+                    {{ donation.notes }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

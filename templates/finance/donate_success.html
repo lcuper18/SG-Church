@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}¡Gracias por tu donación!{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="mb-4">
+                <div class="bg-success bg-opacity-10 d-inline-flex p-4 rounded-circle">
+                    <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+            </div>
+
+            <h1 class="mb-3">¡Gracias por tu donación!</h1>
+            <p class="lead text-muted mb-4">
+                Tu donación ha sido procesada exitosamente. Recibirás un correo electrónico de confirmación pronto.
+            </p>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <p class="mb-0">Número de transacción: <code>{{ session_id }}</code></p>
+                </div>
+            </div>
+
+            <a href="/" class="btn btn-primary">
+                Volver al inicio
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

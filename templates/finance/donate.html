@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Donar a {{ tenant.name|default:"SG Church" }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% if error %}
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+            {% else %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    {% if tenant %}
+                    <div class="text-center mb-4">
+                        {% if tenant.logo %}
+                        <img src="{{ tenant.logo.url }}" alt="{{ tenant.name }}" style="max-height: 80px;" class="mb-3">
+                        {% else %}
+                        <i class="bi bi-church text-primary" style="font-size: 3rem;"></i>
+                        {% endif %}
+                        <h3>{{ tenant.name }}</h3>
+                        <p class="text-muted">Gracias por tu donación</p>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" id="donate-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="church" value="{{ tenant.subdomain|default:'' }}">
+
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Monto de la Donación *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control form-control-lg" id="amount" name="amount" min="1" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="campaign" class="form-label">Tipo de Donación</label>
+                            <select class="form-select" id="campaign" name="campaign">
+                                <option value="tithe">Diezmo</option>
+                                <option value="offering" selected>Ofrenda General</option>
+                                <option value="building">Fondo de Construcción</option>
+                                <option value="missions">Misiones</option>
+                                <option value="other">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="donor_name" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="donor_name" name="donor_name">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="donor_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="donor_email" name="donor_email" required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="cover_fees" name="cover_fees">
+                            <label class="form-check-label" for="cover_fees">
+                                Cubrir las comisiones de procesamiento (2.9% + $0.30)
+                            </label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg" id="donate-btn">
+                                <i class="bi bi-heart"></i> Donar con Stripe
+                            </button>
+                        </div>
+
+                        <p class="text-center text-muted mt-3 mb-0">
+                            <small>Pagos procesados de forma segura por Stripe</small>
+                        </p>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    const form = document.getElementById('donate-form');
+    const btn = document.getElementById('donate-btn');
+
+    form.addEventListener('submit', function() {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Procesando...';
+    });
+</script>
+{% endblock %}

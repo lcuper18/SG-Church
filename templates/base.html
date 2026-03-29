@@ -48,6 +48,11 @@
                                 <i class="bi bi-tags"></i> Etiquetas
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'finance_dashboard' %}">
+                                <i class="bi bi-cash-stack"></i> Finanzas
+                            </a>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 {{ user.get_full_name|default:user.username }}

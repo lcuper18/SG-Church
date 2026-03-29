@@ -6,7 +6,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
 import allauth.urls
+
+
+# Simple health check endpoint
+def health_check(request):
+    return HttpResponse("OK")
+
 
 # Override allauth URLs to use custom templates
 # Remove default allauth and add our custom versions
@@ -36,12 +43,41 @@ allauth_url_patterns = [
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
+    # Health check
+    path("health/", health_check, name="health_check"),
     # Allauth (authentication) - custom templates
     path("accounts/", include((allauth_url_patterns, "allauth"), namespace="account")),
     path("accounts/social/", include("allauth.socialaccount.urls")),
     # Local apps
     path("api/v1/", include("members.api.urls")),
     path("api/v1/", include("finance.api.urls")),
+    # Public donation pages
+    path(
+        "donate/",
+        lambda r: __import__("finance.views", fromlist=["donate_page"]).donate_page(r),
+        name="donate_page",
+    ),
+    path(
+        "donate/checkout/",
+        lambda r: __import__(
+            "finance.views", fromlist=["create_checkout_session"]
+        ).create_checkout_session(r),
+        name="donate_checkout",
+    ),
+    path(
+        "donate/success/",
+        lambda r: __import__(
+            "finance.views", fromlist=["donation_success"]
+        ).donation_success(r),
+        name="donate_success",
+    ),
+    path(
+        "api/v1/webhooks/stripe/",
+        lambda r: __import__(
+            "finance.views", fromlist=["stripe_webhook"]
+        ).stripe_webhook(r),
+        name="stripe_webhook",
+    ),
     # Home and members
     path("", include("core.urls")),
     path("members/", include("members.urls")),

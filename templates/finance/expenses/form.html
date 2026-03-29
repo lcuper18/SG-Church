@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Gasto - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'expense_list' %}">Gastos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% if object %}Editar{% else %}Nuevo{% endif %} Gasto
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h4 class="mb-0">
+                        {% if object %}Editar{% else %}Nuevo{% endblock %} Gasto
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción *</label>
+                            <input type="text" class="form-control" id="description" name="description" value="{{ form.description.value|default:'' }}" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="amount" class="form-label">Monto *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" value="{{ form.amount.value|default:'' }}" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Categoría *</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="operations" {% if form.category.value == 'operations' %}selected{% endif %}>Operaciones</option>
+                                    <option value="salaries" {% if form.category.value == 'salaries' %}selected{% endif %}>Salarios</option>
+                                    <option value="utilities" {% if form.category.value == 'utilities' %}selected{% endif %}>Servicios</option>
+                                    <option value="maintenance" {% if form.category.value == 'maintenance' %}selected{% endif %}>Mantenimiento</option>
+                                    <option value="programs" {% if form.category.value == 'programs' %}selected{% endif %}>Programas</option>
+                                    <option value="missions" {% if form.category.value == 'missions' %}selected{% endif %}>Misiones</option>
+                                    <option value="other" {% if form.category.value == 'other' %}selected{% endif %}>Otro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="expense_date" class="form-label">Fecha del Gasto *</label>
+                                <input type="date" class="form-control" id="expense_date" name="expense_date" value="{{ form.expense_date.value|default:'' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="due_date" class="form-label">Fecha de Vencimiento</label>
+                                <input type="date" class="form-control" id="due_date" name="due_date" value="{{ form.due_date.value|default:'' }}">
+                            </div>
+                        </div>
+
+                        {% if object %}
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Estado</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="pending" {% if object.status == 'pending' %}selected{% endif %}>Pendiente</option>
+                                <option value="approved" {% if object.status == 'approved' %}selected{% endif %}>Aprobado</option>
+                                <option value="paid" {% if object.status == 'paid' %}selected{% endif %}>Pagado</option>
+                                <option value="rejected" {% if object.status == 'rejected' %}selected{% endif %}>Rechazado</option>
+                            </select>
+                        </div>
+                        {% endif %}
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3 text-muted">Información del Proveedor</h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="vendor_name" class="form-label">Nombre del Proveedor</label>
+                                <input type="text" class="form-control" id="vendor_name" name="vendor_name" value="{{ form.vendor_name.value|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="vendor_email" class="form-label">Email del Proveedor</label>
+                                <input type="email" class="form-control" id="vendor_email" name="vendor_email" value="{{ form.vendor_email.value|default:'' }}">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-3">
+                            <label for="receipt" class="form-label">Recibo (opcional)</label>
+                            <input type="file" class="form-control" id="receipt" name="receipt" accept=".pdf,.jpg,.jpeg,.png">
+                            {% if object and object.receipt %}
+                            <small class="text-muted">Actual: <a href="{{ object.receipt.url }}">{{ object.receipt.name }}</a></small>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'expense_list' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if object %}Guardar Cambios{% else %}Crear Gasto{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

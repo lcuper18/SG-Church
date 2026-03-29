@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Donaciones - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0"><i class="bi bi-heart"></i> Donaciones</h1>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar donante..." value="{{ request.GET.search|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pendiente</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completado</option>
+                        <option value="failed" {% if request.GET.status == 'failed' %}selected{% endif %}>Fallido</option>
+                        <option value="refunded" {% if request.GET.status == 'refunded' %}selected{% endif %}>Reembolsado</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="campaign" class="form-select">
+                        <option value="">Todas las campañas</option>
+                        <option value="tithe" {% if request.GET.campaign == 'tithe' %}selected{% endif %}>Diezmo</option>
+                        <option value="offering" {% if request.GET.campaign == 'offering' %}selected{% endif %}>Ofrenda</option>
+                        <option value="building" {% if request.GET.campaign == 'building' %}selected{% endif %}>Construcción</option>
+                        <option value="missions" {% if request.GET.campaign == 'missions' %}selected{% endif %}>Misiones</option>
+                        <option value="other" {% if request.GET.campaign == 'other' %}selected{% endif %}>Otro</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_from" class="form-control" placeholder="Desde" value="{{ request.GET.date_from|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_to" class="form-control" placeholder="Hasta" value="{{ request.GET.date_to|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Donations Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Donante</th>
+                            <th>Monto</th>
+                            <th>Campaña</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donation in donations %}
+                        <tr>
+                            <td>{{ donation.donation_date|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if donation.member %}
+                                <a href="{% url 'member_detail' donation.member.pk %}">
+                                    {{ donation.member.full_name }}
+                                </a>
+                                {% elif donation.anonymous %}
+                                <span class="text-muted">Anónimo</span>
+                                {% else %}
+                                {{ donation.donor_name|default:"Anónimo" }}
+                                {% endif %}
+                            </td>
+                            <td>${{ donation.amount|floatformat:2 }}</td>
+                            <td>{{ donation.get_campaign_display }}</td>
+                            <td>
+                                <span class="badge bg-{% if donation.status == 'completed' %}success{% elif donation.status == 'pending' %}warning{% elif donation.status == 'failed' %}danger{% else %}secondary{% endif %}">
+                                    {{ donation.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'donation_detail' donation.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No se encontraron donaciones.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">Primera</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
