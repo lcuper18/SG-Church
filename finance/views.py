@@ -576,38 +576,42 @@ def handle_checkout_session(session):
         donor_email=donor_email or "",
     )
 
-# Create notification for church admins
-        try:
-            from tenants.models import Tenant
-            from notifications.models import create_notification
-            from django.contrib.auth import get_user_model
+    # Create notification for church admins
+    try:
+        from tenants.models import Tenant
+        from notifications.models import create_notification
+        from django.contrib.auth import get_user_model
 
-            tenant = Tenant.objects.get(id=tenant_id)
-            
-            # Get church admins
-            admins = get_user_model().objects.filter(tenant=tenant, is_staff=True)
-            
-            campaign_display = dict(Donation.CAMPAIGN_CHOICES).get(campaign, campaign.title())
-            
-            for admin in admins:
-                create_notification(
-                    tenant=tenant,
-                    user=admin,
-                    title="Nueva donación recibida",
-                    message=f"Se recibió una donación de ${amount:.2f} ({campaign_display})",
-                    notification_type="donation_received",
-                    link=f"/finance/donations/{donation.pk}/",
-                    content_type="finance.donation",
-                    object_id=donation.pk,
-                )
-                
-            # Send receipt email to donor asynchronously
-            from emails.tasks import send_donation_receipt_task
-            send_donation_receipt_task.delay(donation.pk)
-            
+        tenant = Tenant.objects.get(id=tenant_id)
+
+        # Get church admins
+        admins = get_user_model().objects.filter(tenant=tenant, is_staff=True)
+
+        campaign_display = dict(Donation.CAMPAIGN_CHOICES).get(
+            campaign, campaign.title()
+        )
+
+        for admin in admins:
+            create_notification(
+                tenant=tenant,
+                user=admin,
+                title="Nueva donación recibida",
+                message=f"Se recibió una donación de ${amount:.2f} ({campaign_display})",
+                notification_type="donation_received",
+                link=f"/finance/donations/{donation.pk}/",
+                content_type="finance.donation",
+                object_id=donation.pk,
+            )
+
+        # Send receipt email to donor asynchronously
+        from emails.tasks import send_donation_receipt_task
+
+        send_donation_receipt_task.delay(donation.pk)
+
     except Exception as e:
         # Log error but don't break the donation flow
         import logging
+
         logging.error(f"Error creating notification: {e}")
 
 

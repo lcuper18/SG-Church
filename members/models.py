@@ -39,7 +39,11 @@ class User(AbstractUser):
 
     # Link to member profile (optional)
     member_profile = models.OneToOneField(
-        "Member", on_delete=models.SET_NULL, null=True, blank=True, related_name="user"
+        "Member",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="linked_user",
     )
 
     class Meta:
@@ -152,7 +156,7 @@ class Member(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="member_profile",
+        related_name="member",
     )
 
     # Timestamps

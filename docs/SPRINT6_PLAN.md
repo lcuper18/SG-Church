@@ -657,25 +657,47 @@ Procfile                      # For some platforms
 
 ---
 
-## Métricas de Éxito
+## Estado de QA (Parte D) - Marzo 28, 2026
 
-### Por RESPONSABLE
+### Checklist de Validación QA
 
-#### 👨‍💻 PROGRAMADOR
-- [ ] E2E tests críticos escritos
-- [ ] Integration tests escritos
-- [ ] User guides creados
+#### ✅ PROGRAMADOR - Completado
+- [x] E2E tests críticos escritos (onboarding, members, donations)
+- [x] Integration tests escritos (members API, finance API)
+- [x] pytest.ini configurado
+- [x] conftest.py con fixtures
+- [x] USER_ONBOARDING.md creado
+- [x] USER_MEMBERS.md creado
 
-#### ⚙️ DEV OPS
-- [ ] App deployada y accessible
-- [ ] HTTPS funcionando
-- [ ] Base de datos operativa
-- [ ] Celery funcionando
+#### ⚙️ DEV OPS - Completado
+- [x] Dockerfile configurado
+- [x] docker-compose.dev.yml configurado
+- [x] PostgreSQL configurado (Docker)
+- [x] Redis configurado (Docker)
+- [ ] App deployada a producción (pendiente)
 
-#### ✅ QA
-- [ ] E2E tests pasando
-- [ ] 0 errores críticos
-- [ ] Todas las funcionalidades validadas
+#### ✅ QA - EN PROGRESO
+- [ ] Tests ejecutados en entorno controlado
+- [ ] Validación de funcionalidad en producción
+
+### Issues Encontrados y Solucionados
+
+1. **IndentationError en finance/views.py** - ✅ CORREGIDO
+   - El bloque try dentro de stripe_webhook tenía indentación incorrecta
+
+2. **Conflicto de campos en Member/User models** - ✅ CORREGIDO  
+   - related_name="member_profile"冲突 entre Member.user y User.member_profile
+   - Cambiado a related_name="member" y "linked_user"
+
+3. **Migraciones faltantes** - ✅ CREADAS
+   - Generadas migraciones 0001_initial para tenants y members
+
+### Notas para QA Futuro
+
+- Los tests requieren:
+  - PostgreSQL o SQLite en memoria para tests
+  - Ejecutar `python manage.py migrate` antes de tests
+  - Para E2E: servidor corriendo en background
 
 ---
 

@@ -33,11 +33,7 @@ def pytest_configure(config):
 @pytest.fixture(scope="session")
 def django_db_setup():
     """Setup test database."""
-    from django.test.utils import setup_test_environment, teardown_test_environment
-
-    setup_test_environment()
-    yield
-    teardown_test_environment()
+    pass  # pytest-django handles this automatically
 
 
 @pytest.fixture

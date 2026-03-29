@@ -8,6 +8,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
 import allauth.urls
+from allauth.account.views import LoginView, LogoutView, SignupView, PasswordResetView
 
 
 # Simple health check endpoint
@@ -20,22 +21,22 @@ def health_check(request):
 allauth_url_patterns = [
     path(
         "login/",
-        allauth.urls.LoginView.as_view(template_name="account/login.html"),
+        LoginView.as_view(template_name="account/login.html"),
         name="account_login",
     ),
     path(
         "logout/",
-        allauth.urls.LogoutView.as_view(template_name="account/logout.html"),
+        LogoutView.as_view(template_name="account/logout.html"),
         name="account_logout",
     ),
     path(
         "signup/",
-        allauth.urls.SignupView.as_view(template_name="account/signup.html"),
+        SignupView.as_view(template_name="account/signup.html"),
         name="account_signup",
     ),
     path(
         "password/reset/",
-        allauth.urls.PasswordResetView.as_view(),
+        PasswordResetView.as_view(),
         name="account_reset_password",
     ),
 ]
