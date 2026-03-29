@@ -21,7 +21,7 @@ Plan de desarrollo por fases con timeline estimado, prioridades y entregables.
 | 3 | Gestión de Membresía | ✅ QA Verificado | Members, Families, Tags, Onboarding |
 | 4 | Donaciones y Finanzas | ✅ QA Verificado | Dashboard, Stripe, Reports |
 | 5 | Sistema de Notificaciones | ✅ QA Verificado | Email + In-App notifications |
-| 6 | Deploy y Testing | ⏳ Próximo | Production deploy, E2E tests |
+| 6 | Deploy y Testing | 🚧 En Progreso | Production deploy, E2E tests |
 
 ---
 
@@ -146,7 +146,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 **Entregable**: Sistema de notificaciones por email ✅
 
-#### Sprint 13: Deploy y Testing (Semanas 25-26) 🚧 PRÓXIMO
+#### Sprint 13: Deploy y Testing (Semanas 25-26) 🚧 EN PROGRESO
 - [ ] **Deployment a Producción**
   - [ ] Deploy app a Railway/Render/Dokploy
   - [ ] Setup PostgreSQL (Railway/Render/Supabase)
