@@ -12,19 +12,43 @@ Preparar la aplicación para producción y establecer流程 de testing que garan
 
 ---
 
-## Entregables
+## Responsabilidades por Rol
 
-| # | Módulo | Descripción | Prioridad |
-|---|--------|-------------|-----------|
-| 1 | Deploy a Producción | Configurar Dokploy/Railway/Render | Alta |
-| 2 | Base de Datos | PostgreSQL en producción | Alta |
-| 3 | Redis | Configurar para Celery | Alta |
-| 4 | Variables de Entorno | Configuración segura | Alta |
-| 5 | Dominio y SSL | Dominio personalizado con HTTPS | Media |
-| 6 | E2E Tests | Tests críticos con Playwright | Alta |
-| 7 | Integration Tests | Tests de APIs | Media |
+### 👨‍💻 PROGRAMADOR
+- Escribir tests E2E con Playwright
+- Escribir integration tests
+- Crear user guides (documentación técnica)
+
+### ⚙️ DEV OPS
+- Configurar infraestructura de producción
+- Deploy de la aplicación
+- Configurar base de datos, Redis, SSL
+- Gestion de variables de entorno
+
+### ✅ QA
+- Ejecutar tests E2E e Integration
+- Verificar funcionalidad en producción
+- Validar checklist de calidad
 
 ---
+
+## Entregables
+
+| # | Módulo | Descripción | Prioridad | Responsable |
+|---|--------|-------------|-----------|--------------|
+| 1 | Deploy a Producción | Configurar Dokploy/Railway/Render | Alta | **DEV OPS** |
+| 2 | Base de Datos | PostgreSQL en producción | Alta | **DEV OPS** |
+| 3 | Redis | Configurar para Celery | Alta | **DEV OPS** |
+| 4 | Variables de Entorno | Configuración segura | Alta | **DEV OPS** |
+| 5 | Dominio y SSL | Dominio personalizado con HTTPS | Media | **DEV OPS** |
+| 6 | E2E Tests | Tests críticos con Playwright | Alta | **PROGRAMADOR** |
+| 7 | Integration Tests | Tests de APIs | Media | **PROGRAMADOR** |
+| 8 | User Guides | Documentación para usuarios | Media | **PROGRAMADOR** |
+| 9 | QA Validation | Ejecutar tests y verificar | Alta | **QA** |
+
+---
+
+# PARTE A: INFRAESTRUCTURA (DEV OPS)
 
 ## 1. Deployment a Producción
 
@@ -58,7 +82,7 @@ services:
       interval: 30
 ```
 
-### Pre-requisitos del Servidor
+### Pre-requisitos del Servidor (DEV OPS)
 
 ```bash
 # Instalar dependencias del sistema
@@ -69,7 +93,7 @@ sudo apt install python3.12 python3.12-venv postgresql redis-server nginx
 curl -fsSL https://get.docker.com | sh
 ```
 
-### Archivos de Producción Necesarios
+### Archivos de Producción Necesarios (DEV OPS)
 
 ```
 # gunicorn.config.py (ya existe o crear)
@@ -88,7 +112,7 @@ beat: celery -A sg_church beat -l info
 
 ---
 
-## 2. Base de Datos PostgreSQL
+## 2. Base de Datos PostgreSQL (DEV OPS)
 
 ### Configuración en Producción
 
@@ -110,7 +134,7 @@ DATABASES = {
 }
 ```
 
-### Migraciones
+### Migraciones (DEV OPS)
 
 ```bash
 # En producción
@@ -118,7 +142,7 @@ python manage.py migrate --noinput
 python manage.py collectstatic --noinput --optimize
 ```
 
-### Variables de Entorno Requeridas
+### Variables de Entorno Requeridas (DEV OPS)
 
 ```env
 # Database
@@ -148,7 +172,7 @@ STRIPE_PUBLISHABLE_KEY=pk_live_xxx
 
 ---
 
-## 3. Redis para Celery
+## 3. Redis para Celery (DEV OPS)
 
 ### Configuración
 
@@ -170,9 +194,9 @@ celery -A sg_church inspect ping
 
 ---
 
-## 4. Dominio y SSL
+## 4. Dominio y SSL (DEV OPS)
 
-### Configuración con Nginx (si es necesario)
+### Configuración con Nginx
 
 ```nginx
 # /etc/nginx/sites-available/sgchurch
@@ -212,16 +236,18 @@ sudo certbot renew --dry-run
 
 ---
 
+# PARTE B: TESTS (PROGRAMADOR)
+
 ## 5. E2E Tests con Playwright
 
-### Instalación
+### Instalación (PROGRAMADOR)
 
 ```bash
 pip install playwright
 playwright install chromium
 ```
 
-### Configuración
+### Configuración (PROGRAMADOR)
 
 ```python
 # conftest.py
@@ -243,7 +269,7 @@ def page(browser):
     page.close()
 ```
 
-### Tests Críticos
+### Tests Críticos (PROGRAMADOR)
 
 ```python
 # tests/e2e/test_onboarding.py
@@ -309,7 +335,7 @@ def test_donation_flow(page):
 
 ---
 
-## 6. Integration Tests
+## 6. Integration Tests (PROGRAMADOR)
 
 ### Setup
 
@@ -355,94 +381,119 @@ def test_member_create_api(authenticated_client):
 
 ---
 
-## Checklist de Desarrollo
+# PARTE C: DOCUMENTACIÓN (PROGRAMADOR)
 
-### Pre-requisitos
-- [ ] Cuenta en proveedor de hosting (Dokploy/Railway/Render)
-- [ ] Dominio registrado
-- [ ] Cuenta en Resend API
-- [ ] Cuenta en Stripe (live mode)
+## 7. User Guides
 
-### Deployment
-- [ ] Repository conectado al hosting
-- [ ] Dockerfile o build config
-- [ ] Variables de entorno configuradas
-- [ ] Deploy exitoso
+### 1. USER_ONBOARDING.md (PROGRAMADOR)
 
-### Base de Datos
-- [ ] PostgreSQL configurado
-- [ ] Migraciones aplicadas
-- [ ] Datos seed opcionales
+```markdown
+# Guía de Usuario: Onboarding
 
-### Redis/Celery
-- [ ] Redis instalado/configurado
-- [ ] Celery worker funcionando
-- [ ] Tasks se ejecutan correctamente
+## Registrar tu Iglesia
 
-### SSL
-- [ ] HTTPS funcionando
-- [ ] Redirect HTTP → HTTPS
-- [ ] Certificado auto-renovable
+1. Ve a [URL de registro]
+2. Ingresa el nombre de tu iglesia
+3. Elige un subdominio
+4. Crea la cuenta de administrador
+5. Completa la configuración básica
+6. ¡Listo! Ya puedes usar SG Church
 
-### Testing
-- [ ] Playwright instalado
-- [ ] E2E tests críticos escritos
-- [ ] Tests pasan localmente
-- [ ] Integration tests de APIs
+## Configuración Inicial
 
-### Documentación
-- [ ] User guide: Onboarding
-- [ ] User guide: Gestión de miembros
-- [ ] User guide: Donaciones
+- Logo de la iglesia
+- Información de contacto
+- Moneda predeterminada
+```
+
+### 2. USER_MEMBERS.md (PROGRAMADOR)
+
+```markdown
+# Guía de Usuario: Gestión de Miembros
+
+## Agregar Miembro
+
+1. Ve a Miembros
+2. Click en "Nuevo Miembro"
+3. Llena el formulario
+4. Guarda
+
+## Editar Miembro
+
+1. Click en el miembro
+2. Click en "Editar"
+3. Modifica datos
+4. Guarda
+```
+
+### 3. USER_DONATIONS.md (PROGRAMADOR)
+
+```markdown
+# Guía de Usuario: Donaciones
+
+## Recibir Donaciones
+
+1. Comparte el link de donate: /donate/?church=tusubdominio
+2. Los donantes pueden pagar con tarjeta
+3. Las donaciones aparecen automáticamente
+
+## Ver Reportes
+
+1. Ve a Finanzas
+2. Consulta el dashboard
+3. Exporta reportes
+```
 
 ---
 
-## Checklist de QA
+# PARTE D: QA VALIDATION
 
-### Deployment
+## 8. Checklist de QA
+
+### Deployment (QA)
 - [ ] App accessible en producción
 - [ ] Páginas cargan correctamente
 - [ ] Assets estáticos servidos
 
-### Base de Datos
+### Base de Datos (QA)
 - [ ] Datos se guardan correctamente
 - [ ] Multi-tenancy funciona
 - [ ] Aislamiento entre tenants
 
-### Autenticación
+### Autenticación (QA)
 - [ ] Login funciona
 - [ ] Logout funciona
 - [ ] Password reset funciona
 - [ ] Acceso a páginas protegidas
 
-### Miembros
+### Miembros (QA)
 - [ ] Crear miembro funciona
 - [ ] Editar miembro funciona
 - [ ] Lista de miembros carga
 - [ ] Búsqueda funciona
 
-### Finanzas
+### Finanzas (QA)
 - [ ] Dashboard carga
 - [ ] Crear gasto funciona
 - [ ] Lista de donaciones carga
 - [ ] Gráficos se renderizan
 
-### Donaciones
+### Donaciones (QA)
 - [ ] Página de donate accesible
 - [ ] Formulario redirecciona a Stripe
 - [ ] Webhook actualiza estado
 
-### Notificaciones
+### Notificaciones (QA)
 - [ ] Bell icon visible
 - [ ] Notificaciones se crean
 - [ ] Marcar como leído funciona
 
-### SSL
+### SSL (QA)
 - [ ] HTTPS funciona
 - [ ] No hay warnings de seguridad
 - [ ] Certificado válido
 
-### E2E Tests
+### E2E Tests (QA - Ejecutar)
 - [ ] Test: Onboarding completo
 - [ ] Test: Crear miembro
 - [ ] Test: Procesar donación test
@@ -450,9 +501,51 @@ def test_member_create_api(authenticated_client):
 
 ---
 
+## Checklist por Responsable
+
+### 👨‍💻 PROGRAMADOR
+
+- [ ] Playwright instalado
+- [ ] E2E test: Onboarding escrito
+- [ ] E2E test: Members escrito
+- [ ] E2E test: Donations escrito
+- [ ] Integration test: Members API escrito
+- [ ] Integration test: Finance API escrito
+- [ ] pytest.ini configurado
+- [ ] USER_ONBOARDING.md creado
+- [ ] USER_MEMBERS.md creado
+- [ ] USER_DONATIONS.md creado
+
+### ⚙️ DEV OPS
+
+- [ ] Cuenta en proveedor de hosting
+- [ ] Repository conectado
+- [ ] Dockerfile o build config
+- [ ] PostgreSQL configurado
+- [ ] Migraciones aplicadas
+- [ ] Redis configurado
+- [ ] Celery worker funcionando
+- [ ] Variables de entorno configuradas
+- [ ] Dominio registrado
+- [ ] SSL instalado y funcionando
+- [ ] Deploy exitoso
+
+### ✅ QA
+
+- [ ] E2E tests ejecutados localmente
+- [ ] E2E tests ejecutados en producción
+- [ ] Login/Logout funciona
+- [ ] Crear miembro funciona
+- [ ] Dashboard carga
+- [ ] Donaciones procesa
+- [ ] Multi-tenancy funciona
+- [ ] SSL válido
+
+---
+
 ## Notas Técnicas
 
-### Variables de Entorno de Producción
+### Variables de Entorno de Producción (DEV OPS)
 
 ```bash
 # NUNCA commitear valores reales
@@ -476,7 +569,7 @@ RESEND_API_KEY=re_xxx
 STRIPE_SECRET_KEY=sk_test_xxx
 ```
 
-### Comandos de Deploy
+### Comandos de Deploy (DEV OPS)
 
 ```bash
 # Railway
@@ -511,26 +604,28 @@ sudo systemctl restart celery
 ## Dependencias
 
 ```
-# Production
+# Production (DEV OPS)
 gunicorn>=21.0
 psycopg2-binary>=2.9
 
-# Testing
+# Testing (PROGRAMADOR)
 playwright>=1.40
 pytest>=7.0
 pytest-django>=4.5
 pytest-cov>=4.0
 pytest-playwright>=0.4
 
-# Monitoring (opcional)
+# Monitoring (DEV OPS - opcional)
 sentry-sdk>=1.40
 ```
 
 ---
 
-## Archivos a Modificar
+## Archivos a Crear/Modificar
 
-### Nuevos Archivos
+### Por RESPONSABLE
+
+#### 👨‍💻 PROGRAMADOR
 ```
 tests/
 ├── conftest.py                 # Pytest fixtures
@@ -545,92 +640,42 @@ tests/
 │   └── test_finance_api.py
 └── test_settings.py          # Test settings
 
-gunicorn.config.py            # Production config
-Procfile                      # For some platforms
-```
-
-### Archivos a Modificar
-```
 pytest.ini                   # Pytest config
-.env.example                # Add production vars
+
 docs/
 ├── USER_ONBOARDING.md      # New
 ├── USER_MEMBERS.md         # New
 └── USER_DONATIONS.md       # New
 ```
 
----
-
-## User Guides a Crear
-
-### 1. USER_ONBOARDING.md
-
-```markdown
-# Guía de Usuario: Onboarding
-
-## Registrar tu Iglesia
-
-1. Ve a [URL de registro]
-2. Ingresa el nombre de tu iglesia
-3. Elige un subdominio
-4. Crea la cuenta de administrador
-5. Completa la configuración básica
-6. ¡Listo! Ya puedes usar SG Church
-
-## Configuración Inicial
-
-- Logo de la iglesia
-- Información de contacto
-- Moneda predeterminada
+#### ⚙️ DEV OPS
 ```
-
-### 2. USER_MEMBERS.md
-
-```markdown
-# Guía de Usuario: Gestión de Miembros
-
-## Agregar Miembro
-
-1. Ve a Miembros
-2. Click en "Nuevo Miembro"
-3. Llena el formulario
-4. Guarda
-
-## Editar Miembro
-
-1. Click en el miembro
-2. Click en "Editar"
-3. Modifica datos
-4. Guarda
-```
-
-### 3. USER_DONATIONS.md
-
-```markdown
-# Guía de Usuario: Donaciones
-
-## Recibir Donaciones
-
-1. Comparte el link de donate: /donate/?church=tusubdominio
-2. Los donantes pueden pagar con tarjeta
-3. Las donaciones aparecen automáticamente
-
-## Ver Reportes
-
-1. Ve a Finanzas
-2. Consulta el dashboard
-3. Exporta reportes
+gunicorn.config.py            # Production config
+Procfile                      # For some platforms
+.env.example                # Add production vars
 ```
 
 ---
 
 ## Métricas de Éxito
 
+### Por RESPONSABLE
+
+#### 👨‍💻 PROGRAMADOR
+- [ ] E2E tests críticos escritos
+- [ ] Integration tests escritos
+- [ ] User guides creados
+
+#### ⚙️ DEV OPS
 - [ ] App deployada y accessible
 - [ ] HTTPS funcionando
+- [ ] Base de datos operativa
+- [ ] Celery funcionando
+
+#### ✅ QA
 - [ ] E2E tests pasando
 - [ ] 0 errores críticos
-- [ ] Documentación completa
+- [ ] Todas las funcionalidades validadas
 
 ---
 
