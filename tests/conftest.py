@@ -2,11 +2,43 @@
 Pytest configuration and fixtures for SG Church tests.
 """
 
+import concurrent.futures
 import os
 import pytest
 
 # Configure Django settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sg_church.settings.test")
+
+# Dedicated OS thread that owns Playwright's entire lifecycle for the whole
+# test session (start, browser launch, every page interaction, and -- via
+# pytest_pyfunc_call below -- the E2E test bodies themselves). Playwright's
+# sync API can only be driven from the thread that started it (it relies on
+# greenlets, which are thread-local), and that thread ends up with a
+# "running" asyncio event loop for the rest of the process (confirmed via
+# asyncio.get_running_loop() right after sync_playwright().start() +
+# browser.launch()). That trips Django's @async_unsafe guard on any later
+# same-thread DB operation. Keeping Playwright fully confined to this one
+# worker thread, and never touching it from pytest's main thread, keeps the
+# main thread -- where pytest-django does all its DB setup -- free of that
+# poisoning entirely, regardless of fixture/test ordering.
+_playwright_thread_pool = concurrent.futures.ThreadPoolExecutor(
+    max_workers=1, thread_name_prefix="playwright-worker"
+)
+
+
+def pytest_pyfunc_call(pyfuncitem):
+    """Run E2E test bodies on the Playwright worker thread instead of
+    pytest's main thread -- see `_playwright_thread_pool` above. Since
+    `browser`/`page` are created on that worker thread, every call into
+    them, including the ones the test function itself makes, has to happen
+    on that same thread too."""
+    if "page" in pyfuncitem.fixturenames or "browser" in pyfuncitem.fixturenames:
+        testfunction = pyfuncitem.obj
+        funcargs = pyfuncitem.funcargs
+        testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}
+        _playwright_thread_pool.submit(testfunction, **testargs).result()
+        return True
+    return None
 
 
 @pytest.fixture
@@ -188,45 +220,59 @@ def regular_client_same_tenant(client, regular_user_same_tenant):
 
 
 @pytest.fixture(scope="session")
-def browser(django_db_setup):
+def browser():
     """
     Session-scoped browser instance for E2E tests.
     Requires Playwright to be installed: pip install playwright
 
-    Depends on `django_db_setup` (unused directly) purely to force pytest to
-    create Django's test database *before* Playwright starts. Playwright's
-    sync API leaves a "running" asyncio event loop in this process once
-    started (confirmed: `asyncio.get_running_loop()` succeeds right after
-    `sync_playwright().start()` + launching a browser, for the rest of the
-    process) — Django's `@async_unsafe` guard then raises
-    `SynchronousOnlyOperation` on any later DB setup that shares this
-    session-scoped fixture's lifetime. Since `browser` is session-scoped and
-    never stopped between tests, that poisons every `@pytest.mark.django_db`
-    test in the run unless the DB already exists first.
+    Started, and later stopped, on `_playwright_thread_pool`'s dedicated
+    worker thread (see the top of this file) rather than directly here, so
+    that thread -- not pytest's main thread -- is the one that ends up with
+    Playwright's "running" asyncio event loop.
     """
-    try:
+
+    def _start():
         from playwright.sync_api import sync_playwright
 
-        playwright = sync_playwright().start()
-        browser = playwright.chromium.launch(headless=True)
-        yield browser
-        browser.close()
-        playwright.stop()
+        playwright_ctx = sync_playwright().start()
+        browser_instance = playwright_ctx.chromium.launch(headless=True)
+        return playwright_ctx, browser_instance
+
+    try:
+        playwright_ctx, browser_instance = _playwright_thread_pool.submit(_start).result()
     except ImportError:
         pytest.skip("Playwright not installed. Install with: pip install playwright")
+        return
+
+    yield browser_instance
+
+    def _stop():
+        browser_instance.close()
+        playwright_ctx.stop()
+
+    _playwright_thread_pool.submit(_stop).result()
 
 
 @pytest.fixture
 def page(browser):
-    """Create a new page for each test."""
-    context = browser.new_context(
-        viewport={"width": 1280, "height": 720},
-        locale="es-CR",  # Spanish Costa Rica
-    )
-    page = context.new_page()
-    yield page
-    page.close()
-    context.close()
+    """Create a new page for each test, on the same Playwright worker
+    thread that created `browser`."""
+
+    def _open():
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 720},
+            locale="es-CR",  # Spanish Costa Rica
+        )
+        return context, context.new_page()
+
+    context, page_instance = _playwright_thread_pool.submit(_open).result()
+    yield page_instance
+
+    def _close():
+        page_instance.close()
+        context.close()
+
+    _playwright_thread_pool.submit(_close).result()
 
 
 @pytest.fixture
