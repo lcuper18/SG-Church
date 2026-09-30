@@ -53,7 +53,11 @@ class OnboardingChurchView(View):
 
     def get(self, request):
         # Check if previous step is complete (not applicable for step 1)
-        return render(request, self.template_name)
+        return render(
+            request,
+            self.template_name,
+            {"country_choices": Tenant.COUNTRY_CHOICES},
+        )
 
     def post(self, request):
         # Store church info in session
@@ -145,7 +149,11 @@ class OnboardingSettingsView(View):
             return redirect("onboarding_church")
         if "onboarding_admin" not in request.session:
             return redirect("onboarding_admin")
-        return render(request, self.template_name)
+        return render(
+            request,
+            self.template_name,
+            {"currency_choices": Tenant.CURRENCY_CHOICES},
+        )
 
     def post(self, request):
         if "onboarding_church" not in request.session:

@@ -33,16 +33,87 @@ class Tenant(models.Model):
         ("other", "Other"),
     ]
 
+    # The 10 most-traded currencies internationally (BIS Triennial Survey:
+    # USD, EUR, JPY, GBP, CNY, AUD, CAD, CHF, HKD, SGD) plus the currencies
+    # of the Spanish-speaking countries this platform serves.
     CURRENCY_CHOICES = [
-        ("USD", "US Dollar"),
+        ("USD", "Dólar estadounidense"),
         ("EUR", "Euro"),
-        ("MXN", "Mexican Peso"),
-        ("COP", "Colombian Peso"),
-        ("ARS", "Argentine Peso"),
-        ("BRL", "Brazilian Real"),
-        ("GBP", "British Pound"),
-        ("CAD", "Canadian Dollar"),
-        ("AUD", "Australian Dollar"),
+        ("JPY", "Yen japonés"),
+        ("GBP", "Libra esterlina"),
+        ("CNY", "Yuan chino"),
+        ("AUD", "Dólar australiano"),
+        ("CAD", "Dólar canadiense"),
+        ("CHF", "Franco suizo"),
+        ("HKD", "Dólar de Hong Kong"),
+        ("SGD", "Dólar de Singapur"),
+        ("MXN", "Peso mexicano"),
+        ("COP", "Peso colombiano"),
+        ("ARS", "Peso argentino"),
+        ("CLP", "Peso chileno"),
+        ("PEN", "Sol peruano"),
+        ("BRL", "Real brasileño"),
+        ("CRC", "Colón costarricense"),
+        ("GTQ", "Quetzal guatemalteco"),
+        ("HNL", "Lempira hondureño"),
+        ("NIO", "Córdoba nicaragüense"),
+        ("PAB", "Balboa panameño"),
+        ("DOP", "Peso dominicano"),
+        ("UYU", "Peso uruguayo"),
+        ("BOB", "Boliviano"),
+        ("PYG", "Guaraní paraguayo"),
+        ("VES", "Bolívar venezolano"),
+    ]
+
+    # Countries this platform is commonly used in — every Spanish-speaking
+    # country plus major countries elsewhere. Not the full ISO 3166-1 list
+    # (no django-countries dependency), but broad enough for a platform
+    # meant to serve churches worldwide.
+    COUNTRY_CHOICES = [
+        ("AR", "Argentina"),
+        ("BO", "Bolivia"),
+        ("BR", "Brasil"),
+        ("CA", "Canadá"),
+        ("CL", "Chile"),
+        ("CO", "Colombia"),
+        ("CR", "Costa Rica"),
+        ("CU", "Cuba"),
+        ("EC", "Ecuador"),
+        ("SV", "El Salvador"),
+        ("ES", "España"),
+        ("US", "Estados Unidos"),
+        ("GQ", "Guinea Ecuatorial"),
+        ("GT", "Guatemala"),
+        ("HN", "Honduras"),
+        ("MX", "México"),
+        ("NI", "Nicaragua"),
+        ("PA", "Panamá"),
+        ("PY", "Paraguay"),
+        ("PE", "Perú"),
+        ("PR", "Puerto Rico"),
+        ("DO", "República Dominicana"),
+        ("UY", "Uruguay"),
+        ("VE", "Venezuela"),
+        ("DE", "Alemania"),
+        ("AU", "Australia"),
+        ("ZA", "Sudáfrica"),
+        ("KR", "Corea del Sur"),
+        ("CN", "China"),
+        ("PH", "Filipinas"),
+        ("FR", "Francia"),
+        ("IN", "India"),
+        ("IE", "Irlanda"),
+        ("IT", "Italia"),
+        ("JP", "Japón"),
+        ("KE", "Kenia"),
+        ("NG", "Nigeria"),
+        ("NZ", "Nueva Zelanda"),
+        ("NL", "Países Bajos"),
+        ("PT", "Portugal"),
+        ("GB", "Reino Unido"),
+        ("SG", "Singapur"),
+        ("SE", "Suecia"),
+        ("CH", "Suiza"),
     ]
 
     DATE_FORMAT_CHOICES = [
@@ -69,7 +140,11 @@ class Tenant(models.Model):
         max_length=50, choices=DENOMINATION_CHOICES, blank=True
     )
     country = models.CharField(
-        max_length=2, blank=True, null=True, help_text="ISO country code"
+        max_length=2,
+        choices=COUNTRY_CHOICES,
+        blank=True,
+        null=True,
+        help_text="ISO country code",
     )
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True, null=True)

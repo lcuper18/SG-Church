@@ -54,14 +54,9 @@
                                 <label for="country" class="form-label">País</label>
                                 <select class="form-select" id="country" name="country">
                                     <option value="">Seleccionar...</option>
-                                    <option value="US">Estados Unidos</option>
-                                    <option value="MX">México</option>
-                                    <option value="CO">Colombia</option>
-                                    <option value="AR">Argentina</option>
-                                    <option value="CL">Chile</option>
-                                    <option value="PE">Perú</option>
-                                    <option value="BR">Brasil</option>
-                                    <option value="ES">España</option>
+                                    {% for code, label in country_choices %}
+                                    <option value="{{ code }}">{{ label }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>

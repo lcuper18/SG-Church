@@ -31,14 +31,9 @@
                             <div class="col-md-6 mb-3">
                                 <label for="currency" class="form-label">Moneda</label>
                                 <select class="form-select" id="currency" name="currency">
-                                    <option value="USD" selected>Dólar estadounidense (USD)</option>
-                                    <option value="EUR">Euro (EUR)</option>
-                                    <option value="MXN">Peso mexicano (MXN)</option>
-                                    <option value="COP">Peso colombiano (COP)</option>
-                                    <option value="ARS">Peso argentino (ARS)</option>
-                                    <option value="BRL">Real brasileño (BRL)</option>
-                                    <option value="GBP">Libra esterlina (GBP)</option>
-                                    <option value="CAD">Dólar canadiense (CAD)</option>
+                                    {% for code, label in currency_choices %}
+                                    <option value="{{ code }}" {% if code == "USD" %}selected{% endif %}>{{ label }} ({{ code }})</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
