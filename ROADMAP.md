@@ -13,15 +13,36 @@ Plan de desarrollo por fases con timeline estimado, prioridades y entregables.
 
 **Timeline Total**: 12-18 meses para plataforma completa
 
-### Progreso Actual (Marzo 2026)
+### Progreso Actual (Septiembre 2026)
+
+Numeración alineada con el detalle sprint a sprint más abajo (antes esta
+tabla usaba una numeración compacta distinta — "Sprint 3" acá era en
+realidad "Sprint 5-7" en el detalle; se corrigió para que ambas coincidan).
 
 | Sprint | Nombre | Estado | Notas |
 |--------|--------|--------|-------|
 | 1-2 | Setup Inicial | ✅ Completado | Django + DRF + Multi-tenant |
-| 3 | Gestión de Membresía | ✅ QA Verificado | Members, Families, Tags, Onboarding |
-| 4 | Donaciones y Finanzas | ✅ QA Verificado | Dashboard, Stripe, Reports |
-| 5 | Sistema de Notificaciones | ✅ QA Verificado | Email + In-App notifications |
-| 6 | Deploy y Testing | ✅ Completado | E2E tests, API tests (25 passed) |
+| 3-4 | Autenticación | ✅ Completado | django-allauth, RBAC, onboarding |
+| 5-7 | Gestión de Membresía | ✅ QA Verificado | Members, Families, Tags, Onboarding |
+| 8-10 | Donaciones y Finanzas | ✅ QA Verificado | Dashboard, Stripe, Reports |
+| 11-12 | Sistema de Notificaciones | ✅ QA Verificado | Email + In-App notifications |
+| 13 | Deploy y Testing | ✅ Completado | E2E tests, API tests (34 passed) |
+| — | Auditoría de seguridad y despliegue | ✅ Completado | Tenancy real, RBAC forzado, modo autoinstalable, Docker para ambos modos — ver [CHANGELOG.md](./CHANGELOG.md) |
+
+---
+
+### Modo autoinstalable (self-host)
+
+Este roadmap está pensado en términos del producto SaaS (una instalación
+central que aloja a varias iglesias). En paralelo, el proyecto también
+soporta instalarse de forma independiente para una sola iglesia (SQLite,
+sin Redis — ver `sg_church/settings/standalone.py` y
+`docker-compose.standalone.yml`, documentado en
+[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)). Ese modo no tiene su propio
+tracking de sprints acá porque reutiliza el mismo código de todas las fases
+de abajo — cualquier feature nueva (LMS, sacramentos, etc.) queda
+disponible en ambos modos automáticamente, salvo que se indique lo
+contrario.
 
 ---
 
@@ -93,7 +114,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 **Entregable**: Módulo de membresía funcional ✅
 
-#### Sprint 8-10: Donaciones y Finanzas Básicas (Semanas 15-20) ✅ COMPLETADO
+#### Sprint 8-10: Donaciones y Finanzas Básicas (Semanas 15-20) ✅ COMPLETADO (parcial — ver pendientes marcados abajo)
 - [x] **Integración Stripe**
   - [ ] Setup Stripe Connect (platform model) - Pendiente
   - [ ] Crear connected account en onboarding - Pendiente

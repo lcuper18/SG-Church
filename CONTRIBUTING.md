@@ -17,15 +17,7 @@
 
 ## Código de Conducta
 
-Este proyecto adhiere al [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). Al participar, se espera que mantengas este código. Por favor reporta comportamientos inaceptables a conduct@sgchurch.app.
-
-### Nuestro Compromiso
-
-- Crear un ambiente acogedor e inclusivo
-- Respetar diferentes puntos de vista y experiencias
-- Aceptar críticas constructivas con gracia
-- Enfocarnos en lo que es mejor para la comunidad
-- Mostrar empatía hacia otros miembros de la comunidad
+Este proyecto adhiere al [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). Al participar, se espera que mantengas este código. Reportá comportamientos inaceptables abriendo un issue, o de forma privada usando el contacto de [SECURITY.md](./SECURITY.md).
 
 ---
 
@@ -35,57 +27,31 @@ Hay muchas formas de contribuir a SG Church:
 
 ### 1. 🐛 Reportar Bugs
 
-Si encuentras un bug:
-- Busca en [issues existentes](https://github.com/your-org/sg-church/issues) para ver si ya fue reportado
-- Si no existe, [crea un nuevo issue](https://github.com/your-org/sg-church/issues/new?template=bug_report.md)
-- Incluye toda la información posible (ver [Reportar Bugs](#reportar-bugs))
+Si encontrás un bug:
+- Buscá en los issues existentes del repositorio para ver si ya fue reportado
+- Si no existe, creá uno nuevo con la información de [Reportar Bugs](#reportar-bugs)
 
 ### 2. 💡 Sugerir Features
 
-Tienes una idea para mejorar SG Church:
-- Revisa el [ROADMAP.md](./ROADMAP.md) para ver si ya está planificado
-- Busca en issues existentes con label `enhancement`
-- [Crea un Feature Request](https://github.com/your-org/sg-church/issues/new?template=feature_request.md)
+Si tenés una idea para mejorar SG Church:
+- Revisá [ROADMAP.md](./ROADMAP.md) para ver si ya está planificada
+- Creá un issue describiendo la propuesta (ver [Sugerir Features](#sugerir-features))
 
 ### 3. 📝 Mejorar Documentación
 
-La documentación siempre puede mejorar:
-- Corregir typos o errores
-- Agregar ejemplos o clarificaciones
-- Traducir documentación a otros idiomas
-- Crear tutoriales o guías
+La documentación siempre puede mejorar: corregir typos, agregar ejemplos,
+aclarar pasos confusos, o mejorar la [FAQ](./docs/FAQ.md).
 
 ### 4. 💻 Contribuir Código
 
-Hay varios tipos de contribuciones de código:
-
-**Good First Issues**:
-- Busca issues con label [`good first issue`](https://github.com/your-org/sg-church/labels/good%20first%20issue)
-- Son tareas bien definidas, ideales para primeros contribuidores
-
-**Bug Fixes**:
-- Busca issues con label [`bug`](https://github.com/your-org/sg-church/labels/bug)
-- Comenta en el issue que trabajarás en él
-
-**Features**:
-- Busca issues con label [`enhancement`](https://github.com/your-org/sg-church/labels/enhancement)
-- Discute el approach antes de empezar código
-
-**Tests**:
-- Agregar tests para código sin coverage
-- Mejorar tests existentes
+- **Bug fixes**: buscá issues etiquetados `bug`, comentá que vas a trabajar en él
+- **Features**: buscá issues etiquetados `enhancement`, discutí el enfoque antes de escribir código
+- **Tests**: agregar cobertura donde falte, o mejorar tests existentes
 
 ### 5. 🎨 Diseño y UX
 
-- Sugerir mejoras de UI/UX
-- Crear mockups o prototipos
-- Hacer accessibility audits
-
-### 6. 🌍 Traducciones
-
-- Traducir la aplicación a tu idioma
-- Revisar traducciones existentes
-- Ver [`docs/i18n.md`](./docs/i18n.md) para guía
+Sugerencias de UI/UX, mockups, o auditorías de accesibilidad sobre los
+templates Bootstrap 5 existentes.
 
 ---
 
@@ -93,108 +59,37 @@ Hay varios tipos de contribuciones de código:
 
 ### Prerequisitos
 
-Asegúrate de tener instalado:
-
-- **Node.js** 20+ ([descarga](https://nodejs.org/))
-- **uv** (instalar: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- **Python** 3.11+ ([descarga](https://www.python.org/downloads/))
-- **PostgreSQL** 14+ ([descarga](https://www.postgresql.org/download/))
-  - Alternativa: Cuenta en [Railway](https://railway.app) o [Neon](https://neon.tech) (gratis)
-- **Redis** 6+ ([descarga](https://redis.io/download))
-  - Alternativa: Cuenta en [Upstash](https://upstash.com) (gratis)
-- **Git** ([descarga](https://git-scm.com/))
+- **Python** 3.12+ ([descarga](https://www.python.org/downloads/))
+- **PostgreSQL** 14+ ([descarga](https://www.postgresql.org/download/)) — no
+  hace falta si solo vas a tocar el modo autoinstalable (SQLite)
+- **Redis** 6+ ([descarga](https://redis.io/download)) — tampoco hace falta
+  en modo autoinstalable
+- **Docker** (opcional, pero la forma más rápida de levantar el proyecto —
+  ver [QUICKSTART.md](./QUICKSTART.md))
+- **Git**
 
 ### Clonar el Repositorio
 
 ```bash
-# Fork el repositorio en GitHub primero, luego:
-git clone https://github.com/TU-USUARIO/sg-church.git
-cd sg-church
+# Fork el repositorio primero, luego:
+git clone <url-de-tu-fork>
+cd SG-Church
 
-# Agregar upstream remote
-git remote add upstream https://github.com/your-org/sg-church.git
+# Agregar el repositorio original como upstream
+git remote add upstream <url-del-repositorio-original>
 ```
 
 ### Instalar Dependencias
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
-Esto instalará todas las dependencias de todos los paquetes en el monorepo.
+### Configurar y Levantar
 
-### Configurar Variables de Entorno
-
-```bash
-# Copiar ejemplo
-cp .env.example .env
-
-# Editar con tus valores
-nano .env  # o usa tu editor favorito
-```
-
-**Variables mínimas para desarrollo**:
-
-```env
-# Django
-SECRET_KEY="genera-secreto-con-openssl-rand-base64-32"
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Database (PostgreSQL local o cloud)
-DATABASE_URL="postgresql://postgres:password@localhost:5432/sgchurch_dev"
-
-# Stripe (usa test keys)
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-STRIPE_PUBLISHABLE_KEY="pk_test_..."
-
-# Email (Resend free tier)
-RESEND_API_KEY="re_..."
-
-# Redis (local o Upstash)
-REDIS_URL="redis://localhost:6379"
-
-# Storage (AWS S3 o Cloudflare R2)
-AWS_ACCESS_KEY_ID="..."
-AWS_SECRET_ACCESS_KEY="..."
-AWS_STORAGE_BUCKET_NAME="sgchurch-media"
-```
-
-### Setup de Base de Datos
-
-1. **Crear base de datos**:
-```bash
-createdb sgchurch_dev
-```
-
-2. **Ejecutar migraciones**:
-```bash
-python manage.py migrate
-```
-
-3. **Seedear datos de prueba** (opcional):
-```bash
-python manage.py loaddata fixtures/sample_data.json
-```
-
-Esto creará un tenant de prueba con datos de ejemplo.
-
-### Iniciar Servidor de Desarrollo
-
-```bash
-# Iniciar servidor Django
-python manage.py runserver
-
-# En otra terminal: Iniciar Celery worker (para tareas async)
-celery -A sg_church worker -l info
-
-# O iniciar Celery beat (para tareas programadas)
-celery -A sg_church beat -l info
-```
-
-La app estará disponible en `http://localhost:8000`
-Admin Django: `http://localhost:8000/admin`
+Seguí [QUICKSTART.md](./QUICKSTART.md) — con Docker es un solo comando; sin
+Docker, son los pasos habituales de Django (`.env`, `migrate`,
+`create_tenant`, `runserver`).
 
 ### Verificar Setup
 
@@ -205,19 +100,18 @@ pytest
 # Ejecutar linter
 flake8 .
 
-# Verificar que migrations están al día
-python manage.py showmigrations
+# Formatear (black e isort están configurados en pyproject.toml/setup.cfg)
+black .
+isort .
 ```
 
-Si todo pasa ✅, estás listo para contribuir!
+Si todo pasa, estás listo para contribuir.
 
 ---
 
 ## Proceso de Desarrollo
 
 ### 1. Sincronizar tu Fork
-
-Antes de empezar cualquier trabajo nuevo:
 
 ```bash
 git checkout main
@@ -229,36 +123,27 @@ git push origin main
 ### 2. Crear Branch de Feature
 
 ```bash
-# Nomenclatura: type/short-description
 git checkout -b feat/member-bulk-delete
 git checkout -b fix/donation-receipt-email
 git checkout -b docs/update-api-guide
 ```
 
-**Tipos de branches**:
-- `feat/` - Nueva funcionalidad
-- `fix/` - Bug fix
-- `docs/` - Solo documentación
-- `refactor/` - Refactorización sin cambiar funcionalidad
-- `test/` - Agregar tests
-- `chore/` - Mantenimiento, deps, configs
+**Tipos de branch**: `feat/`, `fix/`, `docs/`, `refactor/`, `test/`, `chore/`
 
 ### 3. Hacer Cambios
 
-- Escribe código siguiendo las [Guías de Estilo](#guías-de-estilo)
-- Haz commits pequeños y descriptivos
-- Escribe tests para tu código
-- Actualiza documentación si es necesario
+- Seguí las [Guías de Estilo](#guías-de-estilo)
+- Commits pequeños y descriptivos
+- Escribí tests para tu código
+- Actualizá documentación si corresponde
 
 ### 4. Commit Guidelines
 
 Usamos [Conventional Commits](https://www.conventionalcommits.org/):
 
-```bash
-# Formato
+```
 <type>(<scope>): <subject>
 
-# Ejemplos
 feat(members): add bulk delete functionality
 fix(donations): correct receipt email template
 docs: update API documentation
@@ -266,16 +151,8 @@ refactor(auth): extract permission logic to utility
 test(members): add unit tests for family relationships
 ```
 
-**Types**:
-- `feat`: Nueva feature
-- `fix`: Bug fix
-- `docs`: Cambios en documentación
-- `style`: Formatting, sin cambios de código
-- `refactor`: Refactoring
-- `test`: Agregar tests
-- `chore`: Mantenimiento
-
-**Scope** (opcional): Módulo afectado (members, donations, courses, etc.)
+**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+**Scope** (opcional): módulo afectado (`members`, `finance`, `tenants`, etc.)
 
 ### 5. Push y Crear Pull Request
 
@@ -283,112 +160,70 @@ test(members): add unit tests for family relationships
 git push origin feat/member-bulk-delete
 ```
 
-Luego en GitHub, crea un Pull Request desde tu branch hacia `main` del repositorio upstream.
+Y creá el Pull Request desde tu branch hacia `main` del repositorio
+original.
 
 ---
 
 ## Guías de Estilo
 
-### Python
+### Python / Django
 
-- **PEP 8**: Sigue las convenciones de PEP 8
-- **Type hints**: Usa type hints en funciones
-- **Docstrings**: Usa docstrings para funciones y clases
-- **Imports**: Organiza imports correctamente (1st party, 3rd party, local)
+- **PEP 8**, aplicado con `flake8` (`max-line-length = 120`, ver `setup.cfg`)
+- **Formateo**: `black` (config en `pyproject.toml`) e `isort`
+  (`profile = django`, ver `setup.cfg`)
+- **Type hints** donde aporten claridad, no obligatorios en todo el código
+  existente
+- **Docstrings** en funciones y clases no triviales
+- **Vistas**: Class-Based Views para CRUD; función simple cuando alcanza
+- **Formularios**: usar Django Forms para validación
+- **API**: ViewSets de DRF, con `permission_classes` explícito — ver
+  `core/permissions.py` para los de este proyecto (`CanManageFinance`,
+  `CanManageMembers`)
+- **Aislamiento por tenant**: cualquier vista o queryset nuevo sobre datos
+  de una iglesia debe filtrar por `tenant` (normalmente
+  `request.user.tenant`) — es el único mecanismo real de aislamiento entre
+  iglesias en este proyecto (no hay separación por schema de base de datos)
 
 ```python
-# ✅ Good
-def get_member(member_id: int) -> Member | None:
-    """Retrieve a member by ID.
-    
-    Args:
-        member_id: The member's unique identifier.
-        
-    Returns:
-        Member object if found, None otherwise.
-    """
+# Bien
+def get_member(member_id: str) -> Member | None:
+    """Retrieve a member by ID, scoped to the caller's tenant."""
+    return Member.objects.filter(id=member_id, tenant=request.user.tenant).first()
+
+# Mal — no filtra por tenant, expondría datos de otras iglesias
+def get_member(member_id: str) -> Member | None:
     return Member.objects.filter(id=member_id).first()
-
-# ❌ Bad
-def get_member(id):  # No type hints
-    return Member.objects.filter(id=id).first()
-```
-
-### Django
-
-- **Models**: Usa `models.Model` y define `__str__`
-- **Views**: Prefiere Class-Based Views para casos complejos
-- **Forms**: Siempre usa Django Forms para validación
-- **URLs**: Define URLs en `urls.py` de cada app
-- **Admin**: Registra modelos en `admin.py`
-```
-
-### Django Views
-
-- **Function-based views (FBV)**: Para casos simples
-- **Class-based views (CBV)**: Para casos complejos
-- **Django Forms**: Siempre usar para validación
-- **REST API**: Usar ViewSets de DRF
-
-```python
-# ✅ Good - Class-based view
-class MemberListView(ListView):
-    model = Member
-    template_name = 'members/list.html'
-    context_object_name = 'members'
-```
-}
-
-export function MemberCard({ member, showEmail = false }: MemberCardProps) {
-  return (
-    <div>
-      <h3>{member.firstName} {member.lastName}</h3>
-      {showEmail && <p>{member.email}</p>}
-    </div>
-  )
-}
-
-// ✅ Good - Client Component (cuando necesario)
-'use client'
-
-export function MemberForm() {
-  const [firstName, setFirstName] = useState('')
-  // ...
-}
 ```
 
 ### Naming Conventions
 
-- **Python**: snake_case (`get_member_by_id`)
-- **Classes/Models**: PascalCase (`Member`, `DonationView`)
-- **Constants**: UPPER_SNAKE_CASE (`MAX_UPLOAD_SIZE`)
-- **Templates**: snake_case (`member_list.html`)
-- **CSS classes**: Bootstrap utilities
+- **Python**: `snake_case` (`get_member_by_id`)
+- **Clases/Modelos**: `PascalCase` (`Member`, `DonationView`)
+- **Constantes**: `UPPER_SNAKE_CASE` (`MAX_UPLOAD_SIZE`)
+- **Templates**: `snake_case` (`member_list.html`)
 
-### File Organization
+### Organización de una app Django
 
 ```
 members/
-├── models.py              # Modelos Django
-├── views.py              # Vistas
-├── forms.py              # Formularios
-├── serializers.py        # DRF Serializers
-├── urls.py               # URLs
-├── admin.py              # Configuración admin
-├── tasks.py              # Tareas Celery
-├── templates/
-│   └── members/
-│       ├── list.html
-│       └── detail.html
-└── static/
-    └── members/
-        └── style.css
+├── models.py
+├── views.py
+├── forms.py
+├── urls.py
+├── admin.py
+├── migrations/
+├── api/
+│   ├── serializers.py
+│   ├── views.py
+│   └── urls.py
+└── ...
 ```
 
-### Imports Order
+### Orden de imports
 
 ```python
-# 1. Python/Django
+# 1. Stdlib
 import os
 import re
 from datetime import datetime
@@ -397,99 +232,25 @@ from datetime import datetime
 from django.db import models
 from django.views.generic import ListView
 
-# 3. Third party
-from celery import shared_task
+# 3. Terceros
+from rest_framework import viewsets
 
-# 4. Local
+# 4. Locales
+from core.mixins import ManageMembersRequiredMixin
 from .models import Member
-
-// 2. External libraries
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-
-// 3. Internal packages
-import { db } from '@/lib/db'
-import { trpc } from '@/lib/trpc'
-
-// 4. Components
-import { Button } from '@/components/ui/button'
-import { MemberCard } from './components/member-card'
-
-// 5. Types
-import type { Member } from '@/types'
-
-// 6. Styles (si aplica)
-import styles from './page.module.css'
 ```
 
-### Comments
+### Comentarios
 
-- **JSDoc**: Para funciones públicas
-- **Inline comments**: Solo cuando código no es obvio
-- **TODOs**: Incluye issue number
+Solo cuando el código por sí solo no explica el *por qué* (una restricción
+no obvia, un workaround, una decisión que sorprendería a quien lo lea
+después). Evitar comentarios que repiten lo que el código ya dice.
 
-```typescript
-/**
- * Retrieves a member by ID with related data
- * @param id - Member UUID
- * @param include - Related data to include
- * @returns Member with relations or null
- */
-export async function getMemberWithRelations(
-  id: string,
-  include: { donations?: boolean; family?: boolean } = {}
-): Promise<MemberWithRelations | null> {
-  // TODO(#123): Add caching layer
-  return await db.member.findUnique({
-    where: { id },
-    include,
-  })
-}
-```
+### Mensajes de Commit
 
-### Testing
-
-- **Test files**: Co-located con código (`member-card.test.tsx`)
-- **Describe blocks**: Por función/componente
-- **Test names**: Descriptivos y específicos
-
-```typescript
-// member-card.test.tsx
-import { render, screen } from '@testing-library/react'
-import { MemberCard } from './member-card'
-
-describe('MemberCard', () => {
-  it('renders member name', () => {
-    const member = { firstName: 'John', lastName: 'Doe' }
-    render(<MemberCard member={member} />)
-    expect(screen.getByText('John Doe')).toBeInTheDocument()
-  })
-  
-  it('shows email when showEmail prop is true', () => {
-    const member = { firstName: 'John', lastName: 'Doe', email: 'john@example.com' }
-    render(<MemberCard member={member} showEmail />)
-    expect(screen.getByText('john@example.com')).toBeInTheDocument()
-  })
-})
-```
-
-### Git Commit Messages
-
-- Primera línea: máximo 72 caracteres
-- Presente imperativo: "Add feature" no "Added feature"
-- Cuerpo opcional con detalles
+- Primera línea: máximo ~72 caracteres, imperativo ("Add feature", no "Added feature")
+- Cuerpo opcional con el *por qué* del cambio
 - Referenciar issues: `Closes #123`
-
-```
-feat(members): add bulk delete with confirmation dialog
-
-- Implement multi-select in MemberList component
-- Add confirmation modal with member count
-- Add Django view for bulk delete
-- Add form validation
-
-Closes #123
-```
 
 ---
 
@@ -497,206 +258,78 @@ Closes #123
 
 ### Antes de Crear el PR
 
-- [ ] ✅ Sync con upstream/main (no merge conflicts)
-- [ ] ✅ Tests pasan (`pytest`)
-- [ ] ✅ Linter pasa (`flake8`)
-- [ ] ✅ Migrations actualizadas (`python manage.py showmigrations`)
-- [ ] ✅ Commits siguen convención
-- [ ] ✅ Documentación actualizada si aplica
-- [ ] ✅ Código auto-documentado o comentado
+- [ ] Sync con `upstream/main` (sin conflictos)
+- [ ] Tests pasan (`pytest`)
+- [ ] Linter pasa (`flake8 .`, `black --check .`, `isort --check .`)
+- [ ] Si cambiaste modelos, generaste y commiteaste las migraciones
+      (`python manage.py makemigrations`)
+- [ ] Documentación actualizada si aplica
 
 ### Crear el PR
 
-1. **Título descriptivo**:
-   ```
-   feat(members): add bulk delete functionality
-   ```
-
-2. **Descripción completa** usando template:
-
-```markdown
-## Description
-Implements bulk delete feature for members with confirmation dialog.
-
-## Type of Change
-- [x] New feature
-- [ ] Bug fix
-- [ ] Breaking change
-- [ ] Documentation update
-
-## Related Issue
-Closes #123
-
-## Screenshots (si UI changes)
-![Before](url)
-![After](url)
-
-## Checklist
-- [x] Tests added
-- [x] Documentation updated
-- [x] No breaking changes
-- [x] Follows style guide
-```
-
-3. **Request reviewers**: El equipo asignará reviewers automáticamente
+Título descriptivo (mismo formato que los commits), y una descripción que
+explique el *por qué* del cambio, no solo el *qué*. Si cierra un issue,
+incluí `Closes #123`.
 
 ### Durante Code Review
 
-- **Responde a comentarios**: Discute constructivamente
-- **Haz cambios solicitados**: Push nuevos commits al branch
-- **No hacer force push**: Mantén historia de review
-- **Mark conversations resolved**: Cuando hagas el cambio
-
-### Después de Approval
-
-- **Squash and merge**: Usamos squash merge strategy
-- **Delete branch**: GitHub lo hace automáticamente
-- **Cerrar issue**: Si era referenced con `Closes #123`
+- Respondé a los comentarios de forma constructiva
+- Empujá nuevos commits al mismo branch en vez de hacer force-push
+  (mantiene el historial de la revisión legible)
 
 ---
 
 ## Reportar Bugs
 
-### Antes de Reportar
+Antes de reportar: confirmá que es un bug (no una feature faltante) y que
+se reproduce en la última versión de `main`.
 
-1. **Verifica que sea realmente un bug** (no feature faltante)
-2. **Busca en issues existentes**
-3. **Reproduce en última versión** de main
-
-### Crear Bug Report
-
-Usa el [template de bug report](https://github.com/your-org/sg-church/issues/new?template=bug_report.md):
-
-**Información requerida**:
+Información útil al reportar:
 
 ```markdown
-**Describe the bug**
-Clara descripción del bug.
+**Descripción del bug**
+Qué pasó.
 
-**To Reproduce**
-Steps to reproduce:
-1. Go to '...'
-2. Click on '...'
-3. See error
+**Cómo reproducirlo**
+1. Ir a '...'
+2. Hacer click en '...'
+3. Ver el error
 
-**Expected behavior**
+**Comportamiento esperado**
 Qué esperabas que pasara.
 
-**Screenshots**
-Si aplica, agrega screenshots.
-
-**Environment:**
- - OS: [e.g. macOS 14.2]
- - Browser: [e.g. Chrome 121]
- - Version: [e.g. v0.1.0]
-
-**Additional context**
-Cualquier otro contexto sobre el problema.
-
-**Console errors** (si aplica)
-```javascript
-// Paste console errors here
+**Entorno**
+- Modo: autoinstalable / SaaS
+- OS / navegador
+- Versión / commit
 ```
-```
-
-### Severidad
-
-Marca con label apropiado:
-- `critical`: Sistema down o data loss
-- `high`: Feature importante broken
-- `medium`: Bug molesto pero workaround existe
-- `low`: Bug cosmético
 
 ---
 
 ## Sugerir Features
 
-### Feature Request Process
-
-1. **Verifica ROADMAP.md**: Puede estar ya planificado
-2. **Busca feature requests existentes**
-3. **[Crea Feature Request](https://github.com/your-org/sg-church/issues/new?template=feature_request.md)**
-
-### Template
-
-```markdown
-**Is your feature request related to a problem?**
-Descripción del problema. "I'm frustrated when..."
-
-**Describe the solution you'd like**
-Clara descripción de lo que quieres que pase.
-
-**Describe alternatives you've considered**
-Otras soluciones que consideraste.
-
-**Use case**
-Cómo usarías esta feature en práctica.
-
-**Additional context**
-Screenshots, mockups, etc.
-```
-
-### Proceso de Evaluación
-
-1. **Community feedback**: Reacciones 👍 en issue
-2. **Team review**: Evalúa fit con roadmap
-3. **Priority assignment**: Based on impact y effort
-4. **Phase assignment**: Asignado a Fase 2, 3, o 4
+1. Revisá [ROADMAP.md](./ROADMAP.md) — puede estar ya planificada
+2. Abrí un issue describiendo el problema que resuelve, la solución
+   propuesta, y alternativas que consideraste
 
 ---
 
 ## Recursos Adicionales
-
-### Documentación
 
 - [Architecture Guide](./ARCHITECTURE.md)
 - [Database Schema](./DATABASE.md)
 - [Tech Stack](./TECH_STACK.md)
 - [API Documentation](./docs/API.md)
 - [Deployment Guide](./docs/DEPLOYMENT.md)
-
-### Comunicación
-
-- **GitHub Issues**: Bugs, features, questions
-- **GitHub Discussions**: General discussion, Q&A
-- **Discord** (coming soon): Real-time chat con contribuidores
-- **Email**: contribute@sgchurch.app
-
-### Recursos de Aprendizaje
-
-**Django**:
 - [Django Docs](https://docs.djangoproject.com)
-- [Django Tutorial](https://docs.djangoproject.com/en/5.0/intro/)
-
-**Django REST Framework**:
-- [DRF Docs](https://www.django-rest-framework.org)
-- [DRF Tutorial](https://www.django-rest-framework.org/tutorial/quickstart/)
-
-**Python**:
-- [Python Docs](https://docs.python.org/3/)
-- [Real Python](https://realpython.com)
-
----
-
-## Reconocimiento
-
-Todos los contribuidores son listados en:
-- [Contributors Page](https://github.com/your-org/sg-church/graphs/contributors)
-- [CONTRIBUTORS.md](./CONTRIBUTORS.md) (actualizado mensualmente)
-
-Las contribuciones significativas pueden resultar en:
-- Mencionado en release notes
-- Invitación a equipo de core contributors
-- Swag (stickers, t-shirts) si el proyecto crece
+- [Django REST Framework Docs](https://www.django-rest-framework.org)
 
 ---
 
 ## Licencia
 
-Al contribuir a SG Church, aceptas que tus contribuciones serán licenciadas bajo la [MIT License](./LICENSE).
+Al contribuir a SG Church, aceptás que tus contribuciones serán licenciadas bajo la [Licencia MIT](./LICENSE).
 
 ---
 
 **¡Gracias por hacer de SG Church un mejor proyecto para servir a iglesias alrededor del mundo! 🙏**
-
-**¿Dudas?** Pregunta en [GitHub Discussions](https://github.com/your-org/sg-church/discussions) o contacta contribute@sgchurch.app

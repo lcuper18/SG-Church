@@ -2,6 +2,25 @@
 
 Esta guía te ayudará a comenzar con el desarrollo de SG Church en minutos.
 
+## 🐳 La forma más rápida: Docker
+
+Si solo querés levantar la app para una sola iglesia (sin instalar Python,
+PostgreSQL ni Redis en tu máquina):
+
+```bash
+git clone <url-de-este-repositorio>
+cd SG-Church
+docker compose -f docker-compose.standalone.yml up -d
+```
+
+Eso corre las migraciones, crea una iglesia y un usuario admin, y deja la
+app en `http://localhost:8000`. Ver
+[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) para personalizar el nombre de
+la iglesia/admin o para el modo SaaS multi-iglesia con Postgres.
+
+El resto de esta guía es para quien quiera correr el proyecto directamente
+con Python (para desarrollo/contribuir código).
+
 ## 📋 Prerequisitos
 
 Antes de comenzar, asegúrate de tener instalado:
@@ -68,8 +87,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### 1. Clonar el Repositorio
 
 ```bash
-git clone https://github.com/your-org/sg-church.git
-cd sg-church
+git clone <url-de-este-repositorio>
+cd SG-Church
 ```
 
 ### 2. Crear Entorno Virtual
@@ -89,11 +108,14 @@ source .venv/bin/activate  # Linux/Mac
 
 ```bash
 # Con uv (más rápido)
-uv pip install -r requirements.txt
+uv pip install -r requirements-dev.txt
 
 # O con pip
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
+
+(`requirements-dev.txt` incluye `requirements.txt` más pytest, flake8,
+black, isort y demás herramientas de desarrollo.)
 
 ### 4. Configurar Variables de Entorno
 
@@ -109,12 +131,15 @@ nano .env
 
 ```env
 # Django
-DEBUG=True
+DJANGO_SETTINGS_MODULE=sg_church.settings.local
 SECRET_KEY=tu-secret-key-aqui-muy-larga
-ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/sgchurch
+# Database (settings.local usa Postgres; no hay valores por defecto
+# inseguros, hay que setear estos cuatro sí o sí)
+DATABASE_NAME=sgchurch
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_HOST=localhost
 
 # Redis
 CELERY_BROKER_URL=redis://localhost:6379/0
@@ -123,11 +148,15 @@ CELERY_RESULT_BACKEND=redis://localhost:6379/0
 # Email (desarrollo - usa console backend)
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 
-# Stripe (test mode)
+# Stripe (test mode, opcional para desarrollo)
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
+
+(`DEBUG` y `ALLOWED_HOSTS` ya los fuerza `settings.local` — no hace falta
+setearlos a mano para desarrollo. Ver `.env.example` para la lista
+completa.)
 
 ### 5. Configurar Base de Datos
 
@@ -138,11 +167,12 @@ createdb sgchurch
 # Ejecutar migraciones
 python manage.py migrate
 
-# (Opcional) Crear superusuario
-python manage.py createsuperuser
+# Crear tu primera iglesia y su admin
+python manage.py create_tenant "Mi Iglesia" miiglesia \
+  --admin-email admin@miiglesia.com --admin-password changeme123
 
-# (Opcional) Poblar con datos de prueba
-python manage.py loaddata fixtures/sample_data.json
+# (Opcional) Crear también un superusuario de Django (para /admin/)
+python manage.py createsuperuser
 ```
 
 ### 6. Iniciar Servidor de Desarrollo
@@ -205,43 +235,41 @@ pytest -k "test_member"                  # Tests específicos
 ### Comandos Personalizados
 
 ```bash
-python manage.py create_tenant <name> <subdomain>  # Crear tenant
-python manage.py list_tenants                       # Listar tenants
-python manage.py generate_fixtures                   # Generar datos de prueba
+python manage.py create_tenant <name> <subdomain> [--admin-email E --admin-password P]
+python manage.py list_tenants       # Listar iglesias/tenants
+python manage.py bootstrap_tenant   # Idempotente: crea la iglesia única
+                                     # de una instalación autoinstalable si
+                                     # todavía no existe ninguna (usa las
+                                     # env vars CHURCH_NAME/CHURCH_SUBDOMAIN/
+                                     # ADMIN_EMAIL/ADMIN_PASSWORD)
 ```
 
 ---
 
 ## 📁 Estructura del Proyecto
 
-### Estructura Actual (Documentación)
+```
+SG-Church/
+├── sg_church/               # Proyecto Django (settings, urls, wsgi, celery)
+│   └── settings/            # base.py, local.py, test.py, standalone.py, production.py
+├── core/                    # Utilidades compartidas (validators, mixins, permissions)
+├── tenants/                 # Multi-tenancy (Tenant, middleware, comandos create_tenant/list_tenants/bootstrap_tenant)
+├── members/                 # Miembros, familias, tags, onboarding, User
+│   └── api/                 # API REST de members/families/tags
+├── finance/                 # Donaciones, gastos, campañas
+│   └── api/                 # API REST de finance
+├── notifications/           # Notificaciones in-app
+├── emails/                  # Registro/envío de emails transaccionales
+├── templates/                # Templates HTML (Bootstrap 5)
+├── tests/                   # pytest (api/, e2e/)
+├── docs/                    # Documentación detallada (DEPLOYMENT, API, FAQ, GLOSSARY)
+├── requirements.txt          # Dependencias de producción
+├── requirements-dev.txt      # + herramientas de desarrollo
+├── manage.py
+└── pytest.ini
+```
 
-```
-SG_Church/
-├── docs/                    # Documentación detallada
-│   ├── DEPLOYMENT.md       # Guía de deployment
-│   ├── FAQ.md              # Preguntas frecuentes
-│   └── GLOSSARY.md         # Glosario de términos
-│
-├── .github/                # Configuración de GitHub
-│   ├── ISSUE_TEMPLATE/     # Plantillas de issues
-│   └── pull_request_template.md
-│
-├── sg_church/              # Proyecto Django
-│   ├── settings/          # Configuración
-│   ├── core/              # App core
-│   ├── tenants/           # Multi-tenancy
-│   ├── members/           # Gestión de miembros
-│   ├── finance/           # Finanzas
-│   ├── education/         # LMS
-│   └── api/               # API REST
-│
-├── templates/              # Templates HTML
-├── static/                # CSS, JS, imágenes
-├── requirements.txt        # Dependencias Python
-├── manage.py              # CLI de Django
-└── pytest.ini             # Configuración de tests
-```
+No hay app `education`/LMS todavía — está en el roadmap, no implementada.
 
 ---
 
@@ -309,61 +337,20 @@ python manage.py showmigrations
 
 ---
 
-## 🎯 Próximos Pasos en el Desarrollo
-
-Una vez aprobada la planificación, se implementará:
-
-1. **Setup del Proyecto**
-   - Crear proyecto Django
-   - Configurar apps (members, finance, education)
-   - Setup de Django REST Framework
-
-2. **Configuración Inicial**
-   - Modelado de datos (Tenant, Member, Family, etc.)
-   - Sistema de autenticación
-   - Admin Django
-
-3. **Primera Funcionalidad (Sprint 1)**
-   - Registro de iglesias (tenants)
-   - Gestión básica de miembros
-   - Dashboard
-
----
-
 ## 🤝 Obtener Ayuda
 
 Si tienes problemas:
 
 1. **Revisa la [FAQ](./docs/FAQ.md)** - Respuestas a preguntas comunes
-2. **Busca en [Issues](https://github.com/your-org/sg-church/issues)** - Problemas conocidos
-3. **Pregunta en [Discussions](https://github.com/your-org/sg-church/discussions)** - Foro
-4. **Email**: support@sgchurch.app
+2. **Busca o abrí un Issue** en este repositorio
 
 ---
 
 ## 📝 Estado Actual
 
-> ⚠️ **IMPORTANTE**: Este proyecto está actualmente en **desarrollo activo** (Fase 1: MVP).
->
-> Stack tecnológico: **Django 5 + DRF + Bootstrap 5**
-
-**Completado:**
-- ✅ Proyecto Django configurado
-- ✅ Modelos base (Tenant, Member, Family, Donation, Expense, Campaign)
-- ✅ API REST con DRF (Members API, Finance API)
-- ✅ Autenticación con django-allauth
-- ✅ Templates de login/register
-- ✅ Multi-tenancy middleware
-
-**En desarrollo (Sprint 3):**
-- CRUD de miembros
-- Onboarding wizard
-- Dashboard
-
-**Próximo paso**: Continuar implementación del Sprint 3
+Ver [ROADMAP.md](./ROADMAP.md) para el estado sprint a sprint (qué está
+hecho y qué falta) — no lo duplicamos acá para que no se desactualice.
 
 ---
 
 **¿Listo para contribuir?** Lee [CONTRIBUTING.md](./CONTRIBUTING.md) para empezar.
-
-**¿Tienes preguntas?** Consulta la [FAQ](./docs/FAQ.md) o abre una [Discussion](https://github.com/your-org/sg-church/discussions).

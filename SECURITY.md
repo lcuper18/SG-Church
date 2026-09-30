@@ -2,18 +2,8 @@
 
 ## Versiones Soportadas
 
-Actualmente damos soporte y parches de seguridad para las siguientes versiones:
-
-| Versión | Soportada          |
-| ------- | ------------------ |
-| 0.x     | :white_check_mark: |
-
-Una vez lancemos v1.0:
-
-| Versión | Soportada          |
-| ------- | ------------------ |
-| 1.x     | :white_check_mark: |
-| 0.x     | :x:                |
+El proyecto todavía no tiene versiones etiquetadas (`v1.0`, etc.) — se da
+soporte de seguridad sobre la rama `main`.
 
 ---
 
@@ -23,297 +13,109 @@ Una vez lancemos v1.0:
 
 ### ⚠️ NO Crear Issue Público
 
-Por favor **NO** reportes vulnerabilidades de seguridad a través de issues públicos de GitHub, ya que esto podría poner en riesgo a iglesias que usan la plataforma.
+Por favor **NO** reportes vulnerabilidades de seguridad a través de issues
+públicos de GitHub, ya que esto podría poner en riesgo a iglesias que ya
+estén usando la plataforma.
 
 ### ✅ Proceso de Reporte Responsable
 
-1. **Email**: Envía un email a **security@sgchurch.app**
+Si este repositorio es público en GitHub, usá **"Report a vulnerability"**
+en la pestaña Security del repositorio (GitHub Private Vulnerability
+Reporting) — es privado entre vos y quien mantiene el proyecto.
 
-2. **Incluye en tu reporte**:
-   - Descripción detallada de la vulnerabilidad
-   - Pasos para reproducir el problema
-   - Impacto potencial (qué datos están en riesgo)
-   - Severidad estimada (crítica, alta, media, baja)
-   - Cualquier prueba de concepto (PoC) o exploit
-   - Tu nombre/organización si deseas ser acreditado
+> TODO antes de publicar este proyecto: reemplazar esta sección con un
+> email de seguridad real si se prefiere ese canal en vez de (o además de)
+> GitHub Security Advisories.
 
-3. **Qué esperar**:
-   - **24 horas**: Confirmación de recepción
-   - **72 horas**: Evaluación inicial de severidad
-   - **7 días**: Plan de remediación comunicado
-   - **30 días**: Fix deployed (para vulnerabilidades críticas)
-   - **90 días**: Divulgación pública coordinada (opcional)
+Incluí en tu reporte:
+- Descripción detallada de la vulnerabilidad
+- Pasos para reproducirla
+- Impacto potencial (qué datos quedarían expuestos)
+- Severidad estimada
+- Prueba de concepto, si la tenés
 
-### Severidad y Tiempos de Respuesta
+### Severidad de referencia
 
-| Severidad | Descripción | Tiempo de Fix | Ejemplo |
-|-----------|-------------|---------------|---------|
-| **Crítica** | Acceso no autorizado a datos de multiple tenants | 24-48 horas | SQL injection que permite leer datos de otras iglesias |
-| **Alta** | Acceso no autorizado a datos dentro de un tenant | 3-7 días | Fallo de autorización que permite miembro ver datos de otro |
-| **Media** | Exposición de información sensible | 14 días | Información de miembro en HTML source |
-| **Baja** | Issues de configuración o información | 30 días | Versión de software expuesta en headers |
+| Severidad | Descripción | Ejemplo |
+|-----------|-------------|---------|
+| **Crítica** | Acceso no autorizado a datos de otra iglesia | Un bug que rompe el filtrado por `tenant` |
+| **Alta** | Un usuario ve/modifica datos que su rol no debería permitirle | Bypass de `can_manage_finance`/`can_manage_members` |
+| **Media** | Exposición de información sensible sin acceso directo a datos | Información filtrada en un mensaje de error |
+| **Baja** | Configuración o información de bajo impacto | Versión de software expuesta en un header |
 
-### Programa de Recompensas (Bug Bounty)
-
-Actualmente **NO** tenemos un programa formal de bug bounty, pero:
-
-- ✅ **Reconocimiento público** (con tu permiso)
-- ✅ **Mencionado en security advisories**
-- ✅ **Swag del proyecto** (cuando esté disponible)
-
-Consideraremos implementar un programa monetario en Fase 3 cuando tengamos funding.
+No hay un programa de bug bounty (el proyecto es gratuito, financiado por
+donaciones) — sí ofrecemos reconocimiento público en el historial de
+cambios, con tu permiso.
 
 ---
 
-## Mejores Prácticas de Seguridad
+## Qué está implementado hoy
 
-### Para Usuarios (Iglesias)
+Esta sección refleja el estado real del código (auditado y verificado), no
+una lista de aspiraciones:
 
-#### Contraseñas Fuertes
-- Mínimo 12 caracteres
-- Combina letras, números y símbolos
-- No reutilices contraseñas de otros servicios
-- Usa un password manager
+- **Aislamiento por iglesia**: cada modelo con datos de una iglesia (Member,
+  Donation, Expense, Notification, etc.) tiene un campo `tenant`, y toda
+  vista/endpoint filtra por él — no hay separación por schema de base de
+  datos, es aislamiento a nivel de fila, reforzado por `request.user.tenant`.
+- **Control de acceso por rol**: `admin`, `treasurer`, `pastor`,
+  `volunteer`, `member` — aplicado tanto en las vistas web
+  (`core/mixins.py`) como en la API REST (`core/permissions.py`). Un
+  superusuario de Django tiene acceso completo.
+- **CSRF**: protección estándar de Django en todos los formularios; el
+  único endpoint exento es el webhook de Stripe, que en cambio valida la
+  firma de la petición (`stripe.Webhook.construct_event`) como mecanismo
+  de confianza.
+- **Validación de archivos subidos**: extensión y tamaño máximo en fotos de
+  miembros, logos y recibos de gastos (`core/validators.py`).
+- **Configuración sin defaults inseguros**: `SECRET_KEY` y
+  `DATABASE_PASSWORD` son obligatorios (la app no arranca sin ellos, no hay
+  fallback débil); `DEBUG` es `False` por defecto salvo en desarrollo local.
+- **Cookies seguras y HSTS** en el modo de producción
+  (`sg_church/settings/production.py`): `SESSION_COOKIE_SECURE`,
+  `CSRF_COOKIE_SECURE`, `SECURE_SSL_REDIRECT`, HSTS.
+- **Contraseñas**: hasheadas con los validadores/hashers estándar de
+  Django (nunca en texto plano).
+- **SQL**: se usa el ORM de Django en prácticamente todo el código (queries
+  parametrizadas); no hay SQL crudo con interpolación de strings.
 
-#### Autenticación de Dos Factores (2FA)
-- Habilita 2FA para cuentas admin (disponible en Fase 2)
-- Usa apps como Google Authenticator o Authy
+## Qué NO está implementado todavía
 
-#### Permisos de Usuario
-- Asigna roles siguiendo principio de **least privilege**
-- Revisa permisos regularmente
-- Desactiva cuentas de usuarios que ya no son parte del staff
+Para ser honestos sobre las limitaciones actuales:
 
-#### Datos Sensibles
+- **Sin autenticación de dos factores (2FA)**
+- **Sin rate limiting** en login ni en la API (mitigación: usar contraseñas
+  fuertes; considerar un proxy/WAF si se expone públicamente)
+- **Sin auditoría/logging estructurado** de accesos a datos financieros más
+  allá de los logs estándar de la aplicación
+- **Sin cifrado a nivel de aplicación** de datos sensibles en la base de
+  datos (depende de que el proveedor de hosting/base de datos cifre en
+  reposo)
+- **Sin auditoría de seguridad externa realizada todavía**
+- **Sin herramientas de cumplimiento GDPR** (exportación/borrado de datos)
+  implementadas como feature — son operaciones manuales hoy vía Django
+  admin o la base de datos directamente
+
+Si tu iglesia maneja datos especialmente sensibles, tenelo en cuenta al
+decidir cómo desplegar (self-host detrás de tu propia infraestructura vs.
+depender de terceros) y quién tiene acceso administrativo.
+
+---
+
+## Buenas prácticas para quien administra una instancia
+
+- Usá una contraseña fuerte y única para la cuenta admin
+- Asigná roles según el principio de mínimo privilegio (no todos necesitan
+  ser `admin`)
+- Desactivá usuarios que ya no forman parte del staff
 - No compartas credenciales de login
-- No incluyas información sensible (SSN, números de cuenta) en notas de miembros
-- Revisa configuración de privacidad del directorio de miembros
-
-### Para Desarrolladores
-
-#### Code Security
-
-- ✅ **Input validation**: Validar todo input con Django Forms y serializers
-- ✅ **SQL Injection**: Usamos Django ORM (queries parametrizadas automáticamente)
-- ✅ **XSS Prevention**: Django templates escapan output automáticamente
-- ✅ **CSRF Protection**: Django maneja CSRF tokens automáticamente
-- ✅ **Sanitize HTML**: Si permitimos HTML, usar DOMPurify
-
-#### Authentication & Authorization
-
-- ✅ **Password hashing**: bcrypt con salt rounds 12+
-- ✅ **Session management**: HTTP-only cookies
-- ✅ **JWT tokens**: Short-lived (15 min), refresh tokens rotated
-- ✅ **Permission checks**: En cada API endpoint (no solo UI)
-
-```typescript
-// ❌ Bad: Solo check en UI
-{user.role === 'ADMIN' && <DeleteButton />}
-
-// ✅ Good: Check en backend también
-export const deleteMember = protectedProcedure
-  .input(z.object({ id: z.string() }))
-  .mutation(async ({ input, ctx }) => {
-    // Authorization check
-    const ability = defineAbilitiesFor(ctx.session.user)
-    if (!ability.can('delete', 'Member')) {
-      throw new TRPCError({ code: 'FORBIDDEN' })
-    }
-    
-    // Proceed
-    await ctx.db.member.delete({ where: { id: input.id } })
-  })
-```
-
-#### Data Protection
-
-- ✅ **Encryption at rest**: Datos sensibles encrypted en DB
-- ✅ **Encryption in transit**: HTTPS/TLS 1.3 obligatorio
-- ✅ **Environment secrets**: Nunca commitear .env files
-- ✅ **Audit logging**: Log acceso a datos financieros
-
-#### Multi-Tenant Security
-
-- ✅ **Tenant isolation**: Verificar en CADA query
-- ✅ **Middleware enforcement**: Tenant context en cada request
-
-```typescript
-// ✅ Always include tenant check
-export async function getMembers(ctx: Context) {
-  const tenantId = ctx.session.tenant.id
-  
-  return await db.member.findMany({
-    where: { tenantId }  // CRITICAL: Filter by tenant
-  })
-}
-```
-
-#### Dependency Security
-
-```bash
-# Check vulnerabilities regularmente
-pip-audit
-
-# Update dependencies
-pip install -U -r requirements.txt
-
-# Automated scanning
-# GitHub Dependabot: Enabled
-# Snyk: Configured in CI/CD
-```
-
-#### Rate Limiting
-
-```typescript
-// Prevent brute force attacks
-import { rateLimit } from '@/lib/rate-limit'
-
-export async function POST(req: Request) {
-  const identifier = req.headers.get('x-forwarded-for')
-  
-  const { success } = await rateLimit.check(identifier, {
-    limit: 10,
-    window: '1m',
-  })
-  
-  if (!success) {
-    return new Response('Too many requests', { status: 429 })
-  }
-  
-  // Proceed
-}
-```
+- Si desplegás el modo SaaS, restringí el acceso a la base de datos
+  Postgres y a Redis — no deben quedar expuestos a internet
+- Configurá `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS` con tu dominio real,
+  nunca `*` en producción
 
 ---
 
-## Medidas de Seguridad Implementadas
-
-### Application Security
-
-- ✅ **HTTPS only**: Redirect HTTP → HTTPS
-- ✅ **Security headers**: 
-  - Content-Security-Policy
-  - X-Frame-Options: DENY
-  - X-Content-Type-Options: nosniff
-  - Referrer-Policy: strict-origin-when-cross-origin
-- ✅ **CORS**: Configurado restrictivamente
-- ✅ **Rate limiting**: API endpoints protegidos
-- ✅ **Input sanitization**: Django Forms validation en todos los endpoints
-
-### Database Security
-
-- ✅ **Schema-per-tenant**: Máxima aislación de datos
-- ✅ **Row-level security**: Policies adicionales en PG
-- ✅ **Least privilege**: App DB user sin permisos de DROP/ALTER
-- ✅ **Database backups**: Encrypted at rest
-- ✅ **Connection pooling**: Con credentials rotation
-
-### Infrastructure Security
-
-- ✅ **Secrets management**: Nunca en código, solo env vars
-- ✅ **Hosting security** (Render/Railway):
-  - DDoS protection
-  - Edge network
-  - Automatic SSL
-- ✅ **Database encryption**: At rest (PostgreSQL gestionado)
-- ✅ **Network isolation**: DB no accesible públicamente
-
-### Monitoring & Alerting
-
-- ✅ **Error tracking**: Sentry captura excepciones
-- ✅ **Audit logs**: Todas las operaciones críticas logged
-- ✅ **Failed login attempts**: Monitoreados y alertados
-- ✅ **Suspicious activity**: Automated detection (próximamente)
-
-### Compliance
-
-- ✅ **GDPR**: 
-  - Data export capability
-  - Right to erasure
-  - Consent tracking
-- ✅ **PCI DSS**: Manejado por Stripe (no almacenamos card data)
-- 🔄 **SOC 2 Type 1**: Planificado para Fase 4
-
----
-
-## Auditorías de Seguridad
-
-### Auditorías Completadas
-
-| Fecha | Tipo | Resultado | Issues Encontrados | Issues Resueltos |
-|-------|------|-----------|-------------------|------------------|
-| - | - | - | - | - |
-
-*Actualizaremos esta tabla después de cada auditoría*
-
-### Próximas Auditorías Planificadas
-
-- **Q3 2026**: Penetration testing por firma externa
-- **Q4 2026**: Code audit completo
-- **Ongoing**: Automated scanning con Snyk
-
----
-
-## Divulgación Responsable
-
-### Nuestra Política
-
-Creemos en **coordinated disclosure**:
-
-1. **Reporter nos notifica** privadamente
-2. **Evaluamos y desarrollamos fix**
-3. **Deployamos fix** a producción
-4. **Notificamos a usuarios afectados** (si aplica)
-5. **Publicamos advisory** 
-   - Después de que fix esté deployed
-   - Con crédito al reporter (si desea)
-   - Típicamente después de 30-90 días
-
-### Security Advisories
-
-Publicamos advisories en:
-- GitHub Security Advisories
-- Blog de SG Church
-- Email a iglesias afectadas (si crítico)
-
-Ejemplo de advisory:
-```markdown
-# Security Advisory: SQL Injection en Member Search
-
-**CVE**: CVE-2026-XXXXX
-**Severity**: High
-**Affected versions**: v0.1.0 - v0.3.5
-**Fixed in**: v0.4.0
-
-## Description
-SQL injection vulnerability en member search permitía...
-
-## Impact
-Usuarios con rol Teacher podían ver datos de...
-
-## Mitigation
-Actualizar a v0.4.0 o superior.
-
-## Credit
-Gracias a @researcher por el reporte responsable.
-```
-
----
-
-## Contacto
-
-- **Security issues**: security@sgchurch.app
-- **General contact**: support@sgchurch.app
-- **PGP key**: [Coming soon]
-
----
-
-## Reconocimientos
-
-Agradecemos a los siguientes investigadores de seguridad por sus contribuciones:
-
-*Lista será actualizada según recibamos reportes*
-
----
-
-**Última actualización**: Febrero 15, 2026
+**Última actualización**: Septiembre 2026 (revisado junto con la auditoría
+de seguridad que corrigió el aislamiento por tenant y el control de
+acceso por rol).

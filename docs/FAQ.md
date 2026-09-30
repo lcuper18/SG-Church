@@ -12,24 +12,37 @@ Yes! SG Church is completely free to use. The platform is funded by voluntary do
 SG Church is designed to scale from small house churches (10-50 members) to large congregations (5,000+ members). The multi-tenant architecture ensures performance regardless of size.
 
 ### Is my church's data secure?
-Absolutely. We implement schema-per-tenant database isolation, meaning each church's data is physically separated in the database. We follow industry best practices including encryption at rest and in transit, regular backups, and compliance with GDPR and other data protection regulations. See [SECURITY.md](../SECURITY.md) for details.
+Each church's data is isolated at the row level — every query is scoped to
+your church's `tenant` — and access is controlled by role (admin,
+treasurer, pastor, volunteer, member), enforced both in the web app and
+the API. Encryption at rest, backups, and GDPR-specific tooling depend on
+how and where you deploy the instance, not on the application itself. See
+[SECURITY.md](../SECURITY.md) for the honest, current state of what's
+implemented and what isn't.
 
 ### Can I self-host SG Church?
-Yes! SG Church is open source (MIT License), so you can self-host on your own infrastructure. We provide deployment guides for Render, Railway, AWS, and other platforms. See [docs/DEPLOYMENT.md](./DEPLOYMENT.md).
+Yes! SG Church is open source (MIT License). You can run it standalone for
+a single church with one Docker command (SQLite, no external services —
+see `docker-compose.standalone.yml`), or deploy the multi-church SaaS mode
+(PostgreSQL + Redis) on your own infrastructure or a platform like Render,
+Railway, or Dokploy. See [docs/DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Technical Questions
 
 ### What tech stack does SG Church use?
 - **Backend**: Django 5, Python 3.12, Django REST Framework
 - **Frontend**: HTML5, CSS3, Bootstrap 5, JavaScript
-- **Database**: PostgreSQL 16+ with Django ORM
-- **Infrastructure**: Render/VPS (hosting), PostgreSQL, Redis + Celery
-- **Payments**: Stripe Connect
+- **Database**: PostgreSQL 16+ (SaaS mode) or SQLite (standalone mode), with the Django ORM
+- **Infrastructure**: Docker (Dokploy, Render, or any VPS), Redis + Celery in SaaS mode
+- **Payments**: Stripe
 
 See [TECH_STACK.md](../TECH_STACK.md) for complete details.
 
 ### How does multi-tenancy work?
-We use a schema-per-tenant approach. Each church gets its own PostgreSQL schema, providing strong data isolation while maintaining cost efficiency. A single public schema handles tenant registration and routing. See [ARCHITECTURE.md](../ARCHITECTURE.md#multi-tenancy-strategy).
+Isolation is row-level: every church-owned record has a `tenant` foreign
+key, and every query is filtered by the logged-in user's tenant — not by
+separate database schemas. See
+[ARCHITECTURE.md](../ARCHITECTURE.md#multi-tenancy-strategy).
 
 ### Can I integrate SG Church with my existing tools?
 Phase 4 includes a public API for integrations. In earlier phases, you can use webhooks for certain events (donations, new members, etc.).

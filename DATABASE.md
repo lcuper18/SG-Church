@@ -2,11 +2,19 @@
 
 Este documento detalla el esquema completo de la base de datos PostgreSQL, incluyendo tablas, relaciones, índices y estrategias de optimización.
 
+> **Nota**: este documento mezcla el esquema ya implementado (Membresía,
+> Finanzas básicas — ver los modelos reales en `members/models.py`,
+> `finance/models.py`, `tenants/models.py`, `notifications/models.py`,
+> `emails/models.py`) con el diseño planeado para módulos futuros
+> (contabilidad de doble entrada, LMS/cursos) que **todavía no existen en
+> el código**. Tratalo como referencia de diseño, no como el estado actual
+> de cada tabla — ver [ROADMAP.md](./ROADMAP.md) para qué está construido.
+
 ## Tabla de Contenidos
 
 - [Estrategia Multi-Tenant](#estrategia-multi-tenant)
-- [Schema Público](#schema-público)
-- [Schema Per-Tenant](#schema-per-tenant)
+- [Tablas de Plataforma](#tablas-de-plataforma-compartidas)
+- [Tablas por Iglesia](#tablas-por-iglesia-comparten-schema-filtran-por-tenant_id)
 - [Diagrama ER](#diagrama-er)
 - [Índices y Optimizaciones](#índices-y-optimizaciones)
 - [Migraciones](#migraciones)
@@ -16,43 +24,36 @@ Este documento detalla el esquema completo de la base de datos PostgreSQL, inclu
 
 ## Estrategia Multi-Tenant
 
-### Schema Isolation
+### Aislamiento por fila (implementado)
 
-Cada iglesia (tenant) obtiene su propio schema PostgreSQL:
-
-```sql
--- Schema público: datos compartidos entre todos los tenants
-CREATE SCHEMA public;
-
--- Schemas específicos por tenant (uno por iglesia)
-CREATE SCHEMA church_abc123;
-CREATE SCHEMA church_xyz789;
-CREATE SCHEMA church_def456;
-```
-
-**Ventajas**:
-- ✅ Aislamiento fuerte de datos
-- ✅ Backups individuales por iglesia
-- ✅ Posibilidad de migrar iglesias grandes a DB dedicada
-- ✅ Queries más simples (no necesita filtrar por tenant_id en cada query)
-
-**Consideraciones**:
-- ⚠️ Migraciones deben aplicarse a todos los schemas
-- ⚠️ Límite de ~1000 schemas por instancia PostgreSQL
-
-### Tenant Context
+Se evaluó y se intentó un schema-per-tenant (un schema PostgreSQL por
+iglesia), pero el código que lo implementaba dependía de un backend de
+base de datos con soporte de cambio de schema que el proyecto nunca instaló
+— nunca funcionó en producción (ver [CHANGELOG.md](./CHANGELOG.md)). La
+estrategia real, ya implementada, es **una sola base de datos compartida**,
+con una columna `tenant_id` (foreign key a `tenants.Tenant`) en cada tabla
+que pertenece a una iglesia:
 
 ```sql
--- Al inicio de cada request/transacción:
-SET search_path TO church_abc123, public;
-
--- Todas las queries subsecuentes operan en ese schema
-SELECT * FROM members; -- Automáticamente busca en church_abc123.members
+-- Todas las iglesias comparten las mismas tablas
+SELECT * FROM members WHERE tenant_id = '...';
+SELECT * FROM donations WHERE tenant_id = '...';
 ```
+
+Cada vista/endpoint filtra automáticamente por el `tenant` del usuario
+autenticado (ver `ARCHITECTURE.md#arquitectura-multi-tenant`). Esta
+estrategia además es la que permite que el modo autoinstalable use SQLite
+sin cambios de código — no depende de ninguna feature específica de
+Postgres.
+
+**Ventajas**: sin dependencias extra, funciona igual en Postgres y SQLite,
+sin límite práctico de iglesias por instancia.
+**Trade-off**: cada query nueva debe acordarse de filtrar por `tenant` —
+no hay una barrera física que lo haga automáticamente.
 
 ---
 
-## Schema Público
+## Tablas de Plataforma (compartidas)
 
 Contiene datos **compartidos** entre todos los tenants.
 
@@ -139,7 +140,7 @@ CREATE TABLE public.platform_users (
 
 ---
 
-## Schema Per-Tenant
+## Tablas por Iglesia (comparten schema, filtran por tenant_id)
 
 Cada uno de estos modelos se replica en **cada schema de tenant** (`church_abc123`, `church_xyz789`, etc.).
 

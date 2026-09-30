@@ -146,105 +146,59 @@ SG Church es una plataforma SaaS multi-tenant diseñada para escalar desde peque
 | Estrategia | Pros | Contras | Decisión |
 |------------|------|---------|----------|
 | **Database per Tenant** | Máximo aislamiento | 🔴 Muy caro (100s de DBs) | ❌ |
-| **Shared DB, Row-Level Security** | Bajo costo | 🔴 Queries complejas, riesgo leaks | ❌ |
-| **Schema per Tenant** | Buen aislamiento | Límite ~1000 schemas por DB | ✅ **ELEGIDO** |
-| **Discriminator Column** | Simple | 🔴 Aislamiento较弱 | ❌ |
+| **Schema per Tenant** | Buen aislamiento | Requiere una librería tipo `django-tenants`, que este proyecto no instala; el código que la asumía sin tenerla nunca funcionó en producción (ver [CHANGELOG.md](./CHANGELOG.md)) | ❌ (se intentó, se revirtió) |
+| **Discriminator Column / Row-Level** | Simple, sin dependencias extra, funciona igual en Postgres y SQLite (necesario para el modo autoinstalable) | Cada query debe filtrar por tenant explícitamente | ✅ **ELEGIDO** |
 
-### Implementación: Schema-per-Tenant
+### Implementación: aislamiento por fila (`tenant` FK)
 
-Cada iglesia (tenant) tiene su propio schema PostgreSQL:
+Cada modelo con datos de una iglesia (`Member`, `Donation`, `Expense`,
+`Notification`, etc.) tiene una foreign key `tenant`. No hay separación
+física en la base de datos — el aislamiento se garantiza filtrando siempre
+por `tenant` en cada consulta, típicamente `request.user.tenant`:
 
-```sql
--- Iglesia 1
-CREATE SCHEMA church_abc123;
-CREATE TABLE church_abc123.members (...);
-CREATE TABLE church_abc123.donations (...);
-
--- Iglesia 2
-CREATE SCHEMA church_xyz789;
-CREATE TABLE church_xyz789.members (...);
-CREATE TABLE church_xyz789.donations (...);
+```python
+# members/views.py
+class MemberListView(LoginRequiredMixin, ListView):
+    def get_queryset(self):
+        tenant = getattr(self.request.user, "tenant", None)
+        return Member.objects.filter(tenant=tenant)
 ```
+
+Esto es lo mismo tanto en el modo SaaS (PostgreSQL) como en el modo
+autoinstalable (SQLite) — no depende del motor de base de datos.
 
 ### Tenant Resolution
 
-**Middleware**:
+`TenantMiddleware` (`tenants/middleware.py`) resuelve `request.tenant` para
+páginas públicas/anónimas (como la de donaciones), por subdominio o, si
+solo existe una iglesia en la instalación (instalación autoinstalable de
+una sola iglesia), usándola automáticamente sin necesidad de subdominio:
+
 ```python
-# core/middleware.py
+# tenants/middleware.py (real, simplificado)
 class TenantMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-    
     def __call__(self, request):
-        # Extraer subdominio
-        host = request.get_host().split(':')[0]
-        subdomain = host.split('.')[0] if '.' in host else None
-        
-        # Buscar tenant
-        try:
-            tenant = Tenant.objects.get(subdomain=subdomain)
-            request.tenant = tenant
-            # Establecer schema
-            connection.set_schema(tenant.schema_name)
-        except Tenant.DoesNotExist:
+        if self._should_skip(request):
             request.tenant = None
-        
-        response = self.get_response(request)
-        return response
+            return self.get_response(request)
+        request.tenant = self._resolve_tenant(request)
+        return self.get_response(request)
 ```
 
-**Connection wrapper**:
-```python
-# core/db.py
-from django.db import connection
+No cambia el schema de la conexión — no hace falta, porque el aislamiento
+ya lo da el filtrado por `tenant` en cada query.
 
-def get_tenant_model():
-    """Retorna el modelo correcto según el tenant actual."""
-    schema_name = getattr(connection, 'schema_name', 'public')
-    if schema_name == 'public':
-        return PublicTenant
-    return get_model_for_schema(schema_name)
-```
+### Alta de una iglesia (tenant)
 
-### Tenant Provisioning
+Dos caminos, ambos vigentes:
 
-```python
-# tenants/views.py
-import uuid
-from django.db import transaction
-
-@transaction.atomic
-def create_tenant(name, subdomain, email):
-    schema_name = f"church_{uuid.uuid4().hex[:8]}"
-    
-    # 1. Crear registro en tabla tenants
-    tenant = Tenant.objects.create(
-        schema_name=schema_name,
-        subdomain=subdomain,
-        name=name,
-        email=email,
-    )
-    
-    # 2. Crear schema
-    with connection.cursor() as cursor:
-        cursor.execute(f"CREATE SCHEMA {schema_name}")
-    
-    # 3. Ejecutar migraciones en nuevo schema
-    call_command('migrate', 
-                 schema_name=schema_name, 
-                 verbosity=0)
-    
-    # 4. Crear cuenta Stripe Connect
-    import stripe
-    stripe_account = stripe.Account.create(
-        type='standard',
-        metadata={'tenant_id': str(tenant.id)}
-    )
-    tenant.stripe_account_id = stripe_account.id
-    tenant.save()
-    
-    return tenant
-```
+- **Wizard web** (`/onboarding/`): 4 pasos (datos de la iglesia, admin,
+  configuración, confirmación) — crea el `Tenant` y el primer usuario
+  `admin` (`members/views.py::OnboardingCompleteView`).
+- **Línea de comandos**: `python manage.py create_tenant "Nombre" subdominio
+  [--admin-email E --admin-password P]`, o `bootstrap_tenant` para el
+  primer arranque no interactivo de una instalación autoinstalable (ver
+  `tenants/management/commands/`).
 
 ---
 
@@ -598,7 +552,11 @@ class IsReadOnly(permissions.BasePermission):
 
 ## Procesamiento de Pagos
 
-### Stripe Connect
+### Donaciones con Stripe
+
+Stripe Connect (para que cada iglesia reciba pagos en su propia cuenta) está
+en el roadmap pero no implementado todavía — ver ROADMAP.md, Sprint 8-10.
+Hoy `finance/views.py::create_checkout_session` usa Stripe Checkout directo:
 
 ```python
 # payments/views.py

@@ -9,67 +9,62 @@
 
 SG Church es una plataforma SaaS **gratuita** diseñada para ayudar a iglesias de todos los tamaños a gestionar eficientemente sus operaciones diarias. El proyecto se financia mediante donaciones voluntarias y está comprometido con proveer herramientas de administración de clase mundial para el cuerpo de Cristo.
 
-## ✨ Características Principales
+## ✨ Características
 
-### 📋 Gestión de Membresía
-- **Perfiles completos** de miembros con fotos y datos personales
-- **Gestión de familias** con relaciones (padres, hijos, cónyuges)
-- **Registro de asistencia** a servicios y eventos
-- **Importación masiva** desde CSV/Excel
-- **Directorio de miembros** con controles de privacidad
+### Disponibles hoy
 
-### 💰 Gestión Financiera y Donaciones
-- **Procesamiento de donaciones** con Stripe (únicas y recurrentes)
-- **Contabilidad de doble entrada** con categorización de gastos
-- **Reportes financieros** (Estado de Resultados, Balance)
-- **Declaraciones anuales de donaciones** para impuestos
-- **Dashboard financiero** con visualizaciones
+**📋 Gestión de Membresía**
+- Perfiles de miembros con fotos y datos personales
+- Gestión de familias (padres, hijos, cónyuges) y etiquetas
+- Directorio de miembros
+- Onboarding de una iglesia nueva (wizard web o línea de comandos)
 
-### 🎓 Sistema Educativo (LMS)
-- **Creación de cursos** con lecciones multimedia
-- **Rutas de aprendizaje** con prerrequisitos
-- **Quizzes y evaluaciones** con auto-calificación
-- **Certificados de completitud** generados automáticamente
-- **Tracking de progreso** por estudiante
+**💰 Gestión Financiera y Donaciones**
+- Donaciones únicas vía Stripe Checkout, con webhook verificado por firma
+- Registro y categorización de gastos, con adjunto de recibo
+- Dashboard financiero (ingresos/gastos del mes, gráfico de 12 meses)
+- Estado de resultados y reporte de donaciones por miembro
 
-### ⛪ Registros Sacramentales
-- **Bautizos** con certificados PDF
-- **Matrimonios** y confirmaciones
-- **Galerías de fotos** de eventos
-- **Búsqueda histórica** de registros
+**🔔 Notificaciones**
+- Notificaciones in-app
+- Emails transaccionales (vía Resend, con registro de auditoría)
 
-### 📊 Reportes y Analytics
-- **KPIs de crecimiento** y retención
-- **Análisis demográfico** de membresía
-- **Reportes de donaciones** por período/campaña
-- **Identificación de miembros inactivos**
-- **Exportación** a PDF y Excel
+**🔐 Control de acceso**
+- Roles (admin, tesorero, pastor, voluntario, miembro) aplicados tanto en
+  las vistas web como en la API
 
-### 🔔 Comunicaciones
-- **Emails transaccionales** (recibos, bienvenidas)
-- **Notificaciones SMS** (recordatorios, urgentes)
-- **Recordatorios automáticos** de cumpleaños y aniversarios
-- **Mensajería a grupos** (próximamente)
+### En el roadmap (no implementado todavía)
+
+Ver [ROADMAP.md](./ROADMAP.md) para el detalle sprint a sprint. Entre lo
+planeado: registros sacramentales (bautizos, matrimonios), donaciones
+recurrentes, sistema LMS de cursos, reportes financieros avanzados,
+asistencia/check-in, notificaciones SMS, importación/exportación masiva
+CSV, y más.
 
 ## 🏗️ Arquitectura
 
-### Multi-Tenancy
-- **Schema-per-tenant**: Cada iglesia tiene su propio esquema PostgreSQL
-- **Aislamiento completo** de datos entre iglesias
-- **Subdominios personalizados**: `tunombredeiglesia.sgchurch.app`
-- **Escalable** desde 10 hasta 10,000+ miembros por iglesia
+### Dos formas de usar SG Church
+- **Autoinstalable**: una iglesia, una instalación propia (SQLite, sin
+  servicios externos) — pensado para correr en una computadora o un
+  servidor chico. Ver `docker-compose.standalone.yml`.
+- **SaaS multi-iglesia**: una instalación centralizada que aloja a varias
+  iglesias (PostgreSQL + Redis), cada una con sus propios usuarios y datos
+  aislados por fila (`tenant_id`) en cada tabla. Ver `docker-compose.yml`.
+
+Ver [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) para instrucciones de ambos
+modos.
 
 ### Stack Tecnológico
 - **Backend**: Python 3.12 + Django 5.x
 - **API**: Django REST Framework (REST APIs)
 - **Frontend**: HTML5 + CSS3 + JavaScript (Vanilla + Bootstrap 5)
-- **Base de Datos**: PostgreSQL 16 + Django ORM
+- **Base de Datos**: PostgreSQL 16 (SaaS) o SQLite (autoinstalable) + Django ORM
 - **Autenticación**: Django Auth + django-allauth
-- **Pagos**: Stripe Connect
-- **Almacenamiento**: AWS S3
+- **Pagos**: Stripe
+- **Almacenamiento**: Sistema de archivos local, o AWS S3 en producción
 - **Email**: SendGrid / Resend
-- **Tareas async**: Redis + Celery
-- **Hosting**: Render / VPS
+- **Tareas async**: Celery (Redis en modo SaaS, síncrono en modo autoinstalable)
+- **Hosting**: Docker (cualquier proveedor), Dokploy, Render, o VPS manual
 
 Ver [TECH_STACK.md](./TECH_STACK.md) para detalles completos.
 
@@ -97,114 +92,79 @@ Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para decisiones arquitectónicas detall
 
 ## 🚀 Inicio Rápido
 
+### Con Docker (recomendado)
+
+Si tu iglesia solo necesita su propia instalación, sin depender de
+PostgreSQL ni Redis:
+
+```bash
+git clone <url-de-este-repositorio>
+cd SG-Church
+docker compose -f docker-compose.standalone.yml up -d
+```
+
+Eso levanta la app en `http://localhost:8000` con una iglesia y un usuario
+admin ya creados. Ver [QUICKSTART.md](./QUICKSTART.md) y
+[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) para el detalle (incluido el modo
+SaaS multi-iglesia, con `docker-compose.yml`).
+
+### Sin Docker (entorno de desarrollo)
+
 ### Prerrequisitos
 
-- **Python** 3.11+ (recomendado: 3.12)
-- **PostgreSQL** 14+ (recomendado: 16)
-- **Redis** 6+ (para Celery)
+- **Python** 3.12+
+- **PostgreSQL** 14+ (recomendado: 16) — no hace falta si usás el modo
+  autoinstalable con SQLite
+- **Redis** 6+ (para Celery) — tampoco hace falta en modo autoinstalable
 - **Cuenta Stripe** (modo test para desarrollo)
 
 ### Instalación
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/tu-org/sg-church.git
-cd sg-church
+git clone <url-de-este-repositorio>
+cd SG-Church
 
 # Instalar dependencias
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # Configurar variables de entorno
-cp apps/web/.env.example apps/web/.env.local
-# Editar .env.local con tus credenciales
+cp .env.example .env
+# Editar .env con tus credenciales
 
 # Ejecutar migraciones de base de datos
 python manage.py migrate
-
-# Sembrar datos de desarrollo (opcional)
-python manage.py loaddata fixtures/sample_data.json
 
 # Iniciar servidor de desarrollo
 python manage.py runserver
 ```
 
-La aplicación estará disponible en `http://localhost:8000`
+La aplicación estará disponible en `http://localhost:8000`. Ver
+[QUICKSTART.md](./QUICKSTART.md) para el paso a paso completo, incluida la
+creación del primer usuario y la primera iglesia.
 
-### Variables de Entorno Requeridas
-
-```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/sgchurch"
-
-# Django
-SECRET_KEY="genera-un-secreto-seguro-aqui"
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Stripe
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-STRIPE_PUBLISHABLE_KEY="pk_test_..."
-
-# Email
-RESEND_API_KEY="re_..."
-
-# Redis
-REDIS_URL="redis://localhost:6379"
-
-# Storage (AWS S3 o Cloudflare R2)
-AWS_ACCESS_KEY_ID="..."
-AWS_SECRET_ACCESS_KEY="..."
-AWS_STORAGE_BUCKET_NAME="sgchurch-media"
-AWS_S3_REGION_NAME="us-east-1"
-```
-
-Ver [DEPLOYMENT.md](./docs/DEPLOYMENT.md) para configuración de producción.
+Ver [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) para configuración de producción.
 
 ## 📖 Documentación
 
+- **[QUICKSTART.md](./QUICKSTART.md)** - Guía paso a paso para arrancar
 - **[ROADMAP.md](./ROADMAP.md)** - Fases de desarrollo y timeline
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Decisiones arquitectónicas
 - **[DATABASE.md](./DATABASE.md)** - Esquema de base de datos
 - **[TECH_STACK.md](./TECH_STACK.md)** - Stack tecnológico detallado
-- **[API.md](./docs/API.md)** - Documentación de API
-- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - Guía de deployment
+- **[docs/API.md](./docs/API.md)** - Documentación de la API REST
+- **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - Guía de deployment
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guía para contribuidores
 - **[SECURITY.md](./SECURITY.md)** - Políticas de seguridad
 
 ## 🗺️ Roadmap
 
-### Fase 1: Fundación (MVP) - Q1-Q2 2026 ✅ En Progreso
-- [x] Configuración de monorepo
-- [x] Autenticación multi-tenant
-- [ ] Gestión de membresía (CRUD completo)
-- [ ] Donaciones básicas con Stripe
-- [ ] Dashboard financiero
-- [ ] Sistema de notificaciones por email
-
-### Fase 2: Core Features - Q2-Q3 2026
-- [ ] Registros de bautizos y sacramentos
-- [ ] Donaciones recurrentes
-- [ ] Sistema LMS básico
-- [ ] Reportes financieros avanzados
-- [ ] Asistencia y check-in
-- [ ] Portal de miembros
-
-### Fase 3: Funciones Avanzadas - Q3-Q4 2026
-- [ ] Rutas de aprendizaje
-- [ ] Calendario y eventos
-- [ ] Grupos pequeños
-- [ ] PWA (Progressive Web App)
-- [ ] Workflows automatizados
-- [ ] Analytics avanzado
-
-### Fase 4: Escalamiento - Q4 2026
-- [ ] Optimización de performance
-- [ ] API pública
-- [ ] Internacionalización (i18n)
-- [ ] Mobile apps nativas (Flutter)
-
-Ver [ROADMAP.md](./ROADMAP.md) para detalles completos de cada fase.
+El desarrollo avanza por sprints documentados en detalle en
+[ROADMAP.md](./ROADMAP.md), agrupados en 4 fases: Fundación (MVP),
+Core Features (bautizos, LMS, reportes avanzados), Funciones Avanzadas
+(learning paths, PWA, workflows) y Escalamiento (performance, API pública,
+i18n). Ese archivo es la fuente de verdad del progreso — evitamos
+duplicarlo acá para que no se desactualice.
 
 ## 🧪 Testing
 
@@ -232,19 +192,23 @@ Estamos comprometidos con proveer un ambiente acogedor y respetuoso para todos. 
 La seguridad es crítica para nosotros. Si encuentras una vulnerabilidad, por favor revisa nuestra [Política de Seguridad](./SECURITY.md) para reportarla responsablemente.
 
 ### Características de Seguridad
-- ✅ Row-Level Security en PostgreSQL
-- ✅ Encriptación en tránsito (TLS 1.3)
-- ✅ Encriptación en reposo para datos sensibles
-- ✅ Auditoría completa de operaciones financieras
-- ✅ GDPR compliant (exportación y eliminación de datos)
-- ✅ Rate limiting y protección DDoS
-- ✅ Penetration testing regular
+- ✅ Aislamiento de datos por iglesia (`tenant_id`) en cada consulta
+- ✅ Control de acceso por rol (admin, tesorero, pastor, voluntario, miembro)
+- ✅ Verificación de firma en los webhooks de Stripe
+- ✅ Validación de tipo y tamaño en todo archivo subido (fotos, recibos)
+- ✅ HTTPS forzado y cookies seguras en el modo de producción
+- ✅ Sin credenciales ni claves con valores por defecto inseguros
+
+TLS, encriptación en reposo, cumplimiento GDPR y rate limiting dependen de
+cómo despliegues la instancia (proxy/CDN, proveedor de base de datos, etc.)
+— no son garantías automáticas de la aplicación en sí.
 
 ## 💝 Donaciones
 
 SG Church es **100% gratuito** para todas las iglesias. Si este proyecto ha sido de bendición para tu congregación, considera hacer una donación para mantener el desarrollo y los servidores.
 
-**[Donar ahora →](https://donate.sgchurch.app)**
+> La página de donaciones todavía no está publicada. Este README se
+> actualizará con el enlace real en cuanto exista.
 
 Las donaciones nos permiten:
 - 🖥️ Mantener servidores y infraestructura
@@ -268,6 +232,6 @@ Este proyecto está licenciado bajo la [Licencia MIT](./LICENSE).
 
 **Hecho con ❤️ para el cuerpo de Cristo**
 
-Para preguntas, soporte o feedback: support@sgchurch.app
-
-[Website](https://sgchurch.app) • [Documentación](https://docs.sgchurch.app) • [Blog](https://blog.sgchurch.app) • [Twitter](https://twitter.com/sgchurch)
+Para preguntas, soporte o feedback, abrí un issue en este repositorio. El
+sitio web, la documentación pública y las redes sociales del proyecto
+todavía no existen — este pie de página se actualizará cuando estén.
