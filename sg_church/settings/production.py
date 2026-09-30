@@ -9,6 +9,12 @@ DEBUG = False
 ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h]
 
 # Security settings
+# Production always sits behind a reverse proxy (Traefik/nginx) that
+# terminates TLS and forwards plain HTTP internally. Without this, Django
+# never sees the request as secure and SECURE_SSL_REDIRECT redirects every
+# request again even when the client already used HTTPS — an infinite
+# redirect loop for every visitor.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
