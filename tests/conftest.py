@@ -188,10 +188,21 @@ def regular_client_same_tenant(client, regular_user_same_tenant):
 
 
 @pytest.fixture(scope="session")
-def browser():
+def browser(django_db_setup):
     """
     Session-scoped browser instance for E2E tests.
     Requires Playwright to be installed: pip install playwright
+
+    Depends on `django_db_setup` (unused directly) purely to force pytest to
+    create Django's test database *before* Playwright starts. Playwright's
+    sync API leaves a "running" asyncio event loop in this process once
+    started (confirmed: `asyncio.get_running_loop()` succeeds right after
+    `sync_playwright().start()` + launching a browser, for the rest of the
+    process) — Django's `@async_unsafe` guard then raises
+    `SynchronousOnlyOperation` on any later DB setup that shares this
+    session-scoped fixture's lifetime. Since `browser` is session-scoped and
+    never stopped between tests, that poisons every `@pytest.mark.django_db`
+    test in the run unless the DB already exists first.
     """
     try:
         from playwright.sync_api import sync_playwright
