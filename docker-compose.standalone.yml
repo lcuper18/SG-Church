@@ -1,0 +1,32 @@
+# Standalone install: one church, one server, no Postgres/Redis needed.
+#
+# Usage:
+#   docker compose -f docker-compose.standalone.yml up -d
+#
+# Set CHURCH_NAME/CHURCH_SUBDOMAIN/ADMIN_EMAIL/ADMIN_PASSWORD as environment
+# variables (or a .env file next to this one) to bootstrap your church and
+# its first admin on first boot. Everything that needs to survive a restart
+# (the SQLite database, the generated SECRET_KEY, uploaded files) lives in
+# the two named volumes below.
+
+services:
+  web:
+    build: .
+    environment:
+      - DJANGO_SETTINGS_MODULE=sg_church.settings.standalone
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+      - STANDALONE_DATA_DIR=/app/data
+      - CHURCH_NAME=${CHURCH_NAME:-My Church}
+      - CHURCH_SUBDOMAIN=${CHURCH_SUBDOMAIN:-main}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+    volumes:
+      - church_data:/app/data
+      - church_media:/app/media
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  church_data:
+  church_media:

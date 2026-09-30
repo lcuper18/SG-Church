@@ -18,18 +18,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt || true
-
-# Install dependencies one by one if requirements.txt fails
-RUN pip install --no-cache-dir Django>=5.0,<6.0 || true
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
+RUN chmod +x docker-entrypoint.sh
 
 # Expose port
 EXPOSE 8000
 
-# Run migrations and start server
-CMD python manage.py migrate && \
-    python manage.py collectstatic --noinput && \
-    gunicorn sg_church.wsgi:application --bind 0.0.0.0:8000
+# Run migrations, collect static, then exec gunicorn (see docker-entrypoint.sh)
+CMD ["./docker-entrypoint.sh"]

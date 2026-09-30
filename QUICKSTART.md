@@ -152,7 +152,7 @@ python manage.py loaddata fixtures/sample_data.json
 python manage.py runserver
 
 # En otra terminal: Iniciar Celery (para tareas async)
-celery -A sg_chorld worker -l info
+celery -A sg_church worker -l info
 ```
 
 La aplicación estará disponible en: http://localhost:8000

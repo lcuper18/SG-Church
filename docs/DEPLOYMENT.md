@@ -2,6 +2,64 @@
 
 Guía completa para deployar SG Church a producción.
 
+## Despliegue con Docker (recomendado)
+
+Hay dos formas de correr SG Church, según quién lo vaya a usar:
+
+### Modo autoinstalable — una sola iglesia
+
+Pensado para una iglesia que quiere correr su propia instancia en una
+computadora o un servidor chico, sin depender de Postgres ni Redis (usa
+SQLite y Celery en modo síncrono — ver `sg_church/settings/standalone.py`).
+
+```bash
+git clone <url-del-repo>
+cd SG-Church
+
+# Opcional: personalizar el nombre de la iglesia y el primer admin
+export CHURCH_NAME="Mi Iglesia"
+export CHURCH_SUBDOMAIN="miiglesia"
+export ADMIN_EMAIL="admin@miiglesia.com"
+export ADMIN_PASSWORD="una-contraseña-segura"
+
+docker compose -f docker-compose.standalone.yml up -d
+```
+
+Al primer arranque se crea automáticamente la iglesia y el usuario admin
+(comando `bootstrap_tenant`), se corren las migraciones, y la app queda
+disponible en `http://localhost:8000/`. Los datos (base SQLite, archivos
+subidos, la `SECRET_KEY` generada) persisten en los volúmenes Docker
+`church_data`/`church_media` entre reinicios.
+
+### Modo SaaS — muchas iglesias en una instalación centralizada
+
+Pensado para alojar varias iglesias desde un mismo servidor (Postgres +
+Redis + un worker de Celery).
+
+```bash
+cp .env.example .env
+# Editar .env: como mínimo SECRET_KEY, DATABASE_PASSWORD, ALLOWED_HOSTS
+
+docker compose up -d
+```
+
+Cada iglesia se da de alta a través del wizard web en `/onboarding/`, o por
+línea de comandos con `python manage.py create_tenant "Nombre" subdominio`
+dentro del contenedor `web` (`docker compose exec web ...`).
+
+### Referencia rápida
+
+| | Modo autoinstalable | Modo SaaS |
+|---|---|---|
+| Archivo compose | `docker-compose.standalone.yml` | `docker-compose.yml` |
+| Base de datos | SQLite (volumen Docker) | PostgreSQL (contenedor `db`) |
+| Cola de tareas | Síncrona (sin Redis) | Celery + Redis (contenedor `redis`) |
+| Alta de iglesias | Automática al primer arranque | Wizard web o `create_tenant` |
+| `DJANGO_SETTINGS_MODULE` | `sg_church.settings.standalone` | `sg_church.settings.production` |
+
+Las secciones de abajo (Render, VPS manual, AWS) son referencia para quien
+prefiera no usar Docker o necesite control total de la infraestructura.
+
 ## Tabla de Contenidos
 
 - [Opciones de Hosting](#opciones-de-hosting)
@@ -288,7 +346,7 @@ User=deploy
 Group=deploy
 WorkingDirectory=/home/deploy/sg-church
 Environment="PATH=/home/deploy/sg-church/venv/bin"
-ExecStart=/home/deploy/sg-church/venv/bin/celery -A sg_chorld worker --loglevel=info --logfile=/var/log/sgchurch/celery.log --pidfile=/var/run/celery.pid
+ExecStart=/home/deploy/sg-church/venv/bin/celery -A sg_church worker --loglevel=info --logfile=/var/log/sgchurch/celery.log --pidfile=/var/run/celery.pid
 ExecStop=/bin/kill -s TERM $MAINPID
 Restart=on-failure
 

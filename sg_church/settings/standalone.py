@@ -15,7 +15,12 @@ import secrets
 from pathlib import Path
 
 _BASE_DIR = Path(__file__).resolve().parent.parent.parent
-_secret_key_file = _BASE_DIR / ".django_secret_key"
+# Everything that must survive a container recreate (the SQLite file, the
+# generated secret key) lives under one directory so a single volume mount
+# covers both. Defaults to BASE_DIR for a bare-metal/non-Docker install.
+_DATA_DIR = Path(os.environ.get("STANDALONE_DATA_DIR", _BASE_DIR))
+_DATA_DIR.mkdir(parents=True, exist_ok=True)
+_secret_key_file = _DATA_DIR / ".django_secret_key"
 
 # A standalone install has no one available to set environment variables by
 # hand, so generate a real SECRET_KEY on first run and persist it locally
@@ -42,7 +47,7 @@ ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
 DATABASES = {
     "default": dj_database_url.parse(
-        os.environ.get("DATABASE_URL", f"sqlite:///{_BASE_DIR / 'db.sqlite3'}")
+        os.environ.get("DATABASE_URL", f"sqlite:///{_DATA_DIR / 'db.sqlite3'}")
     )
 }
 
