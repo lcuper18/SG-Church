@@ -5,9 +5,9 @@ Views for Members API.
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 
+from core.permissions import CanManageMembers
 from members.models import Member, Family, Tag
 from .serializers import (
     MemberSerializer,
@@ -28,7 +28,7 @@ class MemberViewSet(viewsets.ModelViewSet):
     destroy: Delete a member
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanManageMembers]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["first_name", "last_name", "email", "phone"]
     ordering_fields = ["last_name", "first_name", "created_at"]
@@ -102,7 +102,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
     ViewSet for managing families.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanManageMembers]
     serializer_class = FamilySerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name", "head_of_family__first_name", "head_of_family__last_name"]
@@ -135,7 +135,7 @@ class TagViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = TagSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanManageMembers]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name"]
     ordering_fields = ["name", "created_at"]

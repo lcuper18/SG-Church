@@ -12,6 +12,8 @@ from django.views.generic import (
     View,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
+
+from core.mixins import ManageMembersRequiredMixin
 from django.contrib.auth import login
 from django.db import models
 from django.urls import reverse, reverse_lazy
@@ -328,7 +330,7 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
 member_detail = MemberDetailView.as_view()
 
 
-class MemberCreateView(LoginRequiredMixin, CreateView):
+class MemberCreateView(ManageMembersRequiredMixin, CreateView):
     """Create a new member."""
 
     model = Member
@@ -374,7 +376,7 @@ class MemberCreateView(LoginRequiredMixin, CreateView):
 member_create = MemberCreateView.as_view()
 
 
-class MemberUpdateView(LoginRequiredMixin, UpdateView):
+class MemberUpdateView(ManageMembersRequiredMixin, UpdateView):
     """Update an existing member."""
 
     model = Member
@@ -420,7 +422,7 @@ class MemberUpdateView(LoginRequiredMixin, UpdateView):
 member_update = MemberUpdateView.as_view()
 
 
-class MemberDeleteView(LoginRequiredMixin, DeleteView):
+class MemberDeleteView(ManageMembersRequiredMixin, DeleteView):
     """Delete a member."""
 
     model = Member
@@ -463,7 +465,7 @@ class FamilyListView(LoginRequiredMixin, ListView):
 family_list = FamilyListView.as_view()
 
 
-class FamilyCreateView(LoginRequiredMixin, CreateView):
+class FamilyCreateView(ManageMembersRequiredMixin, CreateView):
     """Create a new family."""
 
     model = Family
@@ -501,7 +503,7 @@ class FamilyCreateView(LoginRequiredMixin, CreateView):
 family_create = FamilyCreateView.as_view()
 
 
-class FamilyUpdateView(LoginRequiredMixin, UpdateView):
+class FamilyUpdateView(ManageMembersRequiredMixin, UpdateView):
     """Update an existing family."""
 
     model = Family
@@ -539,7 +541,7 @@ class FamilyUpdateView(LoginRequiredMixin, UpdateView):
 family_update = FamilyUpdateView.as_view()
 
 
-class FamilyDeleteView(LoginRequiredMixin, DeleteView):
+class FamilyDeleteView(ManageMembersRequiredMixin, DeleteView):
     """Delete a family."""
 
     model = Family
@@ -582,7 +584,7 @@ class TagListView(LoginRequiredMixin, ListView):
 tag_list = TagListView.as_view()
 
 
-class TagCreateView(LoginRequiredMixin, CreateView):
+class TagCreateView(ManageMembersRequiredMixin, CreateView):
     """Create a new tag."""
 
     model = Tag
@@ -602,7 +604,7 @@ class TagCreateView(LoginRequiredMixin, CreateView):
 tag_create = TagCreateView.as_view()
 
 
-class TagUpdateView(LoginRequiredMixin, UpdateView):
+class TagUpdateView(ManageMembersRequiredMixin, UpdateView):
     """Update an existing tag."""
 
     model = Tag
@@ -622,7 +624,7 @@ class TagUpdateView(LoginRequiredMixin, UpdateView):
 tag_update = TagUpdateView.as_view()
 
 
-class TagDeleteView(LoginRequiredMixin, DeleteView):
+class TagDeleteView(ManageMembersRequiredMixin, DeleteView):
     """Delete a tag."""
 
     model = Tag

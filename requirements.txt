@@ -39,20 +39,11 @@ Pillow>=10.0
 django-phonenumber-field>=7.0
 phonenumbers>=8.13
 
-# Security
-django-extensions>=3.2
-django-debug-toolbar>=4.0
-
 # Production
 gunicorn>=21.0,<22.0
 whitenoise>=6.0,<7.0
+sentry-sdk>=1.40
 
-# Development
-pytest>=7.0
-pytest-django>=4.5
-pytest-cov>=4.0
-pytest-flake8>=4.0
-flake8>=6.0
-black>=23.0
-isort>=5.12
-factory-boy>=3.3
+# Development-only dependencies (pytest, linters, debug toolbar, ...) live in
+# requirements-dev.txt, not here — this file is what a production/standalone
+# install actually needs.

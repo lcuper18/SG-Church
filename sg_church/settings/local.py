@@ -2,7 +2,13 @@
 Local development settings.
 """
 
-from .base import *
+import os
+
+# Dev-only fallback so `runserver` works without an .env file. Never used in
+# production: production.py/standalone.py require a real SECRET_KEY.
+os.environ.setdefault("SECRET_KEY", "local-dev-only-insecure-key-do-not-deploy")
+
+from .base import *  # noqa: E402,F401,F403
 
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
@@ -10,13 +16,6 @@ ALLOWED_HOSTS = ["*"]
 # Development-specific settings
 INSTALLED_APPS += [
     "django_extensions",
-]
-
-# Disable TenantMiddleware and debug_toolbar for local development
-MIDDLEWARE = [
-    m for m in MIDDLEWARE if "TenantMiddleware" not in m and "debug_toolbar" not in m
-] + [
-    "allauth.account.middleware.AccountMiddleware",
 ]
 
 # Email to console for development

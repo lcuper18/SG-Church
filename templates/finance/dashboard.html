@@ -195,10 +195,11 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ chart_data|json_script:"chart-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const ctx = document.getElementById('financeChart').getContext('2d');
-    const chartData = {{ chart_data|safe }};
+    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
 
     new Chart(ctx, {
         type: 'bar',

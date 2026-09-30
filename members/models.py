@@ -2,10 +2,13 @@
 Member models for SG Church.
 """
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.urls import reverse
 import uuid
+
+from core.validators import FileSizeValidator
 
 
 class UserManager(BaseUserManager):
@@ -87,15 +90,15 @@ class User(AbstractUser):
 
     @property
     def can_manage_finance(self):
-        return self.role in ["admin", "treasurer"]
+        return self.is_superuser or self.role in ["admin", "treasurer"]
 
     @property
     def can_manage_members(self):
-        return self.role in ["admin", "pastor", "volunteer"]
+        return self.is_superuser or self.role in ["admin", "pastor", "volunteer"]
 
     @property
     def can_manage_education(self):
-        return self.role in ["admin", "teacher"]
+        return self.is_superuser or self.role in ["admin", "teacher"]
 
 
 class Member(models.Model):
@@ -165,7 +168,15 @@ class Member(models.Model):
     postal_code = models.CharField(max_length=20, blank=True)
 
     # Photo
-    photo = models.ImageField(upload_to="members/photos/", null=True, blank=True)
+    photo = models.ImageField(
+        upload_to="members/photos/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png", "webp"]),
+            FileSizeValidator(max_mb=5),
+        ],
+    )
 
     # Notes
     notes = models.TextField(blank=True)

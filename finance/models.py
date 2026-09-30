@@ -3,8 +3,11 @@ Finance models for SG Church.
 Handles donations and accounting.
 """
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
 import uuid
+
+from core.validators import FileSizeValidator
 
 
 class Donation(models.Model):
@@ -145,7 +148,15 @@ class Expense(models.Model):
     due_date = models.DateField(null=True, blank=True)
 
     # Receipt
-    receipt = models.FileField(upload_to="expenses/receipts/", null=True, blank=True)
+    receipt = models.FileField(
+        upload_to="expenses/receipts/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["pdf", "jpg", "jpeg", "png"]),
+            FileSizeValidator(max_mb=10),
+        ],
+    )
 
     # Who created/approved
     created_by = models.ForeignKey(

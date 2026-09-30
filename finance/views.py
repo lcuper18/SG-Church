@@ -10,7 +10,8 @@ from django.views.generic import (
     DeleteView,
     TemplateView,
 )
-from django.contrib.auth.mixins import LoginRequiredMixin
+from core.mixins import ManageFinanceRequiredMixin
+from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Count, Q
 from django.urls import reverse
 from django.shortcuts import render, redirect
@@ -29,7 +30,7 @@ from members.models import Member
 # ============================================================
 
 
-class FinanceDashboardView(LoginRequiredMixin, TemplateView):
+class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
     """Finance dashboard with stats and charts."""
 
     template_name = "finance/dashboard.html"
@@ -175,7 +176,7 @@ finance_dashboard = FinanceDashboardView.as_view()
 # ============================================================
 
 
-class DonationListView(LoginRequiredMixin, ListView):
+class DonationListView(ManageFinanceRequiredMixin, ListView):
     """List all donations with filters."""
 
     model = Donation
@@ -239,7 +240,7 @@ class DonationListView(LoginRequiredMixin, ListView):
 donation_list = DonationListView.as_view()
 
 
-class DonationDetailView(LoginRequiredMixin, DetailView):
+class DonationDetailView(ManageFinanceRequiredMixin, DetailView):
     """Donation detail view."""
 
     model = Donation
@@ -261,7 +262,7 @@ donation_detail = DonationDetailView.as_view()
 # ============================================================
 
 
-class ExpenseListView(LoginRequiredMixin, ListView):
+class ExpenseListView(ManageFinanceRequiredMixin, ListView):
     """List all expenses with filters."""
 
     model = Expense
@@ -301,7 +302,7 @@ class ExpenseListView(LoginRequiredMixin, ListView):
 expense_list = ExpenseListView.as_view()
 
 
-class ExpenseCreateView(LoginRequiredMixin, CreateView):
+class ExpenseCreateView(ManageFinanceRequiredMixin, CreateView):
     """Create a new expense."""
 
     model = Expense
@@ -332,7 +333,7 @@ class ExpenseCreateView(LoginRequiredMixin, CreateView):
 expense_create = ExpenseCreateView.as_view()
 
 
-class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
+class ExpenseUpdateView(ManageFinanceRequiredMixin, UpdateView):
     """Update an existing expense."""
 
     model = Expense
@@ -364,7 +365,7 @@ class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
 expense_update = ExpenseUpdateView.as_view()
 
 
-class ExpenseDeleteView(LoginRequiredMixin, DeleteView):
+class ExpenseDeleteView(ManageFinanceRequiredMixin, DeleteView):
     """Delete an expense."""
 
     model = Expense
@@ -440,14 +441,25 @@ def create_checkout_session(request):
         return redirect("donate_page")
 
     # Get form data
-    amount = float(request.POST.get("amount", 0))
+    try:
+        amount = float(request.POST.get("amount", 0))
+    except ValueError:
+        messages.error(request, "Monto inválido")
+        return redirect("donate_page")
     campaign = request.POST.get("campaign", "offering")
     donor_name = request.POST.get("donor_name", "")
     donor_email = request.POST.get("donor_email", "")
     cover_fees = request.POST.get("cover_fees") == "on"
 
-    if amount <= 0:
-        messages.error(request, "Monto inválido")
+    # Sanity bounds before this ever reaches Stripe: guards against typos and
+    # abusive input, not a business rule.
+    MIN_DONATION_AMOUNT = 1
+    MAX_DONATION_AMOUNT = 100_000
+    if not (MIN_DONATION_AMOUNT <= amount <= MAX_DONATION_AMOUNT):
+        messages.error(
+            request,
+            f"El monto debe estar entre {MIN_DONATION_AMOUNT} y {MAX_DONATION_AMOUNT}",
+        )
         return redirect("donate_page")
 
     # Calculate fees (Stripe: 2.9% + $0.30)
@@ -509,8 +521,13 @@ def donation_success(request):
     return render(request, "finance/donate_success.html", context)
 
 
+@csrf_exempt
 def stripe_webhook(request):
-    """Handle Stripe webhooks."""
+    """Handle Stripe webhooks.
+
+    Exempt from CSRF because Stripe never sends a CSRF token; the request is
+    instead authenticated by verifying the Stripe-Signature header below.
+    """
 
     if request.method != "POST":
         return HttpResponse(status=405)
@@ -628,7 +645,7 @@ def handle_payment_failed(invoice):
 # ============================================================
 
 
-class IncomeStatementView(LoginRequiredMixin, TemplateView):
+class IncomeStatementView(ManageFinanceRequiredMixin, TemplateView):
     """Income statement report."""
 
     template_name = "finance/reports/income_statement.html"
@@ -696,7 +713,7 @@ class IncomeStatementView(LoginRequiredMixin, TemplateView):
 income_statement = IncomeStatementView.as_view()
 
 
-class DonationsByMemberView(LoginRequiredMixin, TemplateView):
+class DonationsByMemberView(ManageFinanceRequiredMixin, TemplateView):
     """Donations grouped by member."""
 
     template_name = "finance/reports/donations_by_member.html"

@@ -9,9 +9,19 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # SECURITY
-SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
-DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+# No insecure fallbacks here: local.py/test.py/standalone.py set their own
+# safe development defaults, and production-like settings must come from the
+# environment. Failing loudly beats silently running with DEBUG on or a
+# guessable SECRET_KEY.
+try:
+    SECRET_KEY = os.environ["SECRET_KEY"]
+except KeyError as exc:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. Copy .env.example to "
+        ".env and set a real secret key before running the app."
+    ) from exc
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h]
 
 # Application definition
 INSTALLED_APPS = [
@@ -48,6 +58,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "tenants.middleware.TenantMiddleware",
@@ -74,12 +85,15 @@ TEMPLATES = [
 WSGI_APPLICATION = "sg_church.wsgi.application"
 
 # Database
+# No default password: a well-known default ("postgres") is a real risk if
+# someone forgets to configure .env. local.py/docker-compose.dev.yml provide
+# their own explicit (non-production) credentials.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DATABASE_NAME", "sgchurch"),
         "USER": os.environ.get("DATABASE_USER", "postgres"),
-        "PASSWORD": os.environ.get("DATABASE_PASSWORD", "postgres"),
+        "PASSWORD": os.environ["DATABASE_PASSWORD"],
         "HOST": os.environ.get("DATABASE_HOST", "localhost"),
         "PORT": os.environ.get("DATABASE_PORT", "5432"),
     }

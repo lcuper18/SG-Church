@@ -52,6 +52,7 @@ def admin_user(db):
         last_name="User",
         tenant=tenant,
         is_staff=True,
+        role="admin",
     )
 
     return user
@@ -134,6 +135,51 @@ def authenticated_api_client(api_client, admin_user):
     """Authenticated DRF API client."""
     api_client.force_authenticate(user=admin_user)
     return api_client
+
+
+@pytest.fixture
+def regular_api_client(api_client, regular_user):
+    """DRF API client authenticated as a low-privilege ('member' role) user."""
+    api_client.force_authenticate(user=regular_user)
+    return api_client
+
+
+@pytest.fixture
+def regular_client(client, regular_user):
+    """Django test client authenticated as a low-privilege ('member' role) user."""
+    client.force_login(regular_user)
+    return client
+
+
+@pytest.fixture
+def regular_user_same_tenant(db, admin_user):
+    """A low-privilege ('member' role) user in admin_user's own tenant — lets
+    RBAC tests tell "denied by role" apart from "denied by tenant scoping"."""
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    unique_id = uuid.uuid4().hex[:8]
+    return User.objects.create_user(
+        email=f"member-{unique_id}@testchurch.com",
+        password="testpassword123",
+        first_name="Regular",
+        last_name="Member",
+        tenant=admin_user.tenant,
+    )
+
+
+@pytest.fixture
+def regular_api_client_same_tenant(api_client, regular_user_same_tenant):
+    """DRF API client for a 'member' role user in admin_user's own tenant."""
+    api_client.force_authenticate(user=regular_user_same_tenant)
+    return api_client
+
+
+@pytest.fixture
+def regular_client_same_tenant(client, regular_user_same_tenant):
+    """Django test client for a 'member' role user in admin_user's own tenant."""
+    client.force_login(regular_user_same_tenant)
+    return client
 
 
 # ============================================================

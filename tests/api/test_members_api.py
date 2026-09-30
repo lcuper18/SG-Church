@@ -149,3 +149,52 @@ class TestTagsAPI:
             status.HTTP_201_CREATED,
             status.HTTP_200_OK,
         ]
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestMembersAPIPermissions:
+    """A 'member'/'volunteer' role user can read the member directory but
+    must not be able to write; a 'church_admin' role user can still write."""
+
+    def test_member_role_can_list_members(
+        self, regular_api_client_same_tenant, member
+    ):
+        response = regular_api_client_same_tenant.get("/api/v1/members/")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_member_role_cannot_create_member(self, regular_api_client_same_tenant):
+        data = {
+            "first_name": "Unauthorized",
+            "last_name": "Member",
+            "email": "unauthorized@test.com",
+            "status": "active",
+        }
+        response = regular_api_client_same_tenant.post("/api/v1/members/", data)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_member_role_cannot_update_member(
+        self, regular_api_client_same_tenant, member
+    ):
+        response = regular_api_client_same_tenant.patch(
+            f"/api/v1/members/{member.pk}/",
+            {"first_name": "Hacked"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_member_role_cannot_delete_member(
+        self, regular_api_client_same_tenant, member
+    ):
+        response = regular_api_client_same_tenant.delete(f"/api/v1/members/{member.pk}/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_role_can_still_create_member(self, authenticated_api_client):
+        data = {
+            "first_name": "Authorized",
+            "last_name": "Member",
+            "email": "authorized@test.com",
+            "status": "active",
+        }
+        response = authenticated_api_client.post("/api/v1/members/", data)
+        assert response.status_code == status.HTTP_201_CREATED

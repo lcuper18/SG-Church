@@ -5,10 +5,10 @@ Views for Finance API.
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 
+from core.permissions import CanManageFinance
 from finance.models import Donation, Expense, Campaign
 from .serializers import (
     DonationSerializer,
@@ -31,7 +31,7 @@ class DonationViewSet(viewsets.ModelViewSet):
     destroy: Delete a donation
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanManageFinance]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = [
         "member__first_name",
@@ -126,7 +126,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     destroy: Delete an expense
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanManageFinance]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["description", "vendor_name", "vendor_email"]
     ordering_fields = ["expense_date", "amount", "created_at"]
@@ -199,7 +199,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     destroy: Delete a campaign
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanManageFinance]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name", "description"]
     ordering_fields = ["start_date", "end_date", "goal", "created_at"]

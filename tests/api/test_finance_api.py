@@ -216,3 +216,51 @@ class TestDashboardAPI:
             status.HTTP_200_OK,
             status.HTTP_404_NOT_FOUND,  # If endpoint doesn't exist
         ]
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestFinanceAPIPermissions:
+    """A 'member'/'volunteer' role user must not be able to read or write
+    finance data; a 'church_admin' role user must still be able to."""
+
+    def test_member_role_cannot_list_donations(self, regular_api_client_same_tenant):
+        response = regular_api_client_same_tenant.get("/api/v1/donations/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_member_role_cannot_create_donation(
+        self, regular_api_client_same_tenant, member
+    ):
+        data = {
+            "member": member.pk,
+            "amount": "50.00",
+            "campaign": "offering",
+            "status": "completed",
+        }
+        response = regular_api_client_same_tenant.post("/api/v1/donations/", data)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_member_role_cannot_create_expense(self, regular_api_client_same_tenant):
+        data = {
+            "description": "Unauthorized expense",
+            "amount": "75.00",
+            "category": "operations",
+            "expense_date": "2026-01-15",
+            "status": "pending",
+        }
+        response = regular_api_client_same_tenant.post("/api/v1/expenses/", data)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_role_can_still_create_expense(self, authenticated_api_client):
+        data = {
+            "description": "Authorized expense",
+            "amount": "75.00",
+            "category": "operations",
+            "expense_date": "2026-01-15",
+            "status": "pending",
+        }
+        response = authenticated_api_client.post("/api/v1/expenses/", data)
+        assert response.status_code in [
+            status.HTTP_201_CREATED,
+            status.HTTP_200_OK,
+        ]

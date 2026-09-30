@@ -5,7 +5,14 @@ This module configures Django settings specifically for running tests.
 It uses an in-memory SQLite database for fast test execution.
 """
 
-from .base import *  # noqa: F401, F403
+import os
+
+# Dev-only fallbacks so `base.py`'s hard requirements don't block test runs;
+# DATABASES is fully overridden with SQLite below regardless.
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-testing-only-do-not-use-in-production")
+os.environ.setdefault("DATABASE_PASSWORD", "unused-in-tests")
+
+from .base import *  # noqa: E402,F401,F403
 
 # Use SQLite for tests (file-based for compatibility)
 DATABASES = {
@@ -87,13 +94,3 @@ MEDIA_ROOT = "/tmp/test_media"
 DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 MEDIA_URL = "/media/"
 
-# Disable debug toolbar in tests
-INSTALLED_APPS = [app for app in INSTALLED_APPS if app != "debug_toolbar"]
-
-MIDDLEWARE = [
-    middleware
-    for middleware in MIDDLEWARE
-    if "debug_toolbar" not in middleware and "TenantMiddleware" not in middleware
-] + [
-    "allauth.account.middleware.AccountMiddleware",
-]

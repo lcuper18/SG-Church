@@ -3,16 +3,20 @@ Tenant models for multi-tenancy.
 Each tenant represents a church/organization.
 """
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 import uuid
 
+from core.validators import FileSizeValidator
+
 
 class Tenant(models.Model):
     """
     Represents a church/tenant in the multi-tenant system.
-    Each tenant has its own database schema.
+    Isolation is row-level: every tenant-owned model has a `tenant` FK,
+    filtered per-query — there is no per-tenant database schema.
     """
 
     DENOMINATION_CHOICES = [
@@ -69,7 +73,15 @@ class Tenant(models.Model):
     )
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True, null=True)
-    logo = models.ImageField(upload_to="church_logos/", null=True, blank=True)
+    logo = models.ImageField(
+        upload_to="church_logos/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png", "webp"]),
+            FileSizeValidator(max_mb=2),
+        ],
+    )
 
     # Contact information
     email = models.EmailField(blank=True, null=True)
@@ -109,11 +121,6 @@ class Tenant(models.Model):
         if not self.slug:
             self.slug = slugify(self.subdomain or self.name)
         super().save(*args, **kwargs)
-
-    @property
-    def schema_name(self):
-        """Returns the PostgreSQL schema name for this tenant."""
-        return f"tenant_{self.slug}"
 
     def get_absolute_url(self):
         return reverse("tenant_dashboard", kwargs={"subdomain": self.subdomain})
