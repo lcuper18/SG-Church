@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Certificado - {{ certificate.course_block.name }} - SG Church{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .navbar, .btn, .no-print, footer {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+    }
+    .certificate-container {
+        box-shadow: none !important;
+        border: 2px solid #333 !important;
+    }
+}
+.certificate-container {
+    border: 10px double #0d6efd;
+    border-radius: 8px;
+    padding: 4rem 3rem;
+    text-align: center;
+    background: #fff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center mb-3 no-print">
+        <div class="col-md-8 text-end">
+            <button type="button" class="btn btn-primary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir / Guardar PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="certificate-container shadow-sm">
+                <p class="text-muted text-uppercase mb-4">Certificado de Finalización</p>
+                <h2 class="mb-4">{{ certificate.tenant.name }}</h2>
+                <p class="mb-1">Se certifica que</p>
+                <h3 class="mb-4">{{ certificate.member.full_name }}</h3>
+                <p class="mb-4">completó satisfactoriamente todos los cursos del bloque</p>
+                <h4 class="mb-4">{{ certificate.course_block.name }}</h4>
+                <p class="text-muted">
+                    Emitido el {{ certificate.issued_at|date:"d/m/Y" }}<br>
+                    N.º de certificado: {{ certificate.certificate_number }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

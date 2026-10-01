@@ -25,3 +25,16 @@ class CanManageMembers(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return user.can_manage_members
+
+
+class CanManageEducation(BasePermission):
+    """Any authenticated tenant user can browse the course catalog; only
+    certain roles can create/update/delete courses and blocks."""
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        return user.can_manage_education

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course_block.name }} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'course_block_list' %}">Bloques de Cursos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ course_block.name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Block Info -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h4>{{ course_block.name }}</h4>
+                    <span class="badge bg-{% if course_block.is_active %}success{% else %}secondary{% endif %} mb-3">
+                        {% if course_block.is_active %}Activo{% else %}Inactivo{% endif %}
+                    </span>
+                    {% if course_block.description %}
+                    <p>{{ course_block.description }}</p>
+                    {% endif %}
+                    <h6 class="text-muted">Cursos del bloque</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for block_course in courses %}
+                        <li class="list-group-item">
+                            <a href="{% url 'course_detail' block_course.pk %}">{{ block_course.title }}</a>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">Sin cursos todavía.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% if user.can_manage_education %}
+                <div class="card-footer bg-white">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'course_block_update' course_block.pk %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'course_block_delete' course_block.pk %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Member Progress -->
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Progreso por Miembro</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Miembro</th>
+                                    <th>Progreso</th>
+                                    <th>Certificado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in progress %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'member_detail' row.member.pk %}">{{ row.member.full_name }}</a>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" style="width: {% widthratio row.completed row.total 100 %}%;">
+                                                {{ row.completed }} de {{ row.total }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if row.certificate %}
+                                        <a href="{% url 'block_certificate_detail' row.certificate.pk %}" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-award"></i> Ver Certificado
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">En progreso</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        Ningún miembro se ha inscrito en los cursos de este bloque todavía.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

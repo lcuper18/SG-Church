@@ -146,6 +146,11 @@ class Member(models.Model):
         max_length=20, choices=MARITAL_STATUS_CHOICES, blank=True
     )
 
+    # Sacraments (lightweight - see the education app for eligibility checks
+    # that key off these fields)
+    is_baptized = models.BooleanField(default=False)
+    baptism_date = models.DateField(null=True, blank=True)
+
     # Membership status
     member_status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default="visitor"

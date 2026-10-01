@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title }} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Cursos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ course.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Course Info -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h4>{{ course.title }}</h4>
+                    <span class="badge bg-{% if course.is_active %}success{% else %}secondary{% endif %} mb-3">
+                        {% if course.is_active %}Activo{% else %}Inactivo{% endif %}
+                    </span>
+                    {% if course.description %}
+                    <p>{{ course.description }}</p>
+                    {% endif %}
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" width="40%">Instructor</td>
+                            <td>{{ course.instructor.get_full_name|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Bloque</td>
+                            <td>
+                                {% if course.course_block %}
+                                <a href="{% url 'course_block_detail' course.course_block.pk %}">{{ course.course_block.name }}</a>
+                                {% else %}
+                                Independiente
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Cupo</td>
+                            <td>{{ course.capacity|default:"Sin límite" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Requisitos</td>
+                            <td>
+                                {% if course.requires_baptized %}<span class="badge bg-info">Bautizado/a</span>{% endif %}
+                                {% if course.requires_married %}<span class="badge bg-info">Casado/a</span>{% endif %}
+                                {% if not course.requires_baptized and not course.requires_married %}-{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Prerrequisitos</td>
+                            <td>
+                                {% for prereq in course.prerequisite_courses.all %}
+                                <a href="{% url 'course_detail' prereq.pk %}">{{ prereq.title }}</a>{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                -
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                {% if user.can_manage_education %}
+                <div class="card-footer bg-white">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'course_update' course.pk %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'course_delete' course.pk %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if user.can_manage_members %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Inscribir Miembro</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'enrollment_create' course.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <select class="form-select" name="member" required>
+                                <option value="">Seleccionar miembro...</option>
+                                {% for enrollable_member in enrollable_members %}
+                                <option value="{{ enrollable_member.id }}">{{ enrollable_member.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Inscribir</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Enrolled Members -->
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Miembros Inscritos</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Miembro</th>
+                                    <th>Estado</th>
+                                    <th>Inscrito</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for enrollment in enrollments %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'member_detail' enrollment.member.pk %}">{{ enrollment.member.full_name }}</a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if enrollment.status == 'completed' %}success{% else %}warning{% endif %}">
+                                            {{ enrollment.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ enrollment.enrolled_at|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if enrollment.status != 'completed' and user.can_manage_education %}
+                                            <form method="post" action="{% url 'enrollment_complete' enrollment.pk %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-success" title="Marcar completado">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                            {% if user.can_manage_members %}
+                                            <form method="post" action="{% url 'enrollment_delete' enrollment.pk %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger" title="Dar de baja">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        No hay miembros inscritos todavía.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Bloques de Cursos - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0"><i class="bi bi-collection"></i> Bloques de Cursos</h1>
+        </div>
+        <div>
+            <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-mortarboard"></i> Cursos
+            </a>
+            {% if user.can_manage_education %}
+            <a href="{% url 'course_block_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Bloque
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cursos</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for block in course_blocks %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'course_block_detail' block.pk %}">{{ block.name }}</a>
+                            </td>
+                            <td>{{ block.courses_count }}</td>
+                            <td>
+                                <span class="badge bg-{% if block.is_active %}success{% else %}secondary{% endif %}">
+                                    {% if block.is_active %}Activo{% else %}Inactivo{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'course_block_detail' block.pk %}" class="btn btn-outline-primary" title="Ver">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if user.can_manage_education %}
+                                    <a href="{% url 'course_block_update' block.pk %}" class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                No hay bloques de cursos todavía.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

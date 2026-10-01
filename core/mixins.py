@@ -23,3 +23,11 @@ class ManageMembersRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
         return user.is_authenticated and user.can_manage_members
+
+
+class ManageEducationRequiredMixin(UserPassesTestMixin):
+    """Require the logged-in user's role to allow managing education (courses)."""
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_authenticated and user.can_manage_education

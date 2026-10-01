@@ -85,6 +85,19 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" id="is_baptized" name="is_baptized" {% if form.is_baptized.value %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_baptized">Bautizado/a</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="baptism_date" class="form-label">Fecha de Bautismo</label>
+                                <input type="date" class="form-control" id="baptism_date" name="baptism_date" value="{{ form.baptism_date.value|default:'' }}">
+                            </div>
+                        </div>
+
                         <hr class="my-4">
 
                         <h5 class="mb-3 text-muted">Información de Membresía</h5>

@@ -334,3 +334,25 @@ def user_factory(db, tenant):
         )
 
     return _create_user
+
+
+@pytest.fixture
+def course_factory(db, tenant):
+    """Factory for creating courses."""
+    from education.models import Course
+
+    def _create_course(title="Test Course", **kwargs):
+        return Course.objects.create(tenant=tenant, title=title, **kwargs)
+
+    return _create_course
+
+
+@pytest.fixture
+def course_block_factory(db, tenant):
+    """Factory for creating course blocks."""
+    from education.models import CourseBlock
+
+    def _create_block(name="Test Block", **kwargs):
+        return CourseBlock.objects.create(tenant=tenant, name=name, **kwargs)
+
+    return _create_block

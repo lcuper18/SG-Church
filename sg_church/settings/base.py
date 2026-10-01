@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "finance",
     "emails",
     "notifications",
+    "education",
 ]
 
 MIDDLEWARE = [
