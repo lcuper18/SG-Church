@@ -66,7 +66,7 @@ class TestFinanceDashboard:
         """Test accessing the finance dashboard."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -80,7 +80,7 @@ class TestFinanceDashboard:
         """Test that finance dashboard shows stats."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -98,7 +98,7 @@ class TestFinanceDashboard:
         """Test accessing the donations list."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -118,7 +118,7 @@ class TestExpenses:
         """Test accessing the expenses list."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -132,7 +132,7 @@ class TestExpenses:
         """Test creating a new expense."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -160,7 +160,7 @@ class TestReports:
         """Test accessing the income statement report."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -178,7 +178,7 @@ class TestReports:
         """Test accessing the donations by member report."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 

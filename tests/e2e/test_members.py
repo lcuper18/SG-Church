@@ -24,7 +24,7 @@ class TestMembers:
         """Test creating a new member."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -57,7 +57,7 @@ class TestMembers:
         """Test editing a member."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -79,7 +79,7 @@ class TestMembers:
         """Test deleting a member."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -102,7 +102,7 @@ class TestFamilies:
         """Test accessing the family list page."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -116,7 +116,7 @@ class TestFamilies:
         """Test creating a new family."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -142,7 +142,7 @@ class TestTags:
         """Test accessing the tags list page."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
@@ -156,7 +156,7 @@ class TestTags:
         """Test creating a new tag."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
-        page.fill("#id_email", admin_user.email)
+        page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 

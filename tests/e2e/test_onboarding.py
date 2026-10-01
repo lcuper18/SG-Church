@@ -121,4 +121,9 @@ class TestAuthentication:
         page.goto(f"{live_server_url}/accounts/logout/")
         page.click("button[type='submit']")
 
-        assert "/accounts/login/" in page.url or "login" in page.url.lower()
+        # LOGOUT_REDIRECT_URL = "home" (see sg_church/settings/base.py), so
+        # logout lands on the public home page, not the login page - confirm
+        # the session was actually cleared via the nav showing "Iniciar
+        # Sesión" again instead of a logged-in user menu.
+        assert page.url == f"{live_server_url}/"
+        assert "Iniciar Sesión" in page.content()
