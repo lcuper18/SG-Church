@@ -652,6 +652,8 @@ class IncomeStatementView(ManageFinanceRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["month_choices"] = range(1, 13)
+        context["year_choices"] = range(2024, 2027)
         tenant = getattr(self.request.user, "tenant", None)
 
         if not tenant:

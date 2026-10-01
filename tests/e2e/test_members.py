@@ -11,16 +11,19 @@ import pytest
 class TestMembers:
     """Test cases for members management."""
 
-    def test_member_list_access(
-        self, page, live_server_url, authenticated_client, admin_user
-    ):
+    def test_member_list_access(self, page, live_server_url, admin_user):
         """Test accessing the member list page."""
+        # Login first
+        page.goto(f"{live_server_url}/accounts/login/")
+        page.fill("#id_login", admin_user.email)
+        page.fill("#id_password", "testpassword123")
+        page.click("button[type='submit']")
+
         page.goto(f"{live_server_url}/members/")
 
-        # Should show members list or redirect to login
-        assert "Miembros" in page.content() or page.url.endswith("/accounts/login/")
+        assert "Miembros" in page.content()
 
-    def test_member_create(self, page, live_server_url, admin_user, tenant):
+    def test_member_create(self, page, live_server_url, admin_user):
         """Test creating a new member."""
         # Login first
         page.goto(f"{live_server_url}/accounts/login/")
@@ -31,14 +34,15 @@ class TestMembers:
         # Navigate to members
         page.goto(f"{live_server_url}/members/create/")
 
-        # Fill member form
-        page.fill("#id_first_name", "Juan")
-        page.fill("#id_last_name", "Pérez")
-        page.fill("#id_email", "juan.perez@test.com")
-        page.fill("#id_phone", "+50688888888")
+        # Fill member form (hand-written template, plain field ids - not
+        # Django's auto-generated "id_<field>")
+        page.fill("#first_name", "Juan")
+        page.fill("#last_name", "Pérez")
+        page.fill("#email", "juan.perez@test.com")
+        page.fill("#phone", "+50688888888")
 
         # Select status
-        page.select_option("#id_status", "active")
+        page.select_option("#member_status", "member")
 
         # Submit
         page.click("button[type='submit']")
@@ -46,8 +50,14 @@ class TestMembers:
         # Should redirect to member list or detail
         assert "/members/" in page.url
 
-    def test_member_detail_view(self, page, live_server_url, member):
+    def test_member_detail_view(self, page, live_server_url, member, admin_user):
         """Test viewing member details."""
+        # Login first - member detail requires authentication
+        page.goto(f"{live_server_url}/accounts/login/")
+        page.fill("#id_login", admin_user.email)
+        page.fill("#id_password", "testpassword123")
+        page.click("button[type='submit']")
+
         page.goto(f"{live_server_url}/members/{member.pk}/")
 
         # Should show member information
@@ -65,7 +75,7 @@ class TestMembers:
         page.goto(f"{live_server_url}/members/{member.pk}/edit/")
 
         # Change first name
-        page.fill("#id_first_name", "Juan Updated")
+        page.fill("#first_name", "Juan Updated")
 
         # Submit
         page.click("button[type='submit']")
@@ -106,8 +116,8 @@ class TestFamilies:
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
-        # Navigate to families
-        page.goto(f"{live_server_url}/families/")
+        # Navigate to families (mounted under /members/, not at the root)
+        page.goto(f"{live_server_url}/members/families/")
 
         # Should show families list
         assert "Familias" in page.content() or "family" in page.url.lower()
@@ -121,10 +131,10 @@ class TestFamilies:
         page.click("button[type='submit']")
 
         # Navigate to create family
-        page.goto(f"{live_server_url}/families/create/")
+        page.goto(f"{live_server_url}/members/families/create/")
 
         # Fill family form
-        page.fill("#id_name", "Familia Pérez")
+        page.fill("#name", "Familia Pérez")
 
         # Submit
         page.click("button[type='submit']")
@@ -146,8 +156,8 @@ class TestTags:
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
 
-        # Navigate to tags
-        page.goto(f"{live_server_url}/tags/")
+        # Navigate to tags (mounted under /members/, not at the root)
+        page.goto(f"{live_server_url}/members/tags/")
 
         # Should show tags list
         assert "Etiquetas" in page.content() or "tag" in page.url.lower()
@@ -161,10 +171,10 @@ class TestTags:
         page.click("button[type='submit']")
 
         # Navigate to create tag
-        page.goto(f"{live_server_url}/tags/create/")
+        page.goto(f"{live_server_url}/members/tags/create/")
 
         # Fill tag form
-        page.fill("#id_name", "Voluntario")
+        page.fill("#name", "Voluntario")
 
         # Submit
         page.click("button[type='submit']")

@@ -17,16 +17,16 @@
                 <div class="col-md-3">
                     <label for="month" class="form-label">Mes</label>
                     <select name="month" class="form-select" id="month">
-                        {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split:"," %}
-                        <option value="{{ m }}" {% if month == m|add:0 %}selected{% endif %}>{{ m }}</option>
+                        {% for m in month_choices %}
+                        <option value="{{ m }}" {% if month == m %}selected{% endif %}>{{ m }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label for="year" class="form-label">Año</label>
                     <select name="year" class="form-select" id="year">
-                        {% for y in "2024,2025,2026"|split:"," %}
-                        <option value="{{ y }}" {% if year == y|add:0 %}selected{% endif %}>{{ y }}</option>
+                        {% for y in year_choices %}
+                        <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
                 </div>

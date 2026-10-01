@@ -32,11 +32,12 @@ class TestDonations:
         """Test filling and submitting the donation form."""
         page.goto(f"{live_server_url}/donate/?church={tenant.subdomain}")
 
-        # Fill donation form
-        page.fill("#id_amount", "100")
-        page.select_option("#id_campaign", "offering")
-        page.fill("#id_donor_name", "Test Donor")
-        page.fill("#id_donor_email", "donor@test.com")
+        # Fill donation form (hand-written template, plain field ids - not
+        # Django's auto-generated "id_<field>")
+        page.fill("#amount", "100")
+        page.select_option("#campaign", "offering")
+        page.fill("#donor_name", "Test Donor")
+        page.fill("#donor_email", "donor@test.com")
 
         # Click donate button
         page.click("#donate-btn")
@@ -139,10 +140,12 @@ class TestExpenses:
         # Navigate to create expense
         page.goto(f"{live_server_url}/finance/expenses/create/")
 
-        # Fill expense form
-        page.fill("#id_description", "Test Expense - Office Supplies")
-        page.fill("#id_amount", "50.00")
-        page.select_option("#id_category", "operations")
+        # Fill expense form (hand-written template, plain field ids - not
+        # Django's auto-generated "id_<field>")
+        page.fill("#description", "Test Expense - Office Supplies")
+        page.fill("#amount", "50.00")
+        page.select_option("#category", "operations")
+        page.fill("#expense_date", "2026-01-15")  # required field, no default
 
         # Submit
         page.click("button[type='submit']")
