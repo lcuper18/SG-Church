@@ -1,4 +1,5 @@
 {% extends "emails/base.html" %}
+{% load ui %}
 
 {% block title %}Recibo de tu donación{% endblock %}
 
@@ -40,7 +41,7 @@
         <tr style="border-top: 2px solid #e5e7eb;">
             <td style="padding: 12px 0 8px 0; color: #1f2937; font-weight: bold;">Monto:</td>
             <td style="padding: 12px 0 8px 0; text-align: right; color: #059669; font-weight: bold; font-size: 18px;">
-                ${{ donation.amount|floatformat:2 }}
+                {% money donation.amount donation.currency %}
             </td>
         </tr>
     </table>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui %}
 
 {% block title %}Donaciones - SG Church{% endblock %}
 
@@ -77,7 +78,7 @@
                                 {{ donation.donor_name|default:"Anónimo" }}
                                 {% endif %}
                             </td>
-                            <td>${{ donation.amount|floatformat:2 }}</td>
+                            <td>{% money donation.amount donation.currency %}</td>
                             <td class="d-none d-md-table-cell">{{ donation.get_campaign_display }}</td>
                             <td>
                                 <span class="badge bg-{% if donation.status == 'completed' %}success{% elif donation.status == 'pending' %}warning{% elif donation.status == 'failed' %}danger{% else %}secondary{% endif %}">

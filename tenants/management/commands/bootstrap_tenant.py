@@ -8,6 +8,8 @@ variables so it can run non-interactively (e.g. a Docker entrypoint).
 Env vars:
     CHURCH_NAME       (default: "My Church")
     CHURCH_SUBDOMAIN  (default: "main")
+    CHURCH_CURRENCY   (default: "USD", e.g. "CRC")
+    CHURCH_TIMEZONE   (default: "America/New_York", e.g. "America/Costa_Rica")
     ADMIN_EMAIL       (optional — creates an admin user if set)
     ADMIN_PASSWORD    (required if ADMIN_EMAIL is set)
 """
@@ -35,6 +37,10 @@ class Command(BaseCommand):
 
         create_args = [name, subdomain]
         create_kwargs = {}
+        if os.environ.get("CHURCH_CURRENCY"):
+            create_kwargs["currency"] = os.environ["CHURCH_CURRENCY"]
+        if os.environ.get("CHURCH_TIMEZONE"):
+            create_kwargs["timezone"] = os.environ["CHURCH_TIMEZONE"]
         if admin_email:
             create_kwargs["admin_email"] = admin_email
             create_kwargs["admin_password"] = admin_password

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui %}
 
 {% block title %}Donaciones por Miembro - SG Church{% endblock %}
 
@@ -58,7 +59,7 @@
                             </td>
                             <td>{{ item.member__email|default:"-" }}</td>
                             <td class="text-center">{{ item.donation_count }}</td>
-                            <td class="text-end text-success">${{ item.total_donated|floatformat:2 }}</td>
+                            <td class="text-end text-success">{% money item.total_donated %}</td>
                             <td class="text-center">{{ item.last_donation|date:"d/m/Y"|default:"-" }}</td>
                         </tr>
                         {% empty %}
@@ -83,7 +84,7 @@
         <div class="card-body">
             <p class="mb-0">
                 <strong>{{ anonymous_count }}</strong> donaciones anónimas por un total de 
-                <strong class="text-success">${{ anonymous_total|floatformat:2 }}</strong>
+                <strong class="text-success">{% money anonymous_total %}</strong>
             </p>
         </div>
     </div>

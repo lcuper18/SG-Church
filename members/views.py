@@ -24,6 +24,12 @@ from datetime import timedelta
 
 from .models import Member, Family, Tag
 from tenants.models import Tenant
+from tenants.timezones import (
+    DEFAULT_TIMEZONE,
+    TIMEZONE_CHOICES,
+    defaults_for_country,
+    get_zone,
+)
 from members.models import User
 
 
@@ -149,10 +155,17 @@ class OnboardingSettingsView(View):
             return redirect("onboarding_church")
         if "onboarding_admin" not in request.session:
             return redirect("onboarding_admin")
+        country = request.session["onboarding_church"].get("country")
+        selected_timezone, selected_currency = defaults_for_country(country)
         return render(
             request,
             self.template_name,
-            {"currency_choices": Tenant.CURRENCY_CHOICES},
+            {
+                "currency_choices": Tenant.CURRENCY_CHOICES,
+                "timezone_choices": TIMEZONE_CHOICES,
+                "selected_currency": selected_currency,
+                "selected_timezone": selected_timezone,
+            },
         )
 
     def post(self, request):
@@ -164,7 +177,11 @@ class OnboardingSettingsView(View):
         # Store settings in session
         request.session["onboarding_settings"] = {
             "currency": request.POST.get("currency", "USD"),
-            "timezone": request.POST.get("timezone", "America/New_York"),
+            "timezone": (
+                request.POST.get("timezone")
+                if get_zone(request.POST.get("timezone"))
+                else DEFAULT_TIMEZONE
+            ),
             "date_format": request.POST.get("date_format", "DD/MM/YYYY"),
             "enable_families": request.POST.get("enable_families") == "on",
             "enable_tags": request.POST.get("enable_tags") == "on",

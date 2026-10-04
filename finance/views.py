@@ -17,6 +17,7 @@ from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
+from django.utils.formats import date_format
 from django.conf import settings
 from datetime import datetime, time, timedelta
 import stripe
@@ -114,7 +115,7 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
 
             chart_data.append(
                 {
-                    "month": start.strftime("%b"),
+                    "month": date_format(start, "M"),
                     "donations": float(month_donations),
                     "expenses": float(month_expenses),
                 }

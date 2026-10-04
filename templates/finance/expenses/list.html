@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui %}
 
 {% block title %}Gastos - SG Church{% endblock %}
 
@@ -70,7 +71,7 @@
                             <td>{{ expense.description }}</td>
                             <td class="d-none d-md-table-cell">{{ expense.get_category_display }}</td>
                             <td class="d-none d-lg-table-cell">{{ expense.vendor_name|default:"-" }}</td>
-                            <td>${{ expense.amount|floatformat:2 }}</td>
+                            <td>{% money expense.amount %}</td>
                             <td>
                                 <span class="badge bg-{% if expense.status == 'paid' %}success{% elif expense.status == 'approved' %}info{% elif expense.status == 'pending' %}warning{% else %}danger{% endif %}">
                                     {{ expense.get_status_display }}

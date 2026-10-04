@@ -31,18 +31,21 @@
     </div>
 
     <!-- Stats Cards -->
+    {% money donations_this_month as income_fmt %}
+    {% money expenses_this_month as expenses_fmt %}
+    {% money balance_this_month as balance_fmt %}
     <div class="row g-4 mb-4">
         <div class="col-6 col-lg-3">
-            {% include "partials/kpi_card.html" with label="Ingresos del Mes" prefix="$" value=donations_this_month|floatformat:2 icon="bi-arrow-down-circle" color="success" %}
+            {% include "partials/kpi_card.html" with label="Ingresos del Mes" value=income_fmt icon="bi-arrow-down-circle" color="success" %}
         </div>
         <div class="col-6 col-lg-3">
-            {% include "partials/kpi_card.html" with label="Gastos del Mes" prefix="$" value=expenses_this_month|floatformat:2 icon="bi-arrow-up-circle" color="danger" %}
+            {% include "partials/kpi_card.html" with label="Gastos del Mes" value=expenses_fmt icon="bi-arrow-up-circle" color="danger" %}
         </div>
         <div class="col-6 col-lg-3">
             {% if balance_this_month >= 0 %}
-            {% include "partials/kpi_card.html" with label="Balance" prefix="$" value=balance_this_month|floatformat:2 icon="bi-wallet2" color="primary" value_color="success" %}
+            {% include "partials/kpi_card.html" with label="Balance" value=balance_fmt icon="bi-wallet2" color="primary" value_color="success" %}
             {% else %}
-            {% include "partials/kpi_card.html" with label="Balance" prefix="-$" value=balance_this_month|floatformat:2|cut:"-" icon="bi-wallet2" color="primary" value_color="danger" %}
+            {% include "partials/kpi_card.html" with label="Balance" value=balance_fmt icon="bi-wallet2" color="primary" value_color="danger" %}
             {% endif %}
         </div>
         <div class="col-6 col-lg-3">
@@ -116,7 +119,7 @@
                             </td>
                             <td class="d-none d-md-table-cell">{{ transaction.description }}</td>
                             <td class="text-end {% if transaction.amount >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                ${{ transaction.amount|floatformat:2 }}
+                                {% money transaction.amount %}
                             </td>
                             <td>
                                 <span class="badge bg-{{ transaction.status|transaction_status_color }}">{{ transaction.status|transaction_status_label }}</span>
@@ -139,10 +142,13 @@
 
 {% block extra_js %}
 {{ chart_data|json_script:"chart-data" }}
+{% currency_info as currency %}
+{{ currency|json_script:"currency-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const ctx = document.getElementById('financeChart').getContext('2d');
     const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+    const currency = JSON.parse(document.getElementById('currency-data').textContent);
 
     new Chart(ctx, {
         type: 'bar',
@@ -173,7 +179,7 @@
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '$' + value;
+                            return currency.symbol + value.toLocaleString('es');
                         }
                     }
                 }

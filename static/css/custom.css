@@ -178,6 +178,21 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.6rem;
     font-weight: 800;
     line-height: 1.1;
+    white-space: nowrap;
+}
+
+/* Los importes largos (colones, miles) no caben junto al icono en tarjetas
+   estrechas: se oculta el icono antes de partir el número. */
+@media (max-width: 575.98px), (min-width: 992px) and (max-width: 1399.98px) {
+    .kpi-card .kpi-icon {
+        display: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .kpi-card .kpi-value {
+        font-size: 1.3rem;
+    }
 }
 
 /* Cabecera de página */

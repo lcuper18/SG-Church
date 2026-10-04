@@ -18,6 +18,7 @@ from django.db import transaction
 
 from members.models import User
 from tenants.models import Tenant
+from tenants.timezones import DEFAULT_TIMEZONE, get_zone
 
 
 class Command(BaseCommand):
@@ -38,11 +39,30 @@ class Command(BaseCommand):
             help="Password for the admin user (required if --admin-email is given)",
         )
 
+        parser.add_argument(
+            "--currency",
+            default="USD",
+            help="ISO currency code of the church, e.g. CRC (default: USD)",
+        )
+        parser.add_argument(
+            "--timezone",
+            default=DEFAULT_TIMEZONE,
+            help="IANA time zone of the church, e.g. America/Costa_Rica "
+            f"(default: {DEFAULT_TIMEZONE})",
+        )
+
     def handle(self, *args, **options):
         name = options["name"]
         subdomain = options["subdomain"].strip().lower()
         admin_email = options["admin_email"]
         admin_password = options["admin_password"]
+
+        currency = options["currency"].upper()
+        if currency not in dict(Tenant.CURRENCY_CHOICES):
+            raise CommandError(f"Unknown currency '{currency}'")
+
+        if not get_zone(options["timezone"]):
+            raise CommandError(f"Unknown time zone '{options['timezone']}'")
 
         if not re.fullmatch(r"[a-z0-9-]+", subdomain):
             raise CommandError(
@@ -59,6 +79,8 @@ class Command(BaseCommand):
             tenant = Tenant.objects.create(
                 name=name,
                 subdomain=subdomain,
+                currency=currency,
+                timezone=options["timezone"],
                 onboarding_completed=True,
             )
 

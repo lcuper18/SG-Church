@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load ui %}
 
 {% block title %}{{ member.full_name }} - SG Church{% endblock %}
 
@@ -180,7 +181,7 @@
                                         {% for donation in donations %}
                                         <tr>
                                             <td>{{ donation.donation_date|date:"d/m/Y" }}</td>
-                                            <td>${{ donation.amount }}</td>
+                                            <td>{% money donation.amount donation.currency %}</td>
                                             <td>{{ donation.get_campaign_display }}</td>
                                             <td>
                                                 <span class="badge bg-{% if donation.status == 'completed' %}success{% else %}warning{% endif %}">

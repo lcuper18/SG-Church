@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui %}
 
 {% block title %}Estado de Resultados - SG Church{% endblock %}
 
@@ -51,7 +52,7 @@
                             {% for item in donations_by_campaign %}
                             <tr>
                                 <td>{{ item.campaign|title }}</td>
-                                <td class="text-end">${{ item.total|floatformat:2 }}</td>
+                                <td class="text-end">{% money item.total %}</td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -62,7 +63,7 @@
                         <tfoot class="table-light">
                             <tr>
                                 <th>Total Ingresos</th>
-                                <th class="text-end text-success">${{ total_donations|floatformat:2 }}</th>
+                                <th class="text-end text-success">{% money total_donations %}</th>
                             </tr>
                         </tfoot>
                     </table>
@@ -82,7 +83,7 @@
                             {% for item in expenses_by_category %}
                             <tr>
                                 <td>{{ item.category|title }}</td>
-                                <td class="text-end">${{ item.total|floatformat:2 }}</td>
+                                <td class="text-end">{% money item.total %}</td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -93,7 +94,7 @@
                         <tfoot class="table-light">
                             <tr>
                                 <th>Total Gastos</th>
-                                <th class="text-end text-danger">${{ total_expenses|floatformat:2 }}</th>
+                                <th class="text-end text-danger">{% money total_expenses %}</th>
                             </tr>
                         </tfoot>
                     </table>
@@ -109,7 +110,7 @@
                 <div class="card-body text-center">
                     <h4 class="mb-0">Balance Neto del Período</h4>
                     <h2 class="mb-0 {% if net_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        ${{ net_balance|floatformat:2 }}
+                        {% money net_balance %}
                     </h2>
                 </div>
             </div>

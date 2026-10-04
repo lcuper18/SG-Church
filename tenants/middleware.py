@@ -9,7 +9,10 @@ connection or switch schemas.
 """
 
 from django.conf import settings
+from django.utils import timezone
+
 from tenants.models import Tenant
+from tenants.timezones import get_zone
 
 
 class TenantMiddleware:
@@ -29,7 +32,22 @@ class TenantMiddleware:
 
         request.tenant = self._resolve_tenant(request)
 
-        return self.get_response(request)
+        # Dates, "this month" cut-offs and datetime form input are all
+        # interpreted in the church's own time zone, not the server's.
+        zone = get_zone(self._timezone_name(request))
+        if zone:
+            timezone.activate(zone)
+        try:
+            return self.get_response(request)
+        finally:
+            timezone.deactivate()
+
+    def _timezone_name(self, request):
+        """Time zone of the logged-in user's church, else of the resolved tenant."""
+        user = getattr(request, "user", None)
+        tenant = getattr(user, "tenant", None) if user and user.is_authenticated else None
+        tenant = tenant or request.tenant
+        return tenant.timezone if tenant else None
 
     def _should_skip(self, request):
         """Check if request should skip tenant resolution."""

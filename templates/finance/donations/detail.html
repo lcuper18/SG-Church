@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui %}
 
 {% block title %}Detalle de Donación - SG Church{% endblock %}
 
@@ -29,7 +30,7 @@
                         </tr>
                         <tr>
                             <td class="text-muted">Monto</td>
-                            <td><strong>${{ donation.amount|floatformat:2 }}</strong></td>
+                            <td><strong>{% money donation.amount donation.currency %}</strong></td>
                         </tr>
                         <tr>
                             <td class="text-muted">Moneda</td>
