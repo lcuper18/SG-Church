@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración de la iglesia - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% include "partials/page_header.html" with title="Configuración de la iglesia" icon="bi-gear" subtitle="Solo los administradores pueden cambiar estos datos." %}
+
+    <form method="post">
+        {% csrf_token %}
+        {% include "partials/form_errors.html" %}
+
+        <div class="card mb-4">
+            <div class="card-header">Datos de la iglesia</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">{% include "partials/form_field.html" with field=form.name %}</div>
+                    <div class="col-md-4">{% include "partials/form_field.html" with field=form.denomination %}</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">{% include "partials/form_field.html" with field=form.country %}</div>
+                    <div class="col-md-4">{% include "partials/form_field.html" with field=form.state %}</div>
+                    <div class="col-md-4">{% include "partials/form_field.html" with field=form.city %}</div>
+                </div>
+                {% include "partials/form_field.html" with field=form.address %}
+                <div class="row">
+                    <div class="col-md-6">{% include "partials/form_field.html" with field=form.phone %}</div>
+                    <div class="col-md-6">{% include "partials/form_field.html" with field=form.email %}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Moneda y zona horaria</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">{% include "partials/form_field.html" with field=form.currency %}</div>
+                    <div class="col-md-6">{% include "partials/form_field.html" with field=form.timezone %}</div>
+                </div>
+                {% if has_financial_data %}
+                <div class="alert alert-warning mb-0" role="note">
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                    Ya hay donaciones o gastos registrados. Cambiar la moneda <strong>no convierte importes</strong>:
+                    las donaciones existentes conservan la moneda con la que se registraron y los gastos
+                    se mostrarán en la moneda nueva.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Módulos</div>
+            <div class="card-body">
+                {% include "partials/form_field.html" with field=form.enable_families %}
+                {% include "partials/form_field.html" with field=form.enable_tags %}
+                <div class="form-text">Si los desactivas, desaparecen del menú; los datos ya guardados no se borran.</div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar configuración</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

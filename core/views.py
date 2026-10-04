@@ -2,12 +2,20 @@
 Core views for SG Church.
 """
 
-from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum
+from django.http import Http404
+from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
+from django.views.generic import UpdateView
 from django.utils import timezone
 from datetime import timedelta
 
+from core.forms import ChurchSettingsForm, ProfileForm, StyledPasswordChangeForm
+from core.mixins import ChurchAdminRequiredMixin
 from members.models import Member
 from tenants.models import Tenant
 from finance.models import Donation
@@ -89,3 +97,58 @@ def dashboard(request):
     }
 
     return render(request, "core/dashboard.html", context)
+
+
+@login_required
+def profile(request):
+    """Edit the user's name and change their password."""
+    user = request.user
+    profile_form = ProfileForm(instance=user)
+    password_form = StyledPasswordChangeForm(user)
+
+    if request.method == "POST":
+        if request.POST.get("action") == "password":
+            password_form = StyledPasswordChangeForm(user, request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                update_session_auth_hash(request, user)  # keep the user logged in
+                messages.success(request, "Contraseña actualizada.")
+                return redirect("profile")
+        else:
+            profile_form = ProfileForm(request.POST, instance=user)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, "Perfil actualizado.")
+                return redirect("profile")
+
+    return render(
+        request,
+        "core/profile.html",
+        {"profile_form": profile_form, "password_form": password_form},
+    )
+
+
+class ChurchSettingsView(LoginRequiredMixin, ChurchAdminRequiredMixin, UpdateView):
+    """Church-wide settings; administrators only."""
+
+    form_class = ChurchSettingsForm
+    template_name = "core/church_settings.html"
+    success_url = reverse_lazy("church_settings")
+
+    def get_object(self, queryset=None):
+        tenant = getattr(self.request.user, "tenant", None)
+        if tenant is None:
+            raise Http404("Este usuario no pertenece a ninguna iglesia.")
+        return tenant
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tenant = self.object
+        context["has_financial_data"] = (
+            tenant.donations.exists() or tenant.expenses.exists()
+        )
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, "Configuración guardada.")
+        return super().form_valid(form)

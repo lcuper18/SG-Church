@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Mi perfil - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% include "partials/page_header.html" with title="Mi perfil" icon="bi-person-circle" subtitle=user.email %}
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">Datos personales</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="profile">
+                        {% include "partials/form_errors.html" with form=profile_form %}
+                        {% include "partials/form_field.html" with field=profile_form.first_name %}
+                        {% include "partials/form_field.html" with field=profile_form.last_name %}
+                        <div class="mb-3">
+                            <label class="form-label" for="profile-email">Email</label>
+                            <input type="email" id="profile-email" class="form-control" value="{{ user.email }}" disabled>
+                            <div class="form-text">Es tu identificador para iniciar sesión y no se puede cambiar aquí.</div>
+                        </div>
+                        <div class="mb-3">
+                            <span class="form-label d-block">Rol</span>
+                            <span class="badge bg-secondary">{{ user.get_role_display }}</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">Cambiar contraseña</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="password">
+                        {% include "partials/form_errors.html" with form=password_form %}
+                        {% include "partials/form_field.html" with field=password_form.old_password %}
+                        {% include "partials/form_field.html" with field=password_form.new_password1 %}
+                        {% include "partials/form_field.html" with field=password_form.new_password2 %}
+                        <button type="submit" class="btn btn-primary">Actualizar contraseña</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

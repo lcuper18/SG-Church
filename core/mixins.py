@@ -31,3 +31,11 @@ class ManageEducationRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
         return user.is_authenticated and user.can_manage_education
+
+
+class ChurchAdminRequiredMixin(UserPassesTestMixin):
+    """Require the logged-in user to be an administrator of their church."""
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_authenticated and user.is_church_admin

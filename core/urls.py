@@ -8,6 +8,9 @@ urlpatterns = [
     # Home and Dashboard
     path("", views.home, name="home"),
     path("dashboard/", views.dashboard, name="dashboard"),
+    # Profile and church settings
+    path("profile/", views.profile, name="profile"),
+    path("settings/", views.ChurchSettingsView.as_view(), name="church_settings"),
     # Onboarding
     path(
         "onboarding/",
