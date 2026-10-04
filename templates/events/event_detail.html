@@ -81,15 +81,24 @@
                 <div class="card-body">
                     <form method="post" action="{% url 'registration_create' event.pk %}">
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <select class="form-select" name="member" required>
-                                <option value="">Seleccionar miembro...</option>
-                                {% for registrable in registrable_members %}
-                                <option value="{{ registrable.id }}">{{ registrable.full_name }}</option>
-                                {% endfor %}
-                            </select>
+                        <label for="member-search" class="visually-hidden">Buscar miembro</label>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+                            <input type="search" id="member-search" class="form-control" autocomplete="off"
+                                   placeholder="Buscar por nombre o correo…">
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Inscribir</button>
+                        <div class="list-group overflow-auto" id="member-options" style="max-height: 280px;">
+                            {% for registrable in registrable_members %}
+                            <button type="submit" name="member" value="{{ registrable.id }}"
+                                    class="list-group-item list-group-item-action member-option"
+                                    data-search="{{ registrable.full_name|lower }} {{ registrable.email|lower }}">
+                                {{ registrable.full_name }}
+                                {% if registrable.email %}<small class="text-muted d-block">{{ registrable.email }}</small>{% endif %}
+                            </button>
+                            {% endfor %}
+                            <div class="list-group-item text-muted d-none" id="member-none">Nadie coincide con la búsqueda.</div>
+                        </div>
+                        <div class="form-text">Haga clic en un miembro para inscribirlo. Con un solo resultado, Enter lo inscribe.</div>
                     </form>
                 </div>
             </div>
@@ -142,4 +151,30 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var input = document.getElementById('member-search');
+    if (!input) return;
+    var options = Array.prototype.slice.call(document.querySelectorAll('.member-option'));
+    var norm = function (t) { return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+    options.forEach(function (o) { o.dataset.search = norm(o.dataset.search); });
+    var visible = function () { return options.filter(function (o) { return !o.classList.contains('d-none'); }); };
+    input.addEventListener('input', function () {
+        var terms = norm(input.value.trim()).split(/\s+/).filter(Boolean);
+        options.forEach(function (o) {
+            o.classList.toggle('d-none', !terms.every(function (t) { return o.dataset.search.indexOf(t) !== -1; }));
+        });
+        document.getElementById('member-none').classList.toggle('d-none', visible().length !== 0 || options.length === 0);
+    });
+    input.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        var v = visible();
+        if (v.length === 1) v[0].click();
+    });
+})();
+</script>
 {% endblock %}
