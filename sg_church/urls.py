@@ -74,6 +74,7 @@ urlpatterns = [
     path("api/v1/", include("finance.api.urls")),
     path("api/v1/", include("notifications.urls")),
     path("api/v1/", include("education.api.urls")),
+    path("api/v1/", include("events.api.urls")),
     # Public donation pages
     path(
         "donate/",
@@ -106,6 +107,7 @@ urlpatterns = [
     path("members/", include("members.urls")),
     path("finance/", include("finance.urls")),
     path("education/", include("education.urls")),
+    path("events/", include("events.urls")),
 ]
 
 # Serve media files in development

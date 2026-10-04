@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Evento - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'event_list' %}">Eventos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% if object %}Editar{% else %}Nuevo{% endif %}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h4 class="mb-0">{% if object %}Editar{% else %}Nuevo{% endif %} Evento</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título *</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ form.title.value|default:'' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ form.description.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="event_type" class="form-label">Tipo</label>
+                                <select class="form-select" id="event_type" name="event_type">
+                                    {% for code, label in form.fields.event_type.choices %}
+                                    <option value="{{ code }}" {% if form.event_type.value == code %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="location" class="form-label">Lugar</label>
+                                <input type="text" class="form-control" id="location" name="location" value="{{ form.location.value|default:'' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="start_at" class="form-label">Inicio *</label>
+                                <input type="datetime-local" class="form-control" id="start_at" name="start_at" value="{{ form.start_at.value|date:'Y-m-d\TH:i' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="end_at" class="form-label">Fin</label>
+                                <input type="datetime-local" class="form-control" id="end_at" name="end_at" value="{{ form.end_at.value|date:'Y-m-d\TH:i' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="capacity" class="form-label">Cupo máximo</label>
+                                <input type="number" class="form-control" id="capacity" name="capacity" min="1" value="{{ form.capacity.value|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if form.is_active.value %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">Activo</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'event_list' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if object %}Guardar Cambios{% else %}Crear Evento{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

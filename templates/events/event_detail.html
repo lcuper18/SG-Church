@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'event_list' %}">Eventos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h4>{{ event.title }}</h4>
+                    <span class="badge bg-info mb-3">{{ event.get_event_type_display }}</span>
+                    {% if event.description %}
+                    <p>{{ event.description }}</p>
+                    {% endif %}
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" width="40%">Inicio</td>
+                            <td>{{ event.start_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Fin</td>
+                            <td>{{ event.end_at|date:"d/m/Y H:i"|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Lugar</td>
+                            <td>{{ event.location|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Inscritos</td>
+                            <td>{{ event.registered_count }}{% if event.capacity %} / {{ event.capacity }}{% endif %}</td>
+                        </tr>
+                    </table>
+                </div>
+                {% if user.can_manage_members %}
+                <div class="card-footer bg-white">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'event_update' event.pk %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'event_delete' event.pk %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if user.can_manage_members %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Inscribir Miembro</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'registration_create' event.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <select class="form-select" name="member" required>
+                                <option value="">Seleccionar miembro...</option>
+                                {% for registrable in registrable_members %}
+                                <option value="{{ registrable.id }}">{{ registrable.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Inscribir</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Miembros Inscritos</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Miembro</th>
+                                    <th>Inscrito</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registration in registrations %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'member_detail' registration.member.pk %}">{{ registration.member.full_name }}</a>
+                                    </td>
+                                    <td>{{ registration.registered_at|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if user.can_manage_members %}
+                                        <form method="post" action="{% url 'registration_cancel' registration.pk %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar inscripción">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">No hay miembros inscritos todavía.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
