@@ -16,12 +16,6 @@
         </div>
     </div>
 
-    {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-    {% endif %}
-
     {% if not event.attendance_open %}
     <div class="alert alert-warning">
         La asistencia se puede tomar a partir del día del evento ({{ event.start_at|date:"d/m/Y" }}).

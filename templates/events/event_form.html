@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load ui %}
 
 {% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Evento - SG Church{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row">
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
@@ -19,58 +20,67 @@
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
+            <div class="card">
+                <div class="card-header">
                     <h4 class="mb-0">{% if object %}Editar{% else %}Nuevo{% endif %} Evento</h4>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
+                        {% include "partials/form_errors.html" %}
 
                         <div class="mb-3">
                             <label for="title" class="form-label">Título *</label>
-                            <input type="text" class="form-control" id="title" name="title" value="{{ form.title.value|default:'' }}" required>
+                            <input type="text" class="form-control {{ form.title|invalid }}" id="title" name="title" value="{{ form.title.value|default:'' }}" required>
+                            {% include "partials/field_errors.html" with field=form.title %}
                         </div>
 
                         <div class="mb-3">
                             <label for="description" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="description" name="description" rows="3">{{ form.description.value|default:'' }}</textarea>
+                            <textarea class="form-control {{ form.description|invalid }}" id="description" name="description" rows="3">{{ form.description.value|default:'' }}</textarea>
+                            {% include "partials/field_errors.html" with field=form.description %}
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="event_type" class="form-label">Tipo</label>
-                                <select class="form-select" id="event_type" name="event_type">
+                                <select class="form-select {{ form.event_type|invalid }}" id="event_type" name="event_type">
                                     {% for code, label in form.fields.event_type.choices %}
                                     <option value="{{ code }}" {% if form.event_type.value == code %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
+                                {% include "partials/field_errors.html" with field=form.event_type %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="location" class="form-label">Lugar</label>
-                                <input type="text" class="form-control" id="location" name="location" value="{{ form.location.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.location|invalid }}" id="location" name="location" value="{{ form.location.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.location %}
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="start_at" class="form-label">Inicio *</label>
-                                <input type="datetime-local" class="form-control" id="start_at" name="start_at" value="{{ form.start_at.value|date:'Y-m-d\TH:i' }}" required>
+                                <input type="datetime-local" class="form-control {{ form.start_at|invalid }}" id="start_at" name="start_at" value="{{ form.start_at.value|date:'Y-m-d\TH:i' }}" required>
+                                {% include "partials/field_errors.html" with field=form.start_at %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="end_at" class="form-label">Fin</label>
-                                <input type="datetime-local" class="form-control" id="end_at" name="end_at" value="{{ form.end_at.value|date:'Y-m-d\TH:i' }}">
+                                <input type="datetime-local" class="form-control {{ form.end_at|invalid }}" id="end_at" name="end_at" value="{{ form.end_at.value|date:'Y-m-d\TH:i' }}">
+                                {% include "partials/field_errors.html" with field=form.end_at %}
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="capacity" class="form-label">Cupo máximo</label>
-                                <input type="number" class="form-control" id="capacity" name="capacity" min="1" value="{{ form.capacity.value|default:'' }}">
+                                <input type="number" class="form-control {{ form.capacity|invalid }}" id="capacity" name="capacity" min="1" value="{{ form.capacity.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.capacity %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <div class="form-check mt-4">
-                                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if form.is_active.value %}checked{% endif %}>
+                                    <input type="checkbox" class="form-check-input {{ form.is_active|invalid }}" id="is_active" name="is_active" {% if form.is_active.value %}checked{% endif %}>
+                                    {% include "partials/field_errors.html" with field=form.is_active %}
                                     <label class="form-check-label" for="is_active">Activo</label>
                                 </div>
                             </div>
@@ -81,26 +91,29 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="requires_baptized" name="requires_baptized" {% if form.requires_baptized.value %}checked{% endif %}>
+                                    <input type="checkbox" class="form-check-input {{ form.requires_baptized|invalid }}" id="requires_baptized" name="requires_baptized" {% if form.requires_baptized.value %}checked{% endif %}>
+                                    {% include "partials/field_errors.html" with field=form.requires_baptized %}
                                     <label class="form-check-label" for="requires_baptized">Requiere estar bautizado/a</label>
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="requires_married" name="requires_married" {% if form.requires_married.value %}checked{% endif %}>
+                                    <input type="checkbox" class="form-check-input {{ form.requires_married|invalid }}" id="requires_married" name="requires_married" {% if form.requires_married.value %}checked{% endif %}>
+                                    {% include "partials/field_errors.html" with field=form.requires_married %}
                                     <label class="form-check-label" for="requires_married">Requiere estar casado/a</label>
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="required_courses" class="form-label">Cursos que debe haber completado</label>
-                            <select class="form-select" id="required_courses" name="required_courses" multiple size="5">
+                            <select class="form-select {{ form.required_courses|invalid }}" id="required_courses" name="required_courses" multiple size="5">
                                 {% for course in form.fields.required_courses.queryset %}
                                 <option value="{{ course.id }}" {% if object and course in object.required_courses.all %}selected{% endif %}>
                                     {{ course.title }}
                                 </option>
                                 {% endfor %}
                             </select>
+                            {% include "partials/field_errors.html" with field=form.required_courses %}
                             <div class="form-text">Mantené Ctrl (o Cmd) presionado para seleccionar varios.</div>
                         </div>
 

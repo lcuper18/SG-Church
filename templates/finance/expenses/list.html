@@ -3,24 +3,16 @@
 {% block title %}Gastos - SG Church{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-0"><i class="bi bi-receipt"></i> Gastos</h1>
-        </div>
-        <div>
-            <a href="{% url 'expense_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nuevo Gasto
-            </a>
-        </div>
-    </div>
+<div class="container py-4">
+    {% url 'expense_create' as create_url %}
+    {% include "partials/page_header.html" with title="Gastos" icon="bi-receipt" action_url=create_url action_label="Nuevo Gasto" %}
 
     <!-- Filters -->
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <select name="status" class="form-select">
+                <div class="col-6 col-md-3">
+                    <select name="status" aria-label="Filtrar por estado" class="form-select">
                         <option value="">Todos los estados</option>
                         <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pendiente</option>
                         <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Aprobado</option>
@@ -28,8 +20,8 @@
                         <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rechazado</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select name="category" class="form-select">
+                <div class="col-6 col-md-3">
+                    <select name="category" aria-label="Filtrar por categoría" class="form-select">
                         <option value="">Todas las categorías</option>
                         <option value="operations" {% if request.GET.category == 'operations' %}selected{% endif %}>Operaciones</option>
                         <option value="salaries" {% if request.GET.category == 'salaries' %}selected{% endif %}>Salarios</option>
@@ -40,13 +32,13 @@
                         <option value="other" {% if request.GET.category == 'other' %}selected{% endif %}>Otro</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from|default:'' }}">
+                <div class="col-6 col-md-2">
+                    <input type="date" name="date_from" aria-label="Desde" class="form-control" value="{{ request.GET.date_from|default:'' }}">
                 </div>
-                <div class="col-md-2">
-                    <input type="date" name="date_to" class="form-control" value="{{ request.GET.date_to|default:'' }}">
+                <div class="col-6 col-md-2">
+                    <input type="date" name="date_to" aria-label="Hasta" class="form-control" value="{{ request.GET.date_to|default:'' }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                     <button type="submit" class="btn btn-secondary w-100">
                         <i class="bi bi-search"></i> Filtrar
                     </button>
@@ -56,16 +48,16 @@
     </div>
 
     <!-- Expenses Table -->
-    <div class="card border-0 shadow-sm">
+    <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
                             <th>Fecha</th>
                             <th>Descripción</th>
-                            <th>Categoría</th>
-                            <th>Proveedor</th>
+                            <th class="d-none d-md-table-cell">Categoría</th>
+                            <th class="d-none d-lg-table-cell">Proveedor</th>
                             <th>Monto</th>
                             <th>Estado</th>
                             <th>Acciones</th>
@@ -76,8 +68,8 @@
                         <tr>
                             <td>{{ expense.expense_date|date:"d/m/Y" }}</td>
                             <td>{{ expense.description }}</td>
-                            <td>{{ expense.get_category_display }}</td>
-                            <td>{{ expense.vendor_name|default:"-" }}</td>
+                            <td class="d-none d-md-table-cell">{{ expense.get_category_display }}</td>
+                            <td class="d-none d-lg-table-cell">{{ expense.vendor_name|default:"-" }}</td>
                             <td>${{ expense.amount|floatformat:2 }}</td>
                             <td>
                                 <span class="badge bg-{% if expense.status == 'paid' %}success{% elif expense.status == 'approved' %}info{% elif expense.status == 'pending' %}warning{% else %}danger{% endif %}">
@@ -86,19 +78,19 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'expense_update' expense.pk %}" class="btn btn-outline-primary">
-                                        <i class="bi bi-pencil"></i>
+                                    <a href="{% url 'expense_update' expense.pk %}" class="btn btn-outline-primary" title="Editar" aria-label="Editar gasto">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
                                     </a>
-                                    <a href="{% url 'expense_delete' expense.pk %}" class="btn btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
+                                    <a href="{% url 'expense_delete' expense.pk %}" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar gasto">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                No se encontraron gastos.
+                            <td colspan="7">
+                                {% include "partials/empty_state.html" with icon="bi-receipt" message="No se encontraron gastos." action_url=create_url action_label="Registrar un gasto" %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -109,32 +101,6 @@
     </div>
 
     <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-    <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1">Primera</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-            </li>
-            {% endif %}
-
-            <li class="page-item active">
-                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-            </li>
-
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
+    {% include "partials/pagination.html" %}
 </div>
 {% endblock %}

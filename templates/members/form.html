@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load ui %}
 
 {% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Miembro - SG Church{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row">
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
@@ -19,8 +20,8 @@
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
+            <div class="card">
+                <div class="card-header">
                     <h4 class="mb-0">
                         {% if object %}Editar{% else %}Nuevo{% endif %} Miembro
                     </h4>
@@ -28,56 +29,64 @@
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
+                        {% include "partials/form_errors.html" %}
                         
                         <h5 class="mb-3 text-muted">Información Personal</h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="first_name" class="form-label">Nombre *</label>
-                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ form.first_name.value|default:'' }}" required>
+                                <input type="text" class="form-control {{ form.first_name|invalid }}" id="first_name" name="first_name" value="{{ form.first_name.value|default:'' }}" required>
+                                {% include "partials/field_errors.html" with field=form.first_name %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="last_name" class="form-label">Apellido *</label>
-                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ form.last_name.value|default:'' }}" required>
+                                <input type="text" class="form-control {{ form.last_name|invalid }}" id="last_name" name="last_name" value="{{ form.last_name.value|default:'' }}" required>
+                                {% include "partials/field_errors.html" with field=form.last_name %}
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" name="email" value="{{ form.email.value|default:'' }}">
+                                <input type="email" class="form-control {{ form.email|invalid }}" id="email" name="email" value="{{ form.email.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.email %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="phone" class="form-label">Teléfono</label>
-                                <input type="text" class="form-control" id="phone" name="phone" value="{{ form.phone.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.phone|invalid }}" id="phone" name="phone" value="{{ form.phone.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.phone %}
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="date_of_birth" class="form-label">Fecha de Nacimiento</label>
-                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}">
+                                <input type="date" class="form-control {{ form.date_of_birth|invalid }}" id="date_of_birth" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.date_of_birth %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="gender" class="form-label">Género</label>
-                                <select class="form-select" id="gender" name="gender">
+                                <select class="form-select {{ form.gender|invalid }}" id="gender" name="gender">
                                     <option value="">Seleccionar...</option>
                                     <option value="male" {% if form.gender.value == 'male' %}selected{% endif %}>Masculino</option>
                                     <option value="female" {% if form.gender.value == 'female' %}selected{% endif %}>Femenino</option>
                                     <option value="other" {% if form.gender.value == 'other' %}selected{% endif %}>Otro</option>
                                 </select>
+                                {% include "partials/field_errors.html" with field=form.gender %}
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="marital_status" class="form-label">Estado Civil</label>
-                                <select class="form-select" id="marital_status" name="marital_status">
+                                <select class="form-select {{ form.marital_status|invalid }}" id="marital_status" name="marital_status">
                                     <option value="">Seleccionar...</option>
                                     <option value="single" {% if form.marital_status.value == 'single' %}selected{% endif %}>Soltero/a</option>
                                     <option value="married" {% if form.marital_status.value == 'married' %}selected{% endif %}>Casado/a</option>
                                     <option value="divorced" {% if form.marital_status.value == 'divorced' %}selected{% endif %}>Divorciado/a</option>
                                     <option value="widowed" {% if form.marital_status.value == 'widowed' %}selected{% endif %}>Viudo/a</option>
                                 </select>
+                                {% include "partials/field_errors.html" with field=form.marital_status %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="photo" class="form-label">Foto</label>
@@ -88,13 +97,15 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="form-check mt-4">
-                                    <input type="checkbox" class="form-check-input" id="is_baptized" name="is_baptized" {% if form.is_baptized.value %}checked{% endif %}>
+                                    <input type="checkbox" class="form-check-input {{ form.is_baptized|invalid }}" id="is_baptized" name="is_baptized" {% if form.is_baptized.value %}checked{% endif %}>
+                                    {% include "partials/field_errors.html" with field=form.is_baptized %}
                                     <label class="form-check-label" for="is_baptized">Bautizado/a</label>
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="baptism_date" class="form-label">Fecha de Bautismo</label>
-                                <input type="date" class="form-control" id="baptism_date" name="baptism_date" value="{{ form.baptism_date.value|default:'' }}">
+                                <input type="date" class="form-control {{ form.baptism_date|invalid }}" id="baptism_date" name="baptism_date" value="{{ form.baptism_date.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.baptism_date %}
                             </div>
                         </div>
 
@@ -104,16 +115,18 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="member_status" class="form-label">Estado</label>
-                                <select class="form-select" id="member_status" name="member_status">
+                                <select class="form-select {{ form.member_status|invalid }}" id="member_status" name="member_status">
                                     <option value="visitor" {% if form.member_status.value == 'visitor' %}selected{% endif %}>Visitante</option>
                                     <option value="attendee" {% if form.member_status.value == 'attendee' %}selected{% endif %}>Asistente</option>
                                     <option value="member" {% if form.member_status.value == 'member' %}selected{% endif %}>Miembro</option>
                                     <option value="inactive" {% if form.member_status.value == 'inactive' %}selected{% endif %}>Inactivo</option>
                                 </select>
+                                {% include "partials/field_errors.html" with field=form.member_status %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="membership_date" class="form-label">Fecha de Membresía</label>
-                                <input type="date" class="form-control" id="membership_date" name="membership_date" value="{{ form.membership_date.value|default:'' }}">
+                                <input type="date" class="form-control {{ form.membership_date|invalid }}" id="membership_date" name="membership_date" value="{{ form.membership_date.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.membership_date %}
                             </div>
                         </div>
 
@@ -122,7 +135,7 @@
                         <h5 class="mb-3 text-muted">Familia</h5>
                         <div class="mb-3">
                             <label for="family" class="form-label">Familia</label>
-                            <select class="form-select" id="family" name="family">
+                            <select class="form-select {{ form.family|invalid }}" id="family" name="family">
                                 <option value="">Sin familia</option>
                                 {% for family in form.fields.family.queryset %}
                                 <option value="{{ family.id }}" {% if form.family.value|stringformat:"s" == family.id|stringformat:"s" %}selected{% endif %}>
@@ -130,6 +143,7 @@
                                 </option>
                                 {% endfor %}
                             </select>
+                            {% include "partials/field_errors.html" with field=form.family %}
                         </div>
 
                         <hr class="my-4">
@@ -137,21 +151,25 @@
                         <h5 class="mb-3 text-muted">Dirección</h5>
                         <div class="mb-3">
                             <label for="address" class="form-label">Dirección</label>
-                            <textarea class="form-control" id="address" name="address" rows="2">{{ form.address.value|default:'' }}</textarea>
+                            <textarea class="form-control {{ form.address|invalid }}" id="address" name="address" rows="2">{{ form.address.value|default:'' }}</textarea>
+                            {% include "partials/field_errors.html" with field=form.address %}
                         </div>
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="city" class="form-label">Ciudad</label>
-                                <input type="text" class="form-control" id="city" name="city" value="{{ form.city.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.city|invalid }}" id="city" name="city" value="{{ form.city.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.city %}
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="state" class="form-label">Estado</label>
-                                <input type="text" class="form-control" id="state" name="state" value="{{ form.state.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.state|invalid }}" id="state" name="state" value="{{ form.state.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.state %}
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="postal_code" class="form-label">Código Postal</label>
-                                <input type="text" class="form-control" id="postal_code" name="postal_code" value="{{ form.postal_code.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.postal_code|invalid }}" id="postal_code" name="postal_code" value="{{ form.postal_code.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.postal_code %}
                             </div>
                         </div>
 
@@ -160,7 +178,8 @@
                         <h5 class="mb-3 text-muted">Notas</h5>
                         <div class="mb-3">
                             <label for="notes" class="form-label">Notas</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            <textarea class="form-control {{ form.notes|invalid }}" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            {% include "partials/field_errors.html" with field=form.notes %}
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">

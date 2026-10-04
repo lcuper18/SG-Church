@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load ui %}
 
 {% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Gasto - SG Church{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row">
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
@@ -19,8 +20,8 @@
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
+            <div class="card">
+                <div class="card-header">
                     <h4 class="mb-0">
                         {% if object %}Editar{% else %}Nuevo{% endif %} Gasto
                     </h4>
@@ -28,10 +29,12 @@
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
+                        {% include "partials/form_errors.html" %}
                         
                         <div class="mb-3">
                             <label for="description" class="form-label">Descripción *</label>
-                            <input type="text" class="form-control" id="description" name="description" value="{{ form.description.value|default:'' }}" required>
+                            <input type="text" class="form-control {{ form.description|invalid }}" id="description" name="description" value="{{ form.description.value|default:'' }}" required>
+                            {% include "partials/field_errors.html" with field=form.description %}
                         </div>
 
                         <div class="row">
@@ -39,12 +42,13 @@
                                 <label for="amount" class="form-label">Monto *</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="amount" name="amount" value="{{ form.amount.value|default:'' }}" step="0.01" min="0" required>
+                                    <input type="number" class="form-control {{ form.amount|invalid }}" id="amount" name="amount" value="{{ form.amount.value|default:'' }}" step="0.01" min="0" required>
+                                    {% include "partials/field_errors.html" with field=form.amount %}
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="category" class="form-label">Categoría *</label>
-                                <select class="form-select" id="category" name="category" required>
+                                <select class="form-select {{ form.category|invalid }}" id="category" name="category" required>
                                     <option value="">Seleccionar...</option>
                                     <option value="operations" {% if form.category.value == 'operations' %}selected{% endif %}>Operaciones</option>
                                     <option value="salaries" {% if form.category.value == 'salaries' %}selected{% endif %}>Salarios</option>
@@ -54,17 +58,20 @@
                                     <option value="missions" {% if form.category.value == 'missions' %}selected{% endif %}>Misiones</option>
                                     <option value="other" {% if form.category.value == 'other' %}selected{% endif %}>Otro</option>
                                 </select>
+                                {% include "partials/field_errors.html" with field=form.category %}
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="expense_date" class="form-label">Fecha del Gasto *</label>
-                                <input type="date" class="form-control" id="expense_date" name="expense_date" value="{{ form.expense_date.value|default:'' }}" required>
+                                <input type="date" class="form-control {{ form.expense_date|invalid }}" id="expense_date" name="expense_date" value="{{ form.expense_date.value|default:'' }}" required>
+                                {% include "partials/field_errors.html" with field=form.expense_date %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="due_date" class="form-label">Fecha de Vencimiento</label>
-                                <input type="date" class="form-control" id="due_date" name="due_date" value="{{ form.due_date.value|default:'' }}">
+                                <input type="date" class="form-control {{ form.due_date|invalid }}" id="due_date" name="due_date" value="{{ form.due_date.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.due_date %}
                             </div>
                         </div>
 
@@ -87,11 +94,13 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="vendor_name" class="form-label">Nombre del Proveedor</label>
-                                <input type="text" class="form-control" id="vendor_name" name="vendor_name" value="{{ form.vendor_name.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.vendor_name|invalid }}" id="vendor_name" name="vendor_name" value="{{ form.vendor_name.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.vendor_name %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="vendor_email" class="form-label">Email del Proveedor</label>
-                                <input type="email" class="form-control" id="vendor_email" name="vendor_email" value="{{ form.vendor_email.value|default:'' }}">
+                                <input type="email" class="form-control {{ form.vendor_email|invalid }}" id="vendor_email" name="vendor_email" value="{{ form.vendor_email.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.vendor_email %}
                             </div>
                         </div>
 
@@ -107,7 +116,8 @@
 
                         <div class="mb-3">
                             <label for="notes" class="form-label">Notas</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            <textarea class="form-control {{ form.notes|invalid }}" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            {% include "partials/field_errors.html" with field=form.notes %}
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">

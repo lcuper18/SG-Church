@@ -1,0 +1,15 @@
+{% comment %}
+Uso: {% include "partials/page_header.html" with title="Miembros" icon="bi-people" subtitle="..." action_url=url action_label="Nuevo" %}
+`action_url` y `action_icon` son opcionales.
+{% endcomment %}
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+        <h1>{% if icon %}<i class="bi {{ icon }}" aria-hidden="true"></i> {% endif %}{{ title }}</h1>
+        {% if subtitle %}<p class="text-muted mb-0">{{ subtitle }}</p>{% endif %}
+    </div>
+    {% if action_url %}
+    <a href="{{ action_url }}" class="btn btn-primary">
+        <i class="bi {{ action_icon|default:'bi-plus-circle' }}" aria-hidden="true"></i> {{ action_label }}
+    </a>
+    {% endif %}
+</div>

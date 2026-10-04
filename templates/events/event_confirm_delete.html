@@ -1,28 +1,10 @@
-{% extends 'base.html' %}
+{% extends "partials/confirm_delete_base.html" %}
 
-{% block title %}Eliminar Evento - SG Church{% endblock %}
+{% block delete_title %}Eliminar Evento{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
-                    <h4 class="mb-0">Confirmar Eliminación</h4>
-                </div>
-                <div class="card-body">
-                    <p>¿Estás seguro de que deseas eliminar el evento <strong>{{ event.title }}</strong>?</p>
-                    <p class="text-muted">Las inscripciones a este evento también se eliminarán.</p>
-                </div>
-                <div class="card-footer bg-white d-flex justify-content-between">
-                    <a href="{% url 'event_detail' event.pk %}" class="btn btn-secondary">Cancelar</a>
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">Eliminar</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+{% block delete_body %}
+<p>¿Estás seguro de que deseas eliminar el evento <strong>{{ event.title }}</strong>?</p>
+<p class="text-muted mb-0">Las inscripciones a este evento también se eliminarán.</p>
 {% endblock %}
+
+{% block cancel_url %}{% url 'event_detail' event.pk %}{% endblock %}

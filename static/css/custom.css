@@ -1,16 +1,287 @@
-/* SG Church Custom Styles */
+/* SG Church — estilos propios.
+   Los tokens de :root alimentan las variables de Bootstrap, así que
+   .btn-primary, .bg-primary, .text-primary, etc. usan la paleta de la marca. */
 
 :root {
-    --primary-color: #1a73e8;
-    --secondary-color: #5f6368;
+    /* Marca */
+    --sg-primary: #3b3a8f;
+    --sg-primary-rgb: 59, 58, 143;
+    --sg-primary-dark: #2d2c73;
+    --sg-primary-soft: #eeeefb;
+    --sg-accent: #c9962b;
+
+    /* Superficies */
+    --sg-bg: #f6f6fb;
+    --sg-surface: #ffffff;
+    --sg-border: #e4e4ef;
+    --sg-text: #1f2033;
+    --sg-muted: #6b6c80;
+
+    /* Forma */
+    --sg-radius: 12px;
+    --sg-radius-sm: 8px;
+    --sg-shadow: 0 1px 2px rgba(31, 32, 51, .06), 0 4px 14px rgba(31, 32, 51, .05);
+
+    /* Mapeo a Bootstrap */
+    --bs-primary: var(--sg-primary);
+    --bs-primary-rgb: var(--sg-primary-rgb);
+    --bs-link-color: var(--sg-primary);
+    --bs-link-color-rgb: var(--sg-primary-rgb);
+    --bs-link-hover-color: var(--sg-primary-dark);
+    --bs-body-font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --bs-body-color: var(--sg-text);
+    --bs-body-bg: var(--sg-bg);
+    --bs-border-color: var(--sg-border);
+    --bs-border-radius: var(--sg-radius-sm);
+    --bs-border-radius-lg: var(--sg-radius);
+    --bs-secondary-color: var(--sg-muted);
 }
 
-/* Custom navbar */
-.navbar-brand {
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -.01em;
+}
+
+.text-muted {
+    color: var(--sg-muted) !important;
+}
+
+/* Accesibilidad: foco visible y enlace "saltar al contenido" */
+:focus-visible {
+    outline: 3px solid rgba(var(--sg-primary-rgb), .45);
+    outline-offset: 2px;
+}
+
+.skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 2000;
+    background: var(--sg-surface);
+    color: var(--sg-primary);
+    padding: .5rem 1rem;
+    border-radius: var(--sg-radius-sm);
+    box-shadow: var(--sg-shadow);
+    transition: top .15s;
+}
+
+.skip-link:focus {
+    top: 1rem;
+}
+
+/* Navbar */
+.navbar-sg {
+    background: linear-gradient(135deg, var(--sg-primary-dark), var(--sg-primary));
+    box-shadow: 0 2px 12px rgba(var(--sg-primary-rgb), .25);
+    padding-block: .65rem;
+}
+
+.navbar-sg .navbar-brand {
+    font-weight: 800;
+    letter-spacing: -.02em;
+}
+
+.navbar-sg .navbar-brand .bi {
+    color: var(--sg-accent);
+}
+
+.navbar-sg .nav-link {
+    color: rgba(255, 255, 255, .8);
+    border-radius: var(--sg-radius-sm);
+    padding: .5rem .8rem;
+    font-weight: 500;
+}
+
+.navbar-sg .nav-link:hover,
+.navbar-sg .nav-link:focus {
+    color: #fff;
+    background: rgba(255, 255, 255, .1);
+}
+
+.navbar-sg .nav-link.active {
+    color: #fff;
+    background: rgba(255, 255, 255, .18);
+}
+
+.dropdown-menu {
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius);
+    box-shadow: var(--sg-shadow);
+    padding: .4rem;
+}
+
+.dropdown-item {
+    border-radius: var(--sg-radius-sm);
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+    background-color: var(--sg-primary);
+}
+
+.notifications-dropdown {
+    width: 320px;
+    max-width: calc(100vw - 2rem);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Tarjetas */
+.card {
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius);
+    background: var(--sg-surface);
+    box-shadow: var(--sg-shadow);
+}
+
+.card.shadow-sm {
+    box-shadow: var(--sg-shadow) !important;
+}
+
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--sg-border);
     font-weight: 600;
 }
 
-/* Feature icons */
+.dashboard-card {
+    transition: transform .2s, box-shadow .2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Tarjeta KPI */
+.kpi-card .kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--sg-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.kpi-card .kpi-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+/* Cabecera de página */
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    font-size: 1.6rem;
+    margin-bottom: 0;
+}
+
+.page-header h1 .bi {
+    color: var(--sg-primary);
+}
+
+/* Tablas */
+.table {
+    --bs-table-hover-bg: var(--sg-primary-soft);
+}
+
+.table th {
+    font-weight: 600;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--sg-muted);
+    background-color: var(--sg-bg);
+    border-bottom: 1px solid var(--sg-border);
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Botones y formularios */
+.btn {
+    border-radius: var(--sg-radius-sm);
+    font-weight: 600;
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--sg-primary);
+    --bs-btn-border-color: var(--sg-primary);
+    --bs-btn-hover-bg: var(--sg-primary-dark);
+    --bs-btn-hover-border-color: var(--sg-primary-dark);
+    --bs-btn-active-bg: var(--sg-primary-dark);
+    --bs-btn-active-border-color: var(--sg-primary-dark);
+    --bs-btn-disabled-bg: var(--sg-primary);
+    --bs-btn-disabled-border-color: var(--sg-primary);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--sg-primary);
+    --bs-btn-border-color: var(--sg-primary);
+    --bs-btn-hover-bg: var(--sg-primary);
+    --bs-btn-hover-border-color: var(--sg-primary);
+    --bs-btn-active-bg: var(--sg-primary);
+    --bs-btn-active-border-color: var(--sg-primary);
+}
+
+.form-control,
+.form-select {
+    border-radius: var(--sg-radius-sm);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--sg-primary);
+    box-shadow: 0 0 0 .2rem rgba(var(--sg-primary-rgb), .15);
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: .875rem;
+}
+
+.pagination {
+    --bs-pagination-active-bg: var(--sg-primary);
+    --bs-pagination-active-border-color: var(--sg-primary);
+    --bs-pagination-color: var(--sg-primary);
+}
+
+/* Insignias de estado: el texto oscuro mantiene el contraste en warning/info */
+.badge.bg-warning,
+.badge.bg-info {
+    color: #1f2033 !important;
+}
+
+/* Estado vacío */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--sg-muted);
+}
+
+.empty-state .bi {
+    font-size: 2.5rem;
+    color: var(--sg-primary);
+    opacity: .5;
+}
+
+/* Iconos de la portada */
 .feature-icon {
     height: 80px;
     width: 80px;
@@ -20,66 +291,27 @@
     justify-content: center;
 }
 
-/* Card styles */
-.card {
-    border: none;
-    border-radius: 12px;
+/* Footer */
+.site-footer {
+    flex-shrink: 0;
+    border-top: 1px solid var(--sg-border);
+    background: var(--sg-surface);
 }
 
-.card-shadow {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+@media print {
+    .navbar, .site-footer, .skip-link, .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .card {
+        box-shadow: none;
+    }
 }
 
-/* Table styles */
-.table th {
-    font-weight: 600;
-    background-color: #f8f9fa;
-}
-
-/* Button styles */
-.btn {
-    border-radius: 8px;
-}
-
-/* Form styles */
-.form-control, .form-select {
-    border-radius: 8px;
-}
-
-/* Dashboard cards */
-.dashboard-card {
-    border-radius: 12px;
-    transition: transform 0.2s;
-}
-
-.dashboard-card:hover {
-    transform: translateY(-2px);
-}
-
-/* Status badges */
-.badge-pending {
-    background-color: #ffc107;
-    color: #000;
-}
-
-.badge-completed {
-    background-color: #28a745;
-}
-
-.badge-failed {
-    background-color: #dc3545;
-}
-
-/* Loading spinner */
-.spinner-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
+.navbar-sg .nav-link > .bi:first-child {
+    margin-right: .3rem;
 }

@@ -3,27 +3,19 @@
 {% block title %}Miembros - SG Church{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-0"><i class="bi bi-people"></i> Miembros</h1>
-        </div>
-        <div>
-            <a href="{% url 'member_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nuevo Miembro
-            </a>
-        </div>
-    </div>
-    
+<div class="container py-4">
+    {% url 'member_create' as create_url %}
+    {% include "partials/page_header.html" with title="Miembros" icon="bi-people" action_url=create_url action_label="Nuevo Miembro" %}
+
     <!-- Filters -->
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" name="search" class="form-control" placeholder="Buscar por nombre, email o teléfono..." value="{{ request.GET.search|default:'' }}">
+                <div class="col-12 col-md-3">
+                    <input type="text" name="search" aria-label="Buscar miembros" class="form-control" placeholder="Buscar por nombre, email o teléfono..." value="{{ request.GET.search|default:'' }}">
                 </div>
-                <div class="col-md-2">
-                    <select name="status" class="form-select">
+                <div class="col-6 col-md-2">
+                    <select name="status" aria-label="Filtrar por estado" class="form-select">
                         <option value="">Todos los estados</option>
                         <option value="visitor" {% if request.GET.status == 'visitor' %}selected{% endif %}>Visitante</option>
                         <option value="attendee" {% if request.GET.status == 'attendee' %}selected{% endif %}>Asistente</option>
@@ -31,8 +23,8 @@
                         <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactivo</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <select name="family" class="form-select">
+                <div class="col-6 col-md-3">
+                    <select name="family" aria-label="Filtrar por familia" class="form-select">
                         <option value="">Todas las familias</option>
                         {% for family in families %}
                         <option value="{{ family.id }}" {% if request.GET.family == family.id|stringformat:"s" %}selected{% endif %}>
@@ -41,12 +33,12 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                     <button type="submit" class="btn btn-secondary w-100">
                         <i class="bi bi-search"></i> Filtrar
                     </button>
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                     <a href="{% url 'member_list' %}" class="btn btn-outline-secondary w-100">
                         Limpiar
                     </a>
@@ -56,29 +48,29 @@
     </div>
     
     <!-- Members Table -->
-    <div class="card border-0 shadow-sm">
+    <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
-                            <th>Foto</th>
+                            <th class="d-none d-md-table-cell">Foto</th>
                             <th>Nombre</th>
-                            <th>Email</th>
-                            <th>Teléfono</th>
+                            <th class="d-none d-lg-table-cell">Email</th>
+                            <th class="d-none d-lg-table-cell">Teléfono</th>
                             <th>Estado</th>
-                            <th>Familia</th>
+                            <th class="d-none d-md-table-cell">Familia</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for member in members %}
                         <tr>
-                            <td>
+                            <td class="d-none d-md-table-cell">
                                 {% if member.photo %}
-                                <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
+                                <img src="{{ member.photo.url }}" alt="" class="rounded-circle object-fit-cover" width="40" height="40">
                                 {% else %}
-                                <div class="bg-secondary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <div class="bg-secondary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-hidden="true">
                                     <i class="bi bi-person text-secondary"></i>
                                 </div>
                                 {% endif %}
@@ -86,14 +78,12 @@
                             <td>
                                 <a href="{% url 'member_detail' member.pk %}">{{ member.full_name }}</a>
                             </td>
-                            <td>{{ member.email|default:'-' }}</td>
-                            <td>{{ member.phone|default:'-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ member.email|default:'-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ member.phone|default:'-' }}</td>
                             <td>
-                                <span class="badge bg-{% if member.member_status == 'member' %}success{% elif member.member_status == 'visitor' %}warning{% elif member.member_status == 'attendee' %}info{% else %}secondary{% endif %}">
-                                    {{ member.get_member_status_display }}
-                                </span>
+                                {% include "partials/status_badge.html" %}
                             </td>
-                            <td>
+                            <td class="d-none d-md-table-cell">
                                 {% if member.family %}
                                 <a href="{% url 'family_update' member.family.pk %}">{{ member.family.name }}</a>
                                 {% else %}
@@ -102,22 +92,23 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'member_detail' member.pk %}" class="btn btn-outline-primary" title="Ver">
-                                        <i class="bi bi-eye"></i>
+                                    <a href="{% url 'member_detail' member.pk %}" class="btn btn-outline-primary" title="Ver" aria-label="Ver {{ member.full_name }}">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
                                     </a>
-                                    <a href="{% url 'member_update' member.pk %}" class="btn btn-outline-secondary" title="Editar">
-                                        <i class="bi bi-pencil"></i>
+                                    <a href="{% url 'member_update' member.pk %}" class="btn btn-outline-secondary" title="Editar" aria-label="Editar {{ member.full_name }}">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                No se encontraron miembros.
-                                <a href="{% url 'member_create' %}" class="btn btn-sm btn-primary ms-2">
-                                    Agregar el primer miembro
-                                </a>
+                            <td colspan="7">
+                                {% if request.GET.search or request.GET.status or request.GET.family %}
+                                {% include "partials/empty_state.html" with icon="bi-search" message="Ningún miembro coincide con los filtros." %}
+                                {% else %}
+                                {% include "partials/empty_state.html" with icon="bi-people" message="Aún no hay miembros registrados." action_url=create_url action_label="Agregar el primer miembro" %}
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -128,32 +119,6 @@
     </div>
 
     <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-    <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1">Primera</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-            </li>
-            {% endif %}
-
-            <li class="page-item active">
-                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-            </li>
-
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
+    {% include "partials/pagination.html" %}
 </div>
 {% endblock %}

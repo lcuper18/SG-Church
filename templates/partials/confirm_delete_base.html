@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% comment %}
+Base de las páginas de confirmación de borrado. Cada entidad define:
+  delete_title  (título de la pestaña), delete_body (texto), cancel_url.
+{% endcomment %}
+
+{% block title %}{% block delete_title %}Confirmar eliminación{% endblock %} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger-subtle">
+                <div class="card-header">
+                    <i class="bi bi-exclamation-triangle text-danger" aria-hidden="true"></i> Confirmar Eliminación
+                </div>
+                <div class="card-body">
+                    {% block delete_body %}{% endblock %}
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between">
+                    <a href="{% block cancel_url %}{% endblock %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash" aria-hidden="true"></i> Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

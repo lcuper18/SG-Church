@@ -267,3 +267,8 @@ LOGGING = {
 # Multi-tenancy settings
 TENANT_RESOLUTION_STRATEGY = os.environ.get("TENANT_RESOLUTION_STRATEGY", "subdomain")
 BASE_DOMAIN = os.environ.get("BASE_DOMAIN", "localhost:8000")
+
+# Mensajes: Bootstrap usa "danger" para errores
+from django.contrib.messages import constants as message_constants  # noqa: E402
+
+MESSAGE_TAGS = {message_constants.ERROR: "danger"}

@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load ui %}
 
 {% block title %}{% if object %}Editar{% else %}Nueva{% endif %} Familia - SG Church{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row">
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
@@ -19,8 +20,8 @@
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
+            <div class="card">
+                <div class="card-header">
                     <h4 class="mb-0">
                         {% if object %}Editar{% else %}Nueva{% endif %} Familia
                     </h4>
@@ -28,15 +29,17 @@
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
+                        {% include "partials/form_errors.html" %}
                         
                         <div class="mb-3">
                             <label for="name" class="form-label">Nombre de la Familia *</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ form.name.value|default:'' }}" required placeholder="e.g., Familia García">
+                            <input type="text" class="form-control {{ form.name|invalid }}" id="name" name="name" value="{{ form.name.value|default:'' }}" required placeholder="Ej.: Familia García">
+                            {% include "partials/field_errors.html" with field=form.name %}
                         </div>
 
                         <div class="mb-3">
                             <label for="head_of_family" class="form-label">Cabeza de Familia</label>
-                            <select class="form-select" id="head_of_family" name="head_of_family">
+                            <select class="form-select {{ form.head_of_family|invalid }}" id="head_of_family" name="head_of_family">
                                 <option value="">Seleccionar...</option>
                                 {% for member in form.fields.head_of_family.queryset %}
                                 <option value="{{ member.id }}" {% if form.head_of_family.value|stringformat:"s" == member.id|stringformat:"s" %}selected{% endif %}>
@@ -44,6 +47,7 @@
                                 </option>
                                 {% endfor %}
                             </select>
+                            {% include "partials/field_errors.html" with field=form.head_of_family %}
                         </div>
 
                         <hr class="my-4">
@@ -51,34 +55,40 @@
                         <h5 class="mb-3 text-muted">Dirección</h5>
                         <div class="mb-3">
                             <label for="address" class="form-label">Dirección</label>
-                            <textarea class="form-control" id="address" name="address" rows="2">{{ form.address.value|default:'' }}</textarea>
+                            <textarea class="form-control {{ form.address|invalid }}" id="address" name="address" rows="2">{{ form.address.value|default:'' }}</textarea>
+                            {% include "partials/field_errors.html" with field=form.address %}
                         </div>
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="city" class="form-label">Ciudad</label>
-                                <input type="text" class="form-control" id="city" name="city" value="{{ form.city.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.city|invalid }}" id="city" name="city" value="{{ form.city.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.city %}
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="state" class="form-label">Estado</label>
-                                <input type="text" class="form-control" id="state" name="state" value="{{ form.state.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.state|invalid }}" id="state" name="state" value="{{ form.state.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.state %}
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="postal_code" class="form-label">Código Postal</label>
-                                <input type="text" class="form-control" id="postal_code" name="postal_code" value="{{ form.postal_code.value|default:'' }}">
+                                <input type="text" class="form-control {{ form.postal_code|invalid }}" id="postal_code" name="postal_code" value="{{ form.postal_code.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.postal_code %}
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="home_phone" class="form-label">Teléfono de Casa</label>
-                            <input type="text" class="form-control" id="home_phone" name="home_phone" value="{{ form.home_phone.value|default:'' }}">
+                            <input type="text" class="form-control {{ form.home_phone|invalid }}" id="home_phone" name="home_phone" value="{{ form.home_phone.value|default:'' }}">
+                            {% include "partials/field_errors.html" with field=form.home_phone %}
                         </div>
 
                         <hr class="my-4">
 
                         <div class="mb-3">
                             <label for="notes" class="form-label">Notas</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            <textarea class="form-control {{ form.notes|invalid }}" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            {% include "partials/field_errors.html" with field=form.notes %}
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">

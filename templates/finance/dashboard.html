@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui %}
 
 {% block title %}Dashboard Financiero - SG Church{% endblock %}
 
@@ -12,124 +13,74 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container py-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div>
-            <h1 class="h3 mb-0"><i class="bi bi-cash-stack"></i> Finanzas</h1>
+            <h1><i class="bi bi-cash-stack" aria-hidden="true"></i> Finanzas</h1>
             <p class="text-muted mb-0">Resumen financiero de {{ tenant.name }}</p>
         </div>
-        <div>
+        <div class="d-flex flex-wrap gap-2">
             <a href="{% url 'donation_list' %}" class="btn btn-outline-primary">
-                <i class="bi bi-heart"></i> Ver Donaciones
+                <i class="bi bi-heart" aria-hidden="true"></i> Ver Donaciones
             </a>
             <a href="{% url 'expense_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nuevo Gasto
+                <i class="bi bi-plus-circle" aria-hidden="true"></i> Nuevo Gasto
             </a>
         </div>
     </div>
 
     <!-- Stats Cards -->
     <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-0">Ingresos del Mes</p>
-                            <h2 class="mb-0">${{ donations_this_month|floatformat:2 }}</h2>
-                        </div>
-                        <div class="bg-success bg-opacity-10 p-3 rounded">
-                            <i class="bi bi-arrow-down-circle text-success fs-4"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="col-6 col-lg-3">
+            {% include "partials/kpi_card.html" with label="Ingresos del Mes" prefix="$" value=donations_this_month|floatformat:2 icon="bi-arrow-down-circle" color="success" %}
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-0">Gastos del Mes</p>
-                            <h2 class="mb-0">${{ expenses_this_month|floatformat:2 }}</h2>
-                        </div>
-                        <div class="bg-danger bg-opacity-10 p-3 rounded">
-                            <i class="bi bi-arrow-up-circle text-danger fs-4"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="col-6 col-lg-3">
+            {% include "partials/kpi_card.html" with label="Gastos del Mes" prefix="$" value=expenses_this_month|floatformat:2 icon="bi-arrow-up-circle" color="danger" %}
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-0">Balance</p>
-                            <h2 class="mb-0 {% if balance_this_month >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                ${{ balance_this_month|floatformat:2 }}
-                            </h2>
-                        </div>
-                        <div class="bg-primary bg-opacity-10 p-3 rounded">
-                            <i class="bi bi-balance text-primary fs-4"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="col-6 col-lg-3">
+            {% if balance_this_month >= 0 %}
+            {% include "partials/kpi_card.html" with label="Balance" prefix="$" value=balance_this_month|floatformat:2 icon="bi-wallet2" color="primary" value_color="success" %}
+            {% else %}
+            {% include "partials/kpi_card.html" with label="Balance" prefix="-$" value=balance_this_month|floatformat:2|cut:"-" icon="bi-wallet2" color="primary" value_color="danger" %}
+            {% endif %}
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-0">Donantes Activos</p>
-                            <h2 class="mb-0">{{ active_donors }}</h2>
-                        </div>
-                        <div class="bg-info bg-opacity-10 p-3 rounded">
-                            <i class="bi bi-people text-info fs-4"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="col-6 col-lg-3">
+            {% include "partials/kpi_card.html" with label="Donantes Activos" value=active_donors icon="bi-people" color="info" %}
         </div>
     </div>
 
     <!-- Chart and Quick Links -->
     <div class="row g-4 mb-4">
         <!-- Chart -->
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
-                    <h5 class="mb-0">Ingresos vs Gastos (Últimos 12 meses)</h5>
-                </div>
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">Ingresos vs Gastos (Últimos 12 meses)</div>
                 <div class="card-body">
                     <div class="chart-container">
-                        <canvas id="financeChart"></canvas>
+                        <canvas id="financeChart" role="img" aria-label="Gráfico de barras de ingresos y gastos de los últimos 12 meses"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0">
-                    <h5 class="mb-0">Acciones Rápidas</h5>
-                </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">Acciones Rápidas</div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="{% url 'donation_list' %}" class="btn btn-outline-success">
-                            <i class="bi bi-heart"></i> Ver Donaciones
+                            <i class="bi bi-heart" aria-hidden="true"></i> Ver Donaciones
                         </a>
                         <a href="{% url 'expense_create' %}" class="btn btn-outline-danger">
-                            <i class="bi bi-receipt"></i> Registrar Gasto
+                            <i class="bi bi-receipt" aria-hidden="true"></i> Registrar Gasto
                         </a>
                         <a href="{% url 'income_statement' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-file-earmark-bar-graph"></i> Estado de Resultados
+                            <i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i> Estado de Resultados
                         </a>
                         <a href="{% url 'donations_by_member' %}" class="btn btn-outline-info">
-                            <i class="bi bi-people"></i> Donantes por Miembro
+                            <i class="bi bi-people" aria-hidden="true"></i> Donantes por Miembro
                         </a>
                     </div>
                 </div>
@@ -138,56 +89,48 @@
     </div>
 
     <!-- Recent Transactions -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
-                    <h5 class="mb-0">Transacciones Recientes</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Descripción</th>
-                                    <th class="text-end">Monto</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for transaction in recent_transactions %}
-                                <tr>
-                                    <td>{{ transaction.date|date:"d/m/Y" }}</td>
-                                    <td>
-                                        {% if transaction.type == 'donation' %}
-                                        <span class="badge bg-success">Donación</span>
-                                        {% else %}
-                                        <span class="badge bg-danger">Gasto</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ transaction.description }}</td>
-                                    <td class="text-end {% if transaction.amount >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                        ${{ transaction.amount|floatformat:2 }}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{% if transaction.status == 'completed' %}success{% elif transaction.status == 'paid' %}success{% elif transaction.status == 'pending' %}warning{% else %}secondary{% endif %}">
-                                            {{ transaction.status }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        No hay transacciones registradas.
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="card">
+        <div class="card-header">Transacciones Recientes</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th class="d-none d-md-table-cell">Descripción</th>
+                            <th class="text-end">Monto</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in recent_transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if transaction.type == 'donation' %}
+                                <span class="badge bg-success">Donación</span>
+                                {% else %}
+                                <span class="badge bg-danger">Gasto</span>
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-md-table-cell">{{ transaction.description }}</td>
+                            <td class="text-end {% if transaction.amount >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                ${{ transaction.amount|floatformat:2 }}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ transaction.status|transaction_status_color }}">{{ transaction.status|transaction_status_label }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                {% include "partials/empty_state.html" with icon="bi-receipt" message="No hay transacciones registradas." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
