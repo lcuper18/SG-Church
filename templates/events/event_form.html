@@ -76,6 +76,34 @@
                             </div>
                         </div>
 
+                        <hr class="my-4">
+                        <h5 class="mb-3 text-muted">Requisitos de elegibilidad</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="requires_baptized" name="requires_baptized" {% if form.requires_baptized.value %}checked{% endif %}>
+                                    <label class="form-check-label" for="requires_baptized">Requiere estar bautizado/a</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="requires_married" name="requires_married" {% if form.requires_married.value %}checked{% endif %}>
+                                    <label class="form-check-label" for="requires_married">Requiere estar casado/a</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="required_courses" class="form-label">Cursos que debe haber completado</label>
+                            <select class="form-select" id="required_courses" name="required_courses" multiple size="5">
+                                {% for course in form.fields.required_courses.queryset %}
+                                <option value="{{ course.id }}" {% if object and course in object.required_courses.all %}selected{% endif %}>
+                                    {{ course.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Mantené Ctrl (o Cmd) presionado para seleccionar varios.</div>
+                        </div>
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'event_list' %}" class="btn btn-secondary">Cancelar</a>
                             <button type="submit" class="btn btn-primary">

@@ -37,6 +37,13 @@ class Event(models.Model):
     is_active = models.BooleanField(default=True)
     capacity = models.PositiveIntegerField(null=True, blank=True)
 
+    # Eligibility requirements (same idea as education.Course)
+    requires_baptized = models.BooleanField(default=False)
+    requires_married = models.BooleanField(default=False)
+    required_courses = models.ManyToManyField(
+        "education.Course", blank=True, related_name="required_for_events"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -61,12 +68,31 @@ class Event(models.Model):
     def registered_count(self):
         return self.registrations.filter(status="registered").count()
 
+    def meets_requirements(self, member):
+        """Return (True, "") if `member` satisfies the eligibility requirements
+        (baptism, marriage, completed courses), else (False, reason). Says
+        nothing about dates, capacity or existing registration."""
+        if self.requires_baptized and not member.is_baptized:
+            return False, "Este evento requiere que el miembro esté bautizado."
+        if self.requires_married and member.marital_status != "married":
+            return False, "Este evento requiere que el miembro esté casado/a."
+        missing = self.required_courses.exclude(
+            enrollments__member=member, enrollments__status="completed"
+        )
+        if missing.exists():
+            names = ", ".join(missing.values_list("title", flat=True))
+            return False, f"Debe completar primero: {names}."
+        return True, ""
+
     def can_register(self, member):
         """Return (True, "") if `member` may register now, else (False, reason)."""
         if not self.is_active:
             return False, "Este evento no está disponible."
         if self.is_past:
             return False, "Este evento ya finalizó."
+        eligible, reason = self.meets_requirements(member)
+        if not eligible:
+            return False, reason
         if self.capacity is not None and self.registered_count >= self.capacity:
             return False, "Este evento alcanzó su capacidad máxima."
         if self.registrations.filter(member=member, status="registered").exists():

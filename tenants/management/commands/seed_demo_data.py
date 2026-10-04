@@ -364,25 +364,32 @@ class Command(BaseCommand):
         now = timezone.now()
         plan = [
             ("Culto dominical", "service", -14, 3, 400), ("Culto dominical", "service", 7, 3, 400),
-            ("Reunión de líderes", "meeting", -10, 2, 40), ("Reunión de líderes", "meeting", 12, 2, 40),
-            ("Retiro de matrimonios", "retreat", 21, 48, 60), ("Campamento de jóvenes", "camp", 35, 72, 80),
-            ("Conferencia de misiones", "conference", 50, 8, 250), ("Noche de alabanza", "special", 5, 3, 200),
+            ("Reunión de líderes", "meeting", -10, 2, 40, {"courses": ["Liderazgo Cristiano"]}), ("Reunión de líderes", "meeting", 12, 2, 40, {"courses": ["Liderazgo Cristiano"]}),
+            ("Retiro de matrimonios", "retreat", 21, 48, 60, {"requires_married": True}), ("Campamento de jóvenes", "camp", 35, 72, 80),
+            ("Conferencia de misiones", "conference", 50, 8, 250, {"requires_baptized": True}), ("Noche de alabanza", "special", 5, 3, 200),
             ("Feria de la familia", "special", -30, 6, 300), ("Bautizos", "special", 18, 3, 100),
-            ("Retiro de damas", "retreat", -45, 30, 70), ("Cena de agradecimiento a voluntarios", "special", 28, 3, 90),
+            ("Retiro de damas", "retreat", -45, 30, 70, {"requires_baptized": True}), ("Cena de agradecimiento a voluntarios", "special", 28, 3, 90),
         ]
         adults = [m for m in members if (date.today() - m.date_of_birth).days >= 14 * 365]
-        for title, kind, offset_days, hours, capacity in plan:
+        for title, kind, offset_days, hours, capacity, *extra in plan:
+            rules = extra[0] if extra else {}
             start = now + timedelta(days=offset_days)
             event, created = Event.objects.get_or_create(
                 tenant=tenant, title=title, start_at=start.replace(minute=0, second=0, microsecond=0),
-                defaults=dict(event_type=kind, location="Templo principal" if kind in ("service", "meeting", "special") else "Centro de retiros",
+                defaults=dict(event_type=kind, requires_baptized=rules.get("requires_baptized", False),
+                              requires_married=rules.get("requires_married", False), location="Templo principal" if kind in ("service", "meeting", "special") else "Centro de retiros",
                               end_at=start + timedelta(hours=hours), capacity=capacity,
                               description=f"{title} - evento de demostración."),
             )
             if not created:
                 continue
-            count = min(capacity, self.rng.randint(int(capacity * 0.3), int(capacity * 0.95)), len(adults))
+            if rules.get("courses"):
+                event.required_courses.set(
+                    Course.objects.filter(tenant=tenant, title__in=rules["courses"])
+                )
+            eligible = [m for m in adults if event.meets_requirements(m)[0]]
+            count = min(capacity, self.rng.randint(int(capacity * 0.3), int(capacity * 0.95)), len(eligible))
             EventRegistration.objects.bulk_create(
-                [EventRegistration(tenant=tenant, member=m, event=event) for m in self.rng.sample(adults, count)]
+                [EventRegistration(tenant=tenant, member=m, event=event) for m in self.rng.sample(eligible, count)]
             )
         return len(plan)

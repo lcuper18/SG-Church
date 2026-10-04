@@ -44,6 +44,15 @@
                             <td>{{ event.location|default:"-" }}</td>
                         </tr>
                         <tr>
+                            <td class="text-muted">Requisitos</td>
+                            <td>
+                                {% if event.requires_baptized %}<span class="badge bg-info">Bautizado/a</span>{% endif %}
+                                {% if event.requires_married %}<span class="badge bg-info">Casado/a</span>{% endif %}
+                                {% for required in event.required_courses.all %}<span class="badge bg-secondary">{{ required.title }}</span>{% endfor %}
+                                {% if not event.requires_baptized and not event.requires_married and not event.required_courses.all %}-{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="text-muted">Inscritos</td>
                             <td>{{ event.registered_count }}{% if event.capacity %} / {{ event.capacity }}{% endif %}</td>
                         </tr>

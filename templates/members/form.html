@@ -124,8 +124,8 @@
                             <label for="family" class="form-label">Familia</label>
                             <select class="form-select" id="family" name="family">
                                 <option value="">Sin familia</option>
-                                {% for family in form.family.queryset %}
-                                <option value="{{ family.id }}" {% if form.family.value == family.id|stringformat:"s" %}selected{% endif %}>
+                                {% for family in form.fields.family.queryset %}
+                                <option value="{{ family.id }}" {% if form.family.value|stringformat:"s" == family.id|stringformat:"s" %}selected{% endif %}>
                                     {{ family.name }}
                                 </option>
                                 {% endfor %}

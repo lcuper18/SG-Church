@@ -101,3 +101,37 @@ class TestEventRegistrationAPI:
         assert response.status_code == status.HTTP_204_NO_CONTENT
         registration.refresh_from_db()
         assert registration.status == "cancelled"
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestEventRequirementsAPI:
+    def test_baptism_required_blocks_registration(
+        self, authenticated_api_client, admin_user, member
+    ):
+        event = _event(admin_user.tenant, requires_baptized=True)
+        response = authenticated_api_client.post(
+            "/api/v1/event-registrations/", {"member": member.pk, "event": event.pk}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_baptized_member_can_register(
+        self, authenticated_api_client, admin_user, member
+    ):
+        member.is_baptized = True
+        member.save(update_fields=["is_baptized"])
+        event = _event(admin_user.tenant, requires_baptized=True)
+        response = authenticated_api_client.post(
+            "/api/v1/event-registrations/", {"member": member.pk, "event": event.pk}
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_create_event_with_requirements(self, authenticated_api_client):
+        data = {
+            "title": "Retiro de parejas",
+            "start_at": (timezone.now() + timedelta(days=10)).isoformat(),
+            "requires_married": True,
+        }
+        response = authenticated_api_client.post("/api/v1/events/", data, format="json")
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["requires_married"] is True

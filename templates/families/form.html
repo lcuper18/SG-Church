@@ -38,8 +38,8 @@
                             <label for="head_of_family" class="form-label">Cabeza de Familia</label>
                             <select class="form-select" id="head_of_family" name="head_of_family">
                                 <option value="">Seleccionar...</option>
-                                {% for member in form.head_of_family.queryset %}
-                                <option value="{{ member.id }}" {% if form.head_of_family.value == member.id|stringformat:"s" %}selected{% endif %}>
+                                {% for member in form.fields.head_of_family.queryset %}
+                                <option value="{{ member.id }}" {% if form.head_of_family.value|stringformat:"s" == member.id|stringformat:"s" %}selected{% endif %}>
                                     {{ member.full_name }}
                                 </option>
                                 {% endfor %}

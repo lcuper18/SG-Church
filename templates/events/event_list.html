@@ -50,6 +50,7 @@
                             <th>Tipo</th>
                             <th>Fecha</th>
                             <th>Lugar</th>
+                            <th>Requisitos</th>
                             <th>Inscritos</th>
                             <th>Estado</th>
                         </tr>
@@ -61,6 +62,12 @@
                             <td>{{ event.get_event_type_display }}</td>
                             <td>{{ event.start_at|date:"d/m/Y H:i" }}</td>
                             <td>{{ event.location|default:"-" }}</td>
+                            <td>
+                                {% if event.requires_baptized %}<span class="badge bg-info">Bautizado/a</span>{% endif %}
+                                {% if event.requires_married %}<span class="badge bg-info">Casado/a</span>{% endif %}
+                                {% if event.required_courses.all %}<span class="badge bg-secondary">Cursos</span>{% endif %}
+                                {% if not event.requires_baptized and not event.requires_married and not event.required_courses.all %}-{% endif %}
+                            </td>
                             <td>
                                 {{ event.registered_count }}{% if event.capacity %} / {{ event.capacity }}{% endif %}
                             </td>
@@ -76,7 +83,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">No hay eventos todavía.</td>
+                            <td colspan="7" class="text-center text-muted py-4">No hay eventos todavía.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

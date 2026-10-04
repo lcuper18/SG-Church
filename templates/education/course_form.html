@@ -44,8 +44,8 @@
                                 <label for="instructor" class="form-label">Instructor</label>
                                 <select class="form-select" id="instructor" name="instructor">
                                     <option value="">Seleccionar...</option>
-                                    {% for teacher in form.instructor.queryset %}
-                                    <option value="{{ teacher.id }}" {% if form.instructor.value == teacher.id|stringformat:"s" %}selected{% endif %}>
+                                    {% for teacher in form.fields.instructor.queryset %}
+                                    <option value="{{ teacher.id }}" {% if form.instructor.value|stringformat:"s" == teacher.id|stringformat:"s" %}selected{% endif %}>
                                         {{ teacher.get_full_name }}
                                     </option>
                                     {% endfor %}
@@ -62,8 +62,8 @@
                                 <label for="course_block" class="form-label">Bloque</label>
                                 <select class="form-select" id="course_block" name="course_block">
                                     <option value="">Independiente (sin bloque)</option>
-                                    {% for block in form.course_block.queryset %}
-                                    <option value="{{ block.id }}" {% if form.course_block.value == block.id|stringformat:"s" %}selected{% endif %}>
+                                    {% for block in form.fields.course_block.queryset %}
+                                    <option value="{{ block.id }}" {% if form.course_block.value|stringformat:"s" == block.id|stringformat:"s" %}selected{% endif %}>
                                         {{ block.name }}
                                     </option>
                                     {% endfor %}
@@ -78,7 +78,7 @@
                         <div class="mb-3">
                             <label for="prerequisite_courses" class="form-label">Cursos prerrequisito</label>
                             <select class="form-select" id="prerequisite_courses" name="prerequisite_courses" multiple size="5">
-                                {% for other_course in form.prerequisite_courses.queryset %}
+                                {% for other_course in form.fields.prerequisite_courses.queryset %}
                                 <option value="{{ other_course.id }}" {% if object and other_course in object.prerequisite_courses.all %}selected{% endif %}>
                                     {{ other_course.title }}
                                 </option>

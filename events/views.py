@@ -10,6 +10,7 @@ from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from core.mixins import ManageMembersRequiredMixin
+from education.models import Course
 from members.models import Member
 
 from .models import Event, EventRegistration
@@ -22,6 +23,9 @@ EVENT_FIELDS = [
     "start_at",
     "end_at",
     "capacity",
+    "requires_baptized",
+    "requires_married",
+    "required_courses",
     "is_active",
 ]
 
@@ -91,6 +95,15 @@ class EventCreateView(ManageMembersRequiredMixin, CreateView):
     template_name = "events/event_form.html"
     fields = EVENT_FIELDS
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        tenant = getattr(self.request.user, "tenant", None)
+        if tenant:
+            form.fields["required_courses"].queryset = Course.objects.filter(
+                tenant=tenant
+            )
+        return form
+
     def form_valid(self, form):
         tenant = getattr(self.request.user, "tenant", None)
         if tenant:
@@ -116,6 +129,15 @@ class EventUpdateView(ManageMembersRequiredMixin, UpdateView):
         if not tenant:
             return Event.objects.none()
         return Event.objects.filter(tenant=tenant)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        tenant = getattr(self.request.user, "tenant", None)
+        if tenant:
+            form.fields["required_courses"].queryset = Course.objects.filter(
+                tenant=tenant
+            )
+        return form
 
     def get_success_url(self):
         return reverse("event_detail", kwargs={"pk": self.object.pk})
