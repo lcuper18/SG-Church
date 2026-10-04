@@ -21,7 +21,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from education.models import Course, CourseBlock, Enrollment
-from events.models import Event, EventRegistration
+from events.models import Event, EventAttendance, EventRegistration
 from finance.models import Donation, Expense
 from members.models import Family, Member, Tag, User
 from tenants.models import Tenant
@@ -102,7 +102,11 @@ class Command(BaseCommand):
             tenant=tenant, email__endswith=f"@{DEMO_DOMAIN}"
         ).exists()
         if already and not opts["force"]:
-            self.stdout.write("Demo data already present, nothing to do (use --force).")
+            added = self._attendance(tenant)
+            self.stdout.write(
+                f"Demo data already present (use --force to add more people). "
+                f"Attendance backfilled for {added} past events."
+            )
             return
 
         with transaction.atomic():
@@ -112,6 +116,7 @@ class Command(BaseCommand):
             expenses = self._expenses(tenant)
             self._courses(tenant, members)
             events = self._events(tenant, members)
+            self._attendance(tenant)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -393,3 +398,23 @@ class Command(BaseCommand):
                 [EventRegistration(tenant=tenant, member=m, event=event) for m in self.rng.sample(eligible, count)]
             )
         return len(plan)
+
+    def _attendance(self, tenant):
+        """Attendance for finished events that have none yet: most of the
+        registered members show up, plus some walk-ins who never registered.
+        Idempotent - events that already have attendance are left alone."""
+        now = timezone.now()
+        everyone = list(Member.objects.filter(tenant=tenant, date_of_birth__lte=date.today() - timedelta(days=14 * 365)))
+        done = 0
+        for event in Event.objects.filter(tenant=tenant, start_at__lt=now, attendances__isnull=True):
+            registered = list(
+                event.registrations.filter(status="registered").values_list("member_id", flat=True)
+            )
+            attended = {m for m in registered if self.rng.random() < 0.82}
+            walk_ins = self.rng.sample(everyone, min(len(everyone), self.rng.randint(5, 40))) if everyone else []
+            attended |= {m.id for m in walk_ins if event.meets_requirements(m)[0]}
+            EventAttendance.objects.bulk_create(
+                [EventAttendance(tenant=tenant, member_id=m_id, event=event) for m_id in attended]
+            )
+            done += 1
+        return done

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Asistencia - {{ event.title }} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'event_list' %}">Eventos</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'event_detail' event.pk %}">{{ event.title }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Asistencia</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    {% if not event.attendance_open %}
+    <div class="alert alert-warning">
+        La asistencia se puede tomar a partir del día del evento ({{ event.start_at|date:"d/m/Y" }}).
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por nombre o correo..." value="{{ query }}">
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="filter" name="filter" value="registered" {% if only_registered %}checked{% endif %}>
+                        <label class="form-check-label" for="filter">Solo inscritos</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-search"></i> Buscar</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{% url 'event_attendance' event.pk %}" class="btn btn-outline-secondary w-100">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ members|length }} miembro{{ members|length|pluralize }} en pantalla</h5>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="check-all">Marcar todos los visibles</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="uncheck-all">Desmarcar todos</button>
+                    {% if event.attendance_open %}
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check2-square"></i> Guardar asistencia</button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 60px;">Presente</th>
+                                <th>Miembro</th>
+                                <th>Inscripción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for person in members %}
+                            <tr>
+                                <td>
+                                    <input type="hidden" name="shown" value="{{ person.id }}">
+                                    <input type="checkbox" class="form-check-input attendance-box" name="present" value="{{ person.id }}" {% if person.id in present_ids %}checked{% endif %} {% if not event.attendance_open %}disabled{% endif %}>
+                                </td>
+                                <td>{{ person.full_name }}</td>
+                                <td>
+                                    {% if person.id in registered_ids %}
+                                    <span class="badge bg-success">Inscrito</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">No se encontraron miembros.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('check-all').addEventListener('click', function () {
+        document.querySelectorAll('.attendance-box:not(:disabled)').forEach(function (box) { box.checked = true; });
+    });
+    document.getElementById('uncheck-all').addEventListener('click', function () {
+        document.querySelectorAll('.attendance-box:not(:disabled)').forEach(function (box) { box.checked = false; });
+    });
+</script>
+{% endblock %}

@@ -56,11 +56,18 @@
                             <td class="text-muted">Inscritos</td>
                             <td>{{ event.registered_count }}{% if event.capacity %} / {{ event.capacity }}{% endif %}</td>
                         </tr>
+                        <tr>
+                            <td class="text-muted">Asistieron</td>
+                            <td>{{ attended_count }}{% if no_show_count %} <span class="text-muted">({{ no_show_count }} inscrito{{ no_show_count|pluralize }} no asistieron)</span>{% endif %}</td>
+                        </tr>
                     </table>
                 </div>
                 {% if user.can_manage_members %}
                 <div class="card-footer bg-white">
                     <div class="d-grid gap-2">
+                        <a href="{% url 'event_attendance' event.pk %}" class="btn btn-success">
+                            <i class="bi bi-check2-square"></i> Tomar asistencia
+                        </a>
                         <a href="{% url 'event_update' event.pk %}" class="btn btn-primary">
                             <i class="bi bi-pencil"></i> Editar
                         </a>

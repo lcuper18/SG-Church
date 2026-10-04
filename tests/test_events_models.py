@@ -160,3 +160,30 @@ class TestRequirements:
 
         assert past_full.meets_requirements(plain_member) == (True, "")
         assert past_full.can_register(plain_member)[0] is False
+
+
+@pytest.mark.django_db
+class TestAttendance:
+    def test_attendance_not_open_before_event_day(self, event):
+        assert event.attendance_open is False  # event is 7 days ahead
+
+    def test_attendance_open_on_event_day(self, tenant):
+        today = Event.objects.create(
+            tenant=tenant, title="Hoy", start_at=timezone.now() + timedelta(minutes=5)
+        )
+        assert today.attendance_open is True
+
+    def test_attendance_open_after_event(self, tenant):
+        past = Event.objects.create(
+            tenant=tenant, title="Ayer", start_at=timezone.now() - timedelta(days=2)
+        )
+        assert past.attendance_open is True
+
+    def test_attended_count(self, tenant, plain_member):
+        from events.models import EventAttendance
+
+        past = Event.objects.create(
+            tenant=tenant, title="Ayer", start_at=timezone.now() - timedelta(days=2)
+        )
+        EventAttendance.objects.create(tenant=tenant, member=plain_member, event=past)
+        assert past.attended_count == 1

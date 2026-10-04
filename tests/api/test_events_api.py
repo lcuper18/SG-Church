@@ -135,3 +135,60 @@ class TestEventRequirementsAPI:
         response = authenticated_api_client.post("/api/v1/events/", data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["requires_married"] is True
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestEventAttendanceAPI:
+    def _past(self, tenant):
+        return _event(tenant, start_at=timezone.now() - timedelta(days=1))
+
+    def test_mark_attendance(self, authenticated_api_client, admin_user, member):
+        event = self._past(admin_user.tenant)
+        response = authenticated_api_client.post(
+            "/api/v1/event-attendances/", {"member": member.pk, "event": event.pk}
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert event.attendances.count() == 1
+
+    def test_registration_not_required(self, authenticated_api_client, admin_user, member):
+        event = self._past(admin_user.tenant)
+        assert not event.registrations.exists()
+        response = authenticated_api_client.post(
+            "/api/v1/event-attendances/", {"member": member.pk, "event": event.pk}
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_duplicate_rejected(self, authenticated_api_client, admin_user, member):
+        event = self._past(admin_user.tenant)
+        payload = {"member": member.pk, "event": event.pk}
+        authenticated_api_client.post("/api/v1/event-attendances/", payload)
+        response = authenticated_api_client.post("/api/v1/event-attendances/", payload)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_future_event_rejected(self, authenticated_api_client, admin_user, member):
+        event = _event(admin_user.tenant, start_at=timezone.now() + timedelta(days=9))
+        response = authenticated_api_client.post(
+            "/api/v1/event-attendances/", {"member": member.pk, "event": event.pk}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_delete_unmarks(self, authenticated_api_client, admin_user, member):
+        from events.models import EventAttendance
+
+        event = self._past(admin_user.tenant)
+        attendance = EventAttendance.objects.create(
+            tenant=admin_user.tenant, member=member, event=event
+        )
+        response = authenticated_api_client.delete(
+            f"/api/v1/event-attendances/{attendance.pk}/"
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert event.attendances.count() == 0
+
+    def test_member_role_cannot_mark(self, regular_api_client_same_tenant, admin_user, member):
+        event = self._past(admin_user.tenant)
+        response = regular_api_client_same_tenant.post(
+            "/api/v1/event-attendances/", {"member": member.pk, "event": event.pk}
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN

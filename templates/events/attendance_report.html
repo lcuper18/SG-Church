@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Reporte de Asistencia - SG Church{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-clipboard-data"></i> Reporte de Asistencia</h1>
+        <a href="{% url 'event_list' %}" class="btn btn-outline-secondary">Eventos</a>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="start" class="form-label">Desde</label>
+                    <input type="date" class="form-control" id="start" name="start" value="{{ start|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end" class="form-label">Hasta</label>
+                    <input type="date" class="form-control" id="end" name="end" value="{{ end|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Tipo</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="">Todos</option>
+                        {% for code, label in type_choices %}
+                        <option value="{{ code }}" {% if event_type == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Ver reporte</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm"><div class="card-body text-center">
+                <div class="h2 mb-0">{{ total_events }}</div><div class="text-muted">Eventos en el período</div>
+            </div></div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm"><div class="card-body text-center">
+                <div class="h2 mb-0">{{ total_attendances }}</div><div class="text-muted">Asistencias registradas</div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white"><h5 class="mb-0">Por evento</h5></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Evento</th><th>Fecha</th><th>Inscritos</th><th>Asistieron</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in event_rows %}
+                        <tr>
+                            <td><a href="{% url 'event_detail' row.pk %}">{{ row.title }}</a></td>
+                            <td>{{ row.start_at|date:"d/m/Y" }}</td>
+                            <td>{{ row.registered }}</td>
+                            <td>{{ row.attended }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">No hay eventos en este período.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white"><h5 class="mb-0">Por miembro</h5></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Miembro</th><th>Eventos asistidos</th><th>% del período</th><th>Última asistencia</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in page %}
+                        <tr>
+                            <td><a href="{% url 'member_detail' row.pk %}">{{ row.full_name }}</a></td>
+                            <td>{{ row.attended }} de {{ total_events }}</td>
+                            <td>
+                                <div class="progress" style="height: 18px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ row.percent }}%;">{{ row.percent }}%</div>
+                                </div>
+                            </td>
+                            <td>{{ row.last_attended|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Nadie ha asistido a eventos en este período.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if page.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page.has_previous %}
+            <li class="page-item"><a class="page-link" href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&type={{ event_type }}&page={{ page.previous_page_number }}">Anterior</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">Página {{ page.number }} de {{ page.paginator.num_pages }}</span></li>
+            {% if page.has_next %}
+            <li class="page-item"><a class="page-link" href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&type={{ event_type }}&page={{ page.next_page_number }}">Siguiente</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

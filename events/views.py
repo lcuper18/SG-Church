@@ -2,18 +2,29 @@
 Event and registration views.
 """
 
+from datetime import date, timedelta
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, redirect
+from django.core.paginator import Paginator
+from django.db.models import Count, Max, Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
 from core.mixins import ManageMembersRequiredMixin
 from education.models import Course
 from members.models import Member
 
-from .models import Event, EventRegistration
+from .models import Event, EventAttendance, EventRegistration
 
 EVENT_FIELDS = [
     "title",
@@ -78,6 +89,11 @@ class EventDetailView(LoginRequiredMixin, DetailView):
             "member"
         )
         context["registrations"] = registrations
+        attended_ids = set(event.attendances.values_list("member_id", flat=True))
+        registered_ids = set(registrations.values_list("member_id", flat=True))
+        context["attended_count"] = len(attended_ids)
+        context["no_show_count"] = len(registered_ids - attended_ids)
+        context["attended_ids"] = attended_ids
         if tenant:
             context["registrable_members"] = Member.objects.filter(
                 tenant=tenant
@@ -205,3 +221,146 @@ class RegistrationCancelView(ManageMembersRequiredMixin, View):
 
 
 registration_cancel = RegistrationCancelView.as_view()
+
+
+# ============================================================
+# ATTENDANCE
+# ============================================================
+
+
+class AttendanceView(ManageMembersRequiredMixin, View):
+    """Checklist to mark who attended an event (any member, registered or not)."""
+
+    template_name = "events/attendance.html"
+
+    def _event(self, request, pk):
+        tenant = getattr(request.user, "tenant", None)
+        return get_object_or_404(Event, pk=pk, tenant=tenant), tenant
+
+    def get(self, request, pk):
+        event, tenant = self._event(request, pk)
+        query = request.GET.get("q", "").strip()
+        only_registered = request.GET.get("filter") == "registered"
+
+        registered_ids = set(
+            event.registrations.filter(status="registered").values_list(
+                "member_id", flat=True
+            )
+        )
+        members = Member.objects.filter(tenant=tenant)
+        if query:
+            members = members.filter(
+                Q(first_name__icontains=query)
+                | Q(last_name__icontains=query)
+                | Q(email__icontains=query)
+            )
+        if only_registered:
+            members = members.filter(id__in=registered_ids)
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "event": event,
+                "members": members.order_by("last_name", "first_name"),
+                "registered_ids": registered_ids,
+                "present_ids": set(event.attendances.values_list("member_id", flat=True)),
+                "query": query,
+                "only_registered": only_registered,
+            },
+        )
+
+    def post(self, request, pk):
+        event, tenant = self._event(request, pk)
+        if not event.attendance_open:
+            messages.error(request, "La asistencia se puede tomar a partir del día del evento.")
+            return redirect("event_detail", pk=event.pk)
+
+        # Only touch the members that were on screen: a search-filtered list
+        # must not un-mark the ones that were hidden.
+        shown = set(
+            Member.objects.filter(
+                tenant=tenant, id__in=request.POST.getlist("shown")
+            ).values_list("id", flat=True)
+        )
+        checked = set(request.POST.getlist("present"))
+        present = {member_id for member_id in shown if str(member_id) in checked}
+
+        existing = set(event.attendances.values_list("member_id", flat=True))
+        EventAttendance.objects.bulk_create(
+            [
+                EventAttendance(tenant=tenant, member_id=member_id, event=event)
+                for member_id in present - existing
+            ]
+        )
+        event.attendances.filter(member_id__in=(shown - present)).delete()
+
+        messages.success(request, f"Asistencia guardada: {event.attended_count} presentes.")
+        return redirect("event_detail", pk=event.pk)
+
+
+event_attendance = AttendanceView.as_view()
+
+
+class AttendanceReportView(ManageMembersRequiredMixin, View):
+    """Attendance totals per event and per member over a date range."""
+
+    template_name = "events/attendance_report.html"
+
+    @staticmethod
+    def _parse(value, default):
+        try:
+            return date.fromisoformat(value)
+        except (TypeError, ValueError):
+            return default
+
+    def get(self, request):
+        tenant = getattr(request.user, "tenant", None)
+        today = timezone.localdate()
+        start = self._parse(request.GET.get("start"), today - timedelta(days=90))
+        end = self._parse(request.GET.get("end"), today)
+        event_type = request.GET.get("type", "")
+
+        events = Event.objects.filter(
+            tenant=tenant, start_at__date__gte=start, start_at__date__lte=end
+        )
+        if event_type:
+            events = events.filter(event_type=event_type)
+
+        event_rows = events.annotate(
+            registered=Count(
+                "registrations", filter=Q(registrations__status="registered"), distinct=True
+            ),
+            attended=Count("attendances", distinct=True),
+        ).order_by("-start_at")
+        total_events = events.count()
+
+        member_rows = (
+            Member.objects.filter(tenant=tenant, event_attendances__event__in=events)
+            .annotate(
+                attended=Count("event_attendances", distinct=True),
+                last_attended=Max("event_attendances__event__start_at"),
+            )
+            .order_by("-attended", "last_name", "first_name")
+        )
+        page = Paginator(member_rows, 50).get_page(request.GET.get("page"))
+        for row in page:
+            row.percent = round(row.attended * 100 / total_events) if total_events else 0
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "start": start,
+                "end": end,
+                "event_type": event_type,
+                "type_choices": Event.TYPE_CHOICES,
+                "event_rows": event_rows,
+                "total_events": total_events,
+                "total_attendances": sum(r.attended for r in event_rows),
+                "page": page,
+            },
+        )
+
+
+attendance_report = AttendanceReportView.as_view()

@@ -6,9 +6,13 @@ from rest_framework import filters, viewsets
 from rest_framework.exceptions import ValidationError
 
 from core.permissions import CanManageMembers
-from events.models import Event, EventRegistration
+from events.models import Event, EventAttendance, EventRegistration
 
-from .serializers import EventRegistrationSerializer, EventSerializer
+from .serializers import (
+    EventAttendanceSerializer,
+    EventRegistrationSerializer,
+    EventSerializer,
+)
 
 
 class EventViewSet(viewsets.ModelViewSet):
@@ -62,3 +66,31 @@ class EventRegistrationViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.status = "cancelled"
         instance.save(update_fields=["status"])
+
+
+class EventAttendanceViewSet(viewsets.ModelViewSet):
+    """Mark (POST) or unmark (DELETE) a member as having attended an event."""
+
+    serializer_class = EventAttendanceSerializer
+    permission_classes = [CanManageMembers]
+    http_method_names = ["get", "post", "delete", "head", "options"]
+    filterset_fields = ["event", "member"]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            queryset = EventAttendance.objects.all()
+        elif hasattr(user, "tenant") and user.tenant:
+            queryset = EventAttendance.objects.filter(tenant=user.tenant)
+        else:
+            return EventAttendance.objects.none()
+        event_id = self.request.query_params.get("event")
+        return queryset.filter(event_id=event_id) if event_id else queryset
+
+    def perform_create(self, serializer):
+        event = serializer.validated_data["event"]
+        if not event.attendance_open:
+            raise ValidationError(
+                "La asistencia se puede tomar a partir del día del evento."
+            )
+        serializer.save(tenant=self.request.user.tenant)

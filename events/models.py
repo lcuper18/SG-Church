@@ -65,6 +65,15 @@ class Event(models.Model):
         return (self.end_at or self.start_at) < timezone.now()
 
     @property
+    def attendance_open(self):
+        """Attendance can be taken from the day of the event onwards, not before."""
+        return timezone.localdate() >= timezone.localtime(self.start_at).date()
+
+    @property
+    def attended_count(self):
+        return self.attendances.count()
+
+    @property
     def registered_count(self):
         return self.registrations.filter(status="registered").count()
 
@@ -131,3 +140,31 @@ class EventRegistration(models.Model):
 
     def __str__(self):
         return f"{self.member.full_name} - {self.event.title} ({self.status})"
+
+
+class EventAttendance(models.Model):
+    """A member who attended an event. A row means "attended"; unmarking
+    deletes it. Any member of the church can be marked, registered or not."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant = models.ForeignKey(
+        "tenants.Tenant", on_delete=models.CASCADE, related_name="event_attendances"
+    )
+    member = models.ForeignKey(
+        "members.Member", on_delete=models.CASCADE, related_name="event_attendances"
+    )
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="attendances"
+    )
+    checked_in_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "event_attendances"
+        verbose_name = "Event Attendance"
+        verbose_name_plural = "Event Attendances"
+        ordering = ["-checked_in_at"]
+        unique_together = ["member", "event"]
+        indexes = [models.Index(fields=["tenant", "event"])]
+
+    def __str__(self):
+        return f"{self.member.full_name} @ {self.event.title}"
