@@ -18,7 +18,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 import stripe
 
 from .models import Donation, Expense, Campaign
@@ -35,6 +35,22 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
 
     template_name = "finance/dashboard.html"
 
+    @staticmethod
+    def _month_bounds(now, months_back):
+        """Return (start, end) of the calendar month `months_back` months
+        before `now`: start inclusive, end exclusive (first moment of the next
+        month). Stepping back by whole calendar months, not by 30 days, so no
+        month is skipped or repeated."""
+        index = now.year * 12 + (now.month - 1) - months_back
+        year, month = divmod(index, 12)
+        start = now.replace(
+            year=year, month=month + 1, day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        next_index = index + 1
+        next_year, next_month = divmod(next_index, 12)
+        end = start.replace(year=next_year, month=next_month + 1)
+        return start, end
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         tenant = getattr(self.request.user, "tenant", None)
@@ -42,11 +58,8 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
         if not tenant:
             return context
 
-        now = timezone.now()
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        year_start = now.replace(
-            month=1, day=1, hour=0, minute=0, second=0, microsecond=0
-        )
+        now = timezone.localtime()
+        month_start, _ = self._month_bounds(now, 0)
 
         # Calculate stats for current month
         donations_this_month = (
@@ -58,7 +71,7 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
 
         expenses_this_month = (
             Expense.objects.filter(
-                tenant=tenant, expense_date__gte=month_start
+                tenant=tenant, expense_date__gte=month_start.date()
             ).aggregate(total=Sum("amount"))["total"]
             or 0
         )
@@ -75,33 +88,17 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
             .count()
         )
 
-        # Chart data - last 12 months
+        # Chart data - last 12 calendar months, oldest first
         chart_data = []
-        for i in range(11, -1, -1):
-            # Calculate month range
-            if i == 0:
-                month_start_data = month_start
-                month_end = now
-            else:
-                # Go back i months
-                month_date = now - timedelta(days=30 * i)
-                month_start_data = month_date.replace(
-                    day=1, hour=0, minute=0, second=0, microsecond=0
-                )
-                if month_date.month == 12:
-                    month_end = month_date.replace(
-                        month=12, day=31, hour=23, minute=59, second=59
-                    )
-                else:
-                    next_month = month_date.replace(month=month_date.month + 1, day=1)
-                    month_end = next_month - timedelta(seconds=1)
+        for months_back in range(11, -1, -1):
+            start, end = self._month_bounds(now, months_back)
 
             month_donations = (
                 Donation.objects.filter(
                     tenant=tenant,
                     status="completed",
-                    donation_date__gte=month_start_data,
-                    donation_date__lte=month_end,
+                    donation_date__gte=start,
+                    donation_date__lt=end,
                 ).aggregate(total=Sum("amount"))["total"]
                 or 0
             )
@@ -109,15 +106,15 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
             month_expenses = (
                 Expense.objects.filter(
                     tenant=tenant,
-                    expense_date__gte=month_start_data,
-                    expense_date__lte=month_end.date(),
+                    expense_date__gte=start.date(),
+                    expense_date__lt=end.date(),
                 ).aggregate(total=Sum("amount"))["total"]
                 or 0
             )
 
             chart_data.append(
                 {
-                    "month": month_start_data.strftime("%b"),
+                    "month": start.strftime("%b"),
                     "donations": float(month_donations),
                     "expenses": float(month_expenses),
                 }
@@ -150,7 +147,9 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
                     "type": "expense",
                     "description": e.description,
                     "amount": -e.amount,
-                    "date": e.expense_date,
+                    "date": timezone.make_aware(
+                        datetime.combine(e.expense_date, time.min)
+                    ),
                     "status": e.status,
                 }
             )
