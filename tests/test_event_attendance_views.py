@@ -36,7 +36,7 @@ class TestTakeAttendance:
         html = authenticated_client.get(f"/events/{past_event.pk}/attendance/").content.decode()
 
         assert str(a.pk) in html and str(b.pk) in html
-        assert html.count("Inscrito") == 1
+        assert html.count(">Inscrito</span>") == 1
 
     def test_save_marks_any_member_registered_or_not(
         self, authenticated_client, admin_user, past_event

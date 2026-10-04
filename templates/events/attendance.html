@@ -24,23 +24,29 @@
 
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body">
-            <form method="get" class="row g-3 align-items-center">
-                <div class="col-md-5">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar por nombre o correo..." value="{{ query }}">
+            <div class="row g-3 align-items-center">
+                <div class="col-12 col-md-6">
+                    <label for="live-search" class="visually-hidden">Buscar miembro</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+                        <input type="search" id="live-search" class="form-control form-control-lg" autocomplete="off"
+                               placeholder="Escriba un nombre o correo…" value="{{ query }}" {% if event.attendance_open %}autofocus{% endif %}>
+                    </div>
+                    <div class="form-text">Se filtra mientras escribe. Con un solo resultado, Enter lo marca como presente.</div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="filter" name="filter" value="registered" {% if only_registered %}checked{% endif %}>
-                        <label class="form-check-label" for="filter">Solo inscritos</label>
+                <div class="col-12 col-md-6">
+                    <div class="btn-group w-100" role="group" aria-label="Mostrar">
+                        <input type="radio" class="btn-check" name="view" id="view-all" value="all" checked>
+                        <label class="btn btn-outline-secondary" for="view-all">Todos</label>
+                        <input type="radio" class="btn-check" name="view" id="view-present" value="present">
+                        <label class="btn btn-outline-secondary" for="view-present">Presentes</label>
+                        <input type="radio" class="btn-check" name="view" id="view-absent" value="absent">
+                        <label class="btn btn-outline-secondary" for="view-absent">Ausentes</label>
+                        <input type="radio" class="btn-check" name="view" id="view-registered" value="registered" {% if only_registered %}checked{% endif %}>
+                        <label class="btn btn-outline-secondary" for="view-registered">Inscritos</label>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-search"></i> Buscar</button>
-                </div>
-                <div class="col-md-2">
-                    <a href="{% url 'event_attendance' event.pk %}" class="btn btn-outline-secondary w-100">Limpiar</a>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -48,10 +54,10 @@
         {% csrf_token %}
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">{{ members|length }} miembro{{ members|length|pluralize }} en pantalla</h5>
+                <h5 class="mb-0"><span id="present-count">0</span> presentes de {{ members|length }} <small class="text-muted fw-normal" id="visible-note"></small></h5>
                 <div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="check-all">Marcar todos los visibles</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="uncheck-all">Desmarcar todos</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="check-all">Marcar visibles</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="uncheck-all">Desmarcar visibles</button>
                     {% if event.attendance_open %}
                     <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check2-square"></i> Guardar asistencia</button>
                     {% endif %}
@@ -69,7 +75,7 @@
                         </thead>
                         <tbody>
                             {% for person in members %}
-                            <tr>
+                            <tr class="attendance-row" data-search="{{ person.full_name|lower }} {{ person.email|lower }}" data-registered="{% if person.id in registered_ids %}1{% endif %}" {% if event.attendance_open %}style="cursor:pointer"{% endif %}>
                                 <td>
                                     <input type="hidden" name="shown" value="{{ person.id }}">
                                     <input type="checkbox" class="form-check-input attendance-box" name="present" value="{{ person.id }}" {% if person.id in present_ids %}checked{% endif %} {% if not event.attendance_open %}disabled{% endif %}>
@@ -88,6 +94,9 @@
                                 <td colspan="3" class="text-center text-muted py-4">No se encontraron miembros.</td>
                             </tr>
                             {% endfor %}
+                            <tr id="no-match" class="d-none">
+                                <td colspan="3" class="text-center text-muted py-4">Nadie coincide con la búsqueda.</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -99,11 +108,65 @@
 
 {% block extra_js %}
 <script>
+(function () {
+    var search = document.getElementById('live-search');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.attendance-row'));
+    var norm = function (t) {
+        return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    };
+    rows.forEach(function (r) { r.dataset.search = norm(r.dataset.search); });
+    var box = function (r) { return r.querySelector('.attendance-box'); };
+    var view = function () { return document.querySelector('input[name=view]:checked').value; };
+    var visible = function () { return rows.filter(function (r) { return !r.classList.contains('d-none'); }); };
+
+    function update() {
+        var terms = norm(search.value.trim()).split(/\s+/).filter(Boolean);
+        var mode = view();
+        rows.forEach(function (r) {
+            var ok = terms.every(function (t) { return r.dataset.search.indexOf(t) !== -1; });
+            if (mode === 'present') ok = ok && box(r).checked;
+            if (mode === 'absent') ok = ok && !box(r).checked;
+            if (mode === 'registered') ok = ok && r.dataset.registered === '1';
+            r.classList.toggle('d-none', !ok);
+        });
+        var shown = visible().length;
+        document.getElementById('present-count').textContent = rows.filter(function (r) { return box(r).checked; }).length;
+        document.getElementById('visible-note').textContent = shown === rows.length ? '' : '(' + shown + ' en pantalla)';
+        var empty = document.getElementById('no-match');
+        if (empty) empty.classList.toggle('d-none', shown !== 0 || rows.length === 0);
+    }
+
+    search.addEventListener('input', update);
+    search.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        var v = visible();
+        if (v.length === 1 && !box(v[0]).disabled) {
+            box(v[0]).checked = !box(v[0]).checked;
+            search.value = '';
+            update();
+            search.focus();
+        }
+    });
+    document.querySelectorAll('input[name=view]').forEach(function (i) { i.addEventListener('change', update); });
+    rows.forEach(function (r) {
+        r.addEventListener('click', function (e) {
+            var b = box(r);
+            if (b.disabled || e.target === b) return;
+            b.checked = !b.checked;
+            update();
+        });
+        box(r).addEventListener('change', update);
+    });
     document.getElementById('check-all').addEventListener('click', function () {
-        document.querySelectorAll('.attendance-box:not(:disabled)').forEach(function (box) { box.checked = true; });
+        visible().forEach(function (r) { if (!box(r).disabled) box(r).checked = true; });
+        update();
     });
     document.getElementById('uncheck-all').addEventListener('click', function () {
-        document.querySelectorAll('.attendance-box:not(:disabled)').forEach(function (box) { box.checked = false; });
+        visible().forEach(function (r) { if (!box(r).disabled) box(r).checked = false; });
+        update();
     });
+    update();
+})();
 </script>
 {% endblock %}
