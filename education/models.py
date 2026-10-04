@@ -157,9 +157,9 @@ class Enrollment(models.Model):
     """A member's enrollment in a course."""
 
     STATUS_CHOICES = [
-        ("enrolled", "Enrolled"),
-        ("completed", "Completed"),
-        ("dropped", "Dropped"),
+        ("enrolled", "Inscrito"),
+        ("completed", "Completado"),
+        ("dropped", "Retirado"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

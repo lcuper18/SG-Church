@@ -38,12 +38,12 @@ class User(AbstractUser):
     """
 
     ROLE_CHOICES = [
-        ("admin", "Church Admin"),
+        ("admin", "Administrador"),
         ("pastor", "Pastor"),
-        ("treasurer", "Treasurer"),
-        ("teacher", "Teacher"),
-        ("volunteer", "Volunteer"),
-        ("member", "Member"),
+        ("treasurer", "Tesorero/a"),
+        ("teacher", "Maestro/a"),
+        ("volunteer", "Voluntario/a"),
+        ("member", "Miembro"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -107,23 +107,23 @@ class Member(models.Model):
     """
 
     STATUS_CHOICES = [
-        ("visitor", "Visitor"),
-        ("attendee", "Attendee"),
-        ("member", "Member"),
-        ("inactive", "Inactive"),
+        ("visitor", "Visitante"),
+        ("attendee", "Asistente"),
+        ("member", "Miembro"),
+        ("inactive", "Inactivo"),
     ]
 
     GENDER_CHOICES = [
-        ("male", "Male"),
-        ("female", "Female"),
-        ("other", "Other"),
+        ("male", "Masculino"),
+        ("female", "Femenino"),
+        ("other", "Otro"),
     ]
 
     MARITAL_STATUS_CHOICES = [
-        ("single", "Single"),
-        ("married", "Married"),
-        ("divorced", "Divorced"),
-        ("widowed", "Widowed"),
+        ("single", "Soltero/a"),
+        ("married", "Casado/a"),
+        ("divorced", "Divorciado/a"),
+        ("widowed", "Viudo/a"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

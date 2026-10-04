@@ -16,24 +16,24 @@ class Donation(models.Model):
     """
 
     TYPE_CHOICES = [
-        ("one_time", "One Time"),
-        ("recurring", "Recurring"),
+        ("one_time", "Única vez"),
+        ("recurring", "Recurrente"),
     ]
 
     STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("completed", "Completed"),
-        ("failed", "Failed"),
-        ("refunded", "Refunded"),
+        ("pending", "Pendiente"),
+        ("completed", "Completado"),
+        ("failed", "Fallido"),
+        ("refunded", "Reembolsado"),
     ]
 
     CAMPAIGN_CHOICES = [
-        ("tithe", "Tithe"),
-        ("offering", "General Offering"),
-        ("building", "Building Fund"),
-        ("missions", "Missions"),
-        ("youth", "Youth"),
-        ("other", "Other"),
+        ("tithe", "Diezmo"),
+        ("offering", "Ofrenda general"),
+        ("building", "Fondo de construcción"),
+        ("missions", "Misiones"),
+        ("youth", "Jóvenes"),
+        ("other", "Otro"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -108,20 +108,20 @@ class Expense(models.Model):
     """
 
     CATEGORY_CHOICES = [
-        ("operations", "Operations"),
-        ("salaries", "Salaries"),
-        ("utilities", "Utilities"),
-        ("maintenance", "Maintenance"),
-        ("programs", "Programs"),
-        ("missions", "Missions"),
-        ("other", "Other"),
+        ("operations", "Operaciones"),
+        ("salaries", "Salarios"),
+        ("utilities", "Servicios"),
+        ("maintenance", "Mantenimiento"),
+        ("programs", "Programas"),
+        ("missions", "Misiones"),
+        ("other", "Otro"),
     ]
 
     STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("approved", "Approved"),
-        ("paid", "Paid"),
-        ("rejected", "Rejected"),
+        ("pending", "Pendiente"),
+        ("approved", "Aprobado"),
+        ("paid", "Pagado"),
+        ("rejected", "Rechazado"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -196,10 +196,10 @@ class Campaign(models.Model):
     """
 
     STATUS_CHOICES = [
-        ("draft", "Draft"),
-        ("active", "Active"),
-        ("completed", "Completed"),
-        ("cancelled", "Cancelled"),
+        ("draft", "Borrador"),
+        ("active", "Activa"),
+        ("completed", "Completada"),
+        ("cancelled", "Cancelada"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

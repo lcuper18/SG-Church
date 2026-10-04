@@ -12,13 +12,13 @@ class Event(models.Model):
     """A church event or special activity members can register for."""
 
     TYPE_CHOICES = [
-        ("service", "Service"),
-        ("meeting", "Meeting"),
-        ("retreat", "Retreat"),
-        ("conference", "Conference"),
-        ("camp", "Camp"),
-        ("special", "Special activity"),
-        ("other", "Other"),
+        ("service", "Servicio"),
+        ("meeting", "Reunión"),
+        ("retreat", "Retiro"),
+        ("conference", "Conferencia"),
+        ("camp", "Campamento"),
+        ("special", "Actividad especial"),
+        ("other", "Otro"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -113,8 +113,8 @@ class EventRegistration(models.Model):
     """A member's registration for an event."""
 
     STATUS_CHOICES = [
-        ("registered", "Registered"),
-        ("cancelled", "Cancelled"),
+        ("registered", "Inscrito"),
+        ("cancelled", "Cancelado"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
