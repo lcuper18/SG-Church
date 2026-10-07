@@ -22,11 +22,9 @@ class TestDonations:
         """Test donation page with invalid church."""
         page.goto(f"{live_server_url}/donate/?church=nonexistent")
 
-        # Should show error or redirect
-        assert (
-            "error" in page.content().lower()
-            or "no encontrado" in page.content().lower()
-        )
+        # An unknown church shows the error alert instead of the donation form
+        assert "Iglesia no encontrada" in page.content()
+        assert page.locator("#amount").count() == 0
 
     def test_donate_form_submission(self, page, live_server_url, tenant):
         """Test filling and submitting the donation form."""
