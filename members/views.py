@@ -355,7 +355,22 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
 member_detail = MemberDetailView.as_view()
 
 
-class MemberCreateView(ManageMembersRequiredMixin, CreateView):
+class SelectedTagsContextMixin:
+    """Expose the ids of the ticked tags as strings, so the hand-written form
+    keeps its checkboxes after a failed POST as well as when editing."""
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context["form"]
+        context["selected_tag_ids"] = [
+            str(pk) for pk in (form["tags"].value() or [])
+        ]
+        return context
+
+
+class MemberCreateView(
+    SelectedTagsContextMixin, ManageMembersRequiredMixin, CreateView
+):
     """Create a new member."""
 
     model = Member
@@ -403,7 +418,9 @@ class MemberCreateView(ManageMembersRequiredMixin, CreateView):
 member_create = MemberCreateView.as_view()
 
 
-class MemberUpdateView(ManageMembersRequiredMixin, UpdateView):
+class MemberUpdateView(
+    SelectedTagsContextMixin, ManageMembersRequiredMixin, UpdateView
+):
     """Update an existing member."""
 
     model = Member

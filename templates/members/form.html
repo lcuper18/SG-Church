@@ -148,6 +148,22 @@
 
                         <hr class="my-4">
 
+                        <h5 class="mb-3 text-muted">Etiquetas</h5>
+                        <div class="mb-3">
+                            {% for tag in form.fields.tags.queryset %}
+                            <div class="form-check form-check-inline">
+                                <input type="checkbox" class="form-check-input" id="tag_{{ tag.id }}" name="tags" value="{{ tag.id }}" {% if tag.id|stringformat:"s" in selected_tag_ids %}checked{% endif %}>
+                                <label class="form-check-label" for="tag_{{ tag.id }}">
+                                    <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+                                </label>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted mb-0">Aún no hay etiquetas. <a href="{% url 'tag_create' %}">Crear una</a>.</p>
+                            {% endfor %}
+                        </div>
+
+                        <hr class="my-4">
+
                         <h5 class="mb-3 text-muted">Dirección</h5>
                         <div class="mb-3">
                             <label for="address" class="form-label">Dirección</label>
