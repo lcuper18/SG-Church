@@ -75,6 +75,16 @@ CAMPAIGN_AMOUNTS = {
 }
 
 
+EVENT_PLAN = [
+    ("Culto dominical", "service", -14, 3, 400), ("Culto dominical", "service", 7, 3, 400),
+    ("Reunión de líderes", "meeting", -10, 2, 40, {"courses": ["Liderazgo Cristiano"]}), ("Reunión de líderes", "meeting", 12, 2, 40, {"courses": ["Liderazgo Cristiano"]}),
+    ("Retiro de matrimonios", "retreat", 21, 48, 60, {"requires_married": True}), ("Campamento de jóvenes", "camp", 35, 72, 80),
+    ("Conferencia de misiones", "conference", 50, 8, 250, {"requires_baptized": True}), ("Noche de alabanza", "special", 5, 3, 200),
+    ("Feria de la familia", "special", -30, 6, 300), ("Bautizos", "special", 18, 3, 100),
+    ("Retiro de damas", "retreat", -45, 30, 70, {"requires_baptized": True}), ("Cena de agradecimiento a voluntarios", "special", 28, 3, 90),
+]
+
+
 def ascii_slug(text):
     return (
         unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
@@ -102,9 +112,12 @@ class Command(BaseCommand):
             tenant=tenant, email__endswith=f"@{DEMO_DOMAIN}"
         ).exists()
         if already and not opts["force"]:
+            updated, removed = self._event_requirements(tenant)
             added = self._attendance(tenant)
             self.stdout.write(
                 f"Demo data already present (use --force to add more people). "
+                f"Requirements applied to {updated} events ({removed} ineligible "
+                f"registrations/attendances removed). "
                 f"Attendance backfilled for {added} past events."
             )
             return
@@ -367,16 +380,8 @@ class Command(BaseCommand):
 
     def _events(self, tenant, members):
         now = timezone.now()
-        plan = [
-            ("Culto dominical", "service", -14, 3, 400), ("Culto dominical", "service", 7, 3, 400),
-            ("Reunión de líderes", "meeting", -10, 2, 40, {"courses": ["Liderazgo Cristiano"]}), ("Reunión de líderes", "meeting", 12, 2, 40, {"courses": ["Liderazgo Cristiano"]}),
-            ("Retiro de matrimonios", "retreat", 21, 48, 60, {"requires_married": True}), ("Campamento de jóvenes", "camp", 35, 72, 80),
-            ("Conferencia de misiones", "conference", 50, 8, 250, {"requires_baptized": True}), ("Noche de alabanza", "special", 5, 3, 200),
-            ("Feria de la familia", "special", -30, 6, 300), ("Bautizos", "special", 18, 3, 100),
-            ("Retiro de damas", "retreat", -45, 30, 70, {"requires_baptized": True}), ("Cena de agradecimiento a voluntarios", "special", 28, 3, 90),
-        ]
         adults = [m for m in members if (date.today() - m.date_of_birth).days >= 14 * 365]
-        for title, kind, offset_days, hours, capacity, *extra in plan:
+        for title, kind, offset_days, hours, capacity, *extra in EVENT_PLAN:
             rules = extra[0] if extra else {}
             start = now + timedelta(days=offset_days)
             event, created = Event.objects.get_or_create(
@@ -397,7 +402,39 @@ class Command(BaseCommand):
             EventRegistration.objects.bulk_create(
                 [EventRegistration(tenant=tenant, member=m, event=event) for m in self.rng.sample(eligible, count)]
             )
-        return len(plan)
+        return len(EVENT_PLAN)
+
+    def _event_requirements(self, tenant):
+        """Apply EVENT_PLAN's requirements to demo events created before the
+        plan had any, then drop registrations and attendances of members who
+        don't meet them. Only events with no requirements yet are touched, so
+        anything edited by hand (or already backfilled) is left alone."""
+        updated = removed = 0
+        for title, *_rest in EVENT_PLAN:
+            rules = _rest[4] if len(_rest) > 4 else {}
+            if not rules:
+                continue
+            for event in Event.objects.filter(tenant=tenant, title=title):
+                if (
+                    event.requires_baptized
+                    or event.requires_married
+                    or event.required_courses.exists()
+                ):
+                    continue
+                event.requires_baptized = rules.get("requires_baptized", False)
+                event.requires_married = rules.get("requires_married", False)
+                event.save(update_fields=["requires_baptized", "requires_married"])
+                if rules.get("courses"):
+                    event.required_courses.set(
+                        Course.objects.filter(tenant=tenant, title__in=rules["courses"])
+                    )
+                for rel in (event.registrations, event.attendances):
+                    for row in rel.select_related("member"):
+                        if not event.meets_requirements(row.member)[0]:
+                            row.delete()
+                            removed += 1
+                updated += 1
+        return updated, removed
 
     def _attendance(self, tenant):
         """Attendance for finished events that have none yet: most of the
