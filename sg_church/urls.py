@@ -8,7 +8,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
 import allauth.urls
-from allauth.account.views import LoginView, LogoutView, SignupView, PasswordResetView
+from allauth.account.views import (
+    AccountInactiveView,
+    LoginView,
+    LogoutView,
+    PasswordResetView,
+    SignupView,
+)
 
 
 # Simple health check endpoint
@@ -48,6 +54,11 @@ allauth_url_patterns = [
         "signup/",
         SignupView.as_view(template_name="account/signup.html"),
         name="account_signup",  # Alias for allauth
+    ),
+    path(
+        "inactive/",
+        AccountInactiveView.as_view(template_name="account/account_inactive.html"),
+        name="account_inactive",
     ),
     path(
         "password/reset/",

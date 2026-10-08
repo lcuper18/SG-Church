@@ -122,6 +122,7 @@
                                 <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>Mi perfil</a></li>
                                 {% if user.is_church_admin %}
                                 <li><a class="dropdown-item" href="{% url 'church_settings' %}"><i class="bi bi-gear me-2"></i>Configuración</a></li>
+                                <li><a class="dropdown-item" href="{% url 'user_list' %}"><i class="bi bi-person-gear me-2"></i>Usuarios</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'account_logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>

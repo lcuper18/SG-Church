@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios - SG Church{% endblock %}
+
+{% block content %}
+{% url 'user_create' as user_create_url %}
+<div class="container py-4">
+    {% include "partials/page_header.html" with title="Usuarios" icon="bi-person-gear" subtitle="Quién puede iniciar sesión en tu iglesia y qué puede hacer." action_url=user_create_url action_label="Nuevo usuario" action_icon="bi-person-plus" %}
+
+    <div class="card mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Rol</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Último acceso</th>
+                        <th scope="col" class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for person in church_users %}
+                    <tr{% if not person.is_active %} class="text-muted"{% endif %}>
+                        <td>
+                            {{ person.get_full_name }}
+                            {% if person.pk == user.pk %}<span class="badge bg-secondary ms-1">Tú</span>{% endif %}
+                        </td>
+                        <td>{{ person.email }}</td>
+                        <td><span class="badge bg-{% if person.role == 'admin' %}primary{% else %}info text-dark{% endif %}">{{ person.get_role_display }}</span></td>
+                        <td>
+                            {% if person.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>{% if person.last_login %}{{ person.last_login|date:"d/m/Y H:i" }}{% else %}Nunca{% endif %}</td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'user_update' person.pk %}" class="btn btn-sm btn-outline-primary" title="Editar" aria-label="Editar a {{ person.get_full_name }}">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                {% if person.pk != user.pk %}
+                                <form method="post" action="{% url 'user_toggle_active' person.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    {% if person.is_active %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar" aria-label="Desactivar a {{ person.get_full_name }}">
+                                        <i class="bi bi-person-dash" aria-hidden="true"></i>
+                                    </button>
+                                    {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Activar" aria-label="Activar a {{ person.get_full_name }}">
+                                        <i class="bi bi-person-check" aria-hidden="true"></i>
+                                    </button>
+                                    {% endif %}
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6">{% include "partials/empty_state.html" with icon="bi-person" message="Aún no hay usuarios." %}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">¿Qué puede hacer cada rol?</div>
+        <ul class="list-group list-group-flush">
+            {% for label, description in role_help %}
+            <li class="list-group-item"><strong>{{ label }}:</strong> {{ description }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

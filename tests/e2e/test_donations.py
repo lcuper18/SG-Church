@@ -68,6 +68,7 @@ class TestFinanceDashboard:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to finance dashboard
         page.goto(f"{live_server_url}/finance/")
@@ -82,6 +83,7 @@ class TestFinanceDashboard:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to finance dashboard
         page.goto(f"{live_server_url}/finance/")
@@ -100,6 +102,7 @@ class TestFinanceDashboard:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to donations list
         page.goto(f"{live_server_url}/finance/donations/")
@@ -120,6 +123,7 @@ class TestExpenses:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to expenses list
         page.goto(f"{live_server_url}/finance/expenses/")
@@ -134,6 +138,7 @@ class TestExpenses:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to create expense
         page.goto(f"{live_server_url}/finance/expenses/create/")
@@ -164,6 +169,7 @@ class TestReports:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to income statement
         page.goto(f"{live_server_url}/finance/reports/income-statement/")
@@ -182,6 +188,7 @@ class TestReports:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to donations by member report
         page.goto(f"{live_server_url}/finance/reports/donations-by-member/")

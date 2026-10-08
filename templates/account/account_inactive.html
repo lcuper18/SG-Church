@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Cuenta desactivada - SG Church{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-body p-4 text-center">
+                    <h4 class="mb-3"><i class="bi bi-person-lock" aria-hidden="true"></i> Cuenta desactivada</h4>
+                    <p>Tu cuenta está desactivada y no puede iniciar sesión.</p>
+                    <p class="text-muted">Si crees que es un error, pide a un administrador de tu iglesia que la reactive.</p>
+                    <a href="{% url 'login' %}" class="btn btn-outline-secondary">Volver al inicio de sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{% if target_user %}Editar usuario{% else %}Nuevo usuario{% endif %} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if target_user %}
+    {% include "partials/page_header.html" with title="Editar usuario" icon="bi-person-gear" subtitle=target_user.email %}
+    {% else %}
+    {% include "partials/page_header.html" with title="Nuevo usuario" icon="bi-person-plus" subtitle="La persona iniciará sesión con este email y la contraseña que definas." %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="post">
+                {% csrf_token %}
+                {% include "partials/form_errors.html" %}
+
+                <div class="card mb-4">
+                    <div class="card-header">Datos</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">{% include "partials/form_field.html" with field=form.first_name %}</div>
+                            <div class="col-md-6">{% include "partials/form_field.html" with field=form.last_name %}</div>
+                        </div>
+                        {% if not target_user %}
+                        {% include "partials/form_field.html" with field=form.email %}
+                        {% endif %}
+                        {% include "partials/form_field.html" with field=form.role %}
+                        {% if target_user %}
+                        {% include "partials/form_field.html" with field=form.is_active %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if form.password1 %}
+                <div class="card mb-4">
+                    <div class="card-header">{% if target_user %}Restablecer contraseña{% else %}Contraseña inicial{% endif %}</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">{% include "partials/form_field.html" with field=form.password1 %}</div>
+                            <div class="col-md-6">{% include "partials/form_field.html" with field=form.password2 %}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info" role="note">
+                    Esta es tu cuenta: tu contraseña se cambia en <a href="{% url 'profile' %}">Mi perfil</a>.
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">{% if target_user %}Guardar cambios{% else %}Crear usuario{% endif %}</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">Roles</div>
+                <ul class="list-group list-group-flush small">
+                    {% for value, label in form.fields.role.choices %}
+                    <li class="list-group-item"><strong>{{ label }}:</strong> {% for key, text in role_help.items %}{% if key == value %}{{ text }}{% endif %}{% endfor %}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

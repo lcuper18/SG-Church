@@ -41,6 +41,17 @@ def pytest_pyfunc_call(pyfuncitem):
     return None
 
 
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    """allauth rate-limits logins per IP (30/minute) using the cache. The E2E
+    suite logs in dozens of times from one address, so without this the later
+    tests get blocked and their login silently never completes."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+
+
 @pytest.fixture
 def client():
     """Django test client."""

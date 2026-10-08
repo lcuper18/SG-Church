@@ -18,6 +18,7 @@ class TestMembers:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         page.goto(f"{live_server_url}/members/")
 
@@ -30,6 +31,7 @@ class TestMembers:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to members
         page.goto(f"{live_server_url}/members/create/")
@@ -57,6 +59,7 @@ class TestMembers:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         page.goto(f"{live_server_url}/members/{member.pk}/")
 
@@ -70,6 +73,7 @@ class TestMembers:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to edit page
         page.goto(f"{live_server_url}/members/{member.pk}/edit/")
@@ -92,6 +96,7 @@ class TestMembers:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to delete page
         page.goto(f"{live_server_url}/members/{member.pk}/delete/")
@@ -115,6 +120,7 @@ class TestFamilies:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to families (mounted under /members/, not at the root)
         page.goto(f"{live_server_url}/members/families/")
@@ -129,6 +135,7 @@ class TestFamilies:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to create family
         page.goto(f"{live_server_url}/members/families/create/")
@@ -155,6 +162,7 @@ class TestTags:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to tags (mounted under /members/, not at the root)
         page.goto(f"{live_server_url}/members/tags/")
@@ -169,6 +177,7 @@ class TestTags:
         page.fill("#id_login", admin_user.email)
         page.fill("#id_password", "testpassword123")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
         # Navigate to create tag
         page.goto(f"{live_server_url}/members/tags/create/")

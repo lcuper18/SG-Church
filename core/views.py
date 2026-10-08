@@ -8,15 +8,22 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum
 from django.http import Http404
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
-from django.views.generic import UpdateView
+from django.views.generic import CreateView, ListView, UpdateView, View
 from django.utils import timezone
 from datetime import timedelta
 
-from core.forms import ChurchSettingsForm, ProfileForm, StyledPasswordChangeForm
+from core.forms import (
+    ROLE_HELP,
+    ChurchSettingsForm,
+    ProfileForm,
+    StyledPasswordChangeForm,
+    UserCreateForm,
+    UserEditForm,
+)
 from core.mixins import ChurchAdminRequiredMixin
-from members.models import Member
+from members.models import Member, User
 from tenants.models import Tenant
 from finance.models import Donation
 
@@ -152,3 +159,98 @@ class ChurchSettingsView(LoginRequiredMixin, ChurchAdminRequiredMixin, UpdateVie
     def form_valid(self, form):
         messages.success(self.request, "Configuración guardada.")
         return super().form_valid(form)
+
+
+# ============================================================
+# USER MANAGEMENT (church administrators)
+# ============================================================
+
+
+class ChurchUsersMixin(LoginRequiredMixin, ChurchAdminRequiredMixin):
+    """Scope everything to the administrator's own church. Platform superusers
+    are managed from /admin/, never from here."""
+
+    def get_tenant(self):
+        tenant = getattr(self.request.user, "tenant", None)
+        if tenant is None:
+            raise Http404("Este usuario no pertenece a ninguna iglesia.")
+        return tenant
+
+    def get_queryset(self):
+        return User.objects.filter(tenant=self.get_tenant(), is_superuser=False)
+
+
+class UserListView(ChurchUsersMixin, ListView):
+    template_name = "core/user_list.html"
+    context_object_name = "church_users"
+
+    def get_queryset(self):
+        return super().get_queryset().order_by("-is_active", "first_name", "last_name")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["role_help"] = [
+            (label, ROLE_HELP[value]) for value, label in User.ROLE_CHOICES
+        ]
+        return context
+
+
+class UserCreateView(ChurchUsersMixin, CreateView):
+    form_class = UserCreateForm
+    template_name = "core/user_form.html"
+    success_url = reverse_lazy("user_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["tenant"] = self.get_tenant()
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["role_help"] = ROLE_HELP
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f"Usuario {self.object.email} creado.")
+        return response
+
+
+class UserUpdateView(ChurchUsersMixin, UpdateView):
+    form_class = UserEditForm
+    template_name = "core/user_form.html"
+    success_url = reverse_lazy("user_list")
+    context_object_name = "target_user"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["editing_self"] = self.object.pk == self.request.user.pk
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["role_help"] = ROLE_HELP
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Usuario actualizado.")
+        return response
+
+
+class UserToggleActiveView(ChurchUsersMixin, View):
+    """Activate/deactivate a login (users are never deleted from here)."""
+
+    def post(self, request, pk):
+        target = get_object_or_404(self.get_queryset(), pk=pk)
+        if target.pk == request.user.pk:
+            messages.error(request, "No puedes desactivar tu propia cuenta.")
+        else:
+            target.is_active = not target.is_active
+            target.save(update_fields=["is_active"])
+            messages.success(
+                request,
+                f"{target.get_full_name()} "
+                f"{'ya puede' if target.is_active else 'ya no puede'} iniciar sesión.",
+            )
+        return redirect("user_list")
