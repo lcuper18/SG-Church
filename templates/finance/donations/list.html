@@ -5,7 +5,8 @@
 
 {% block content %}
 <div class="container py-4">
-    {% include "partials/page_header.html" with title="Donaciones" icon="bi-heart" %}
+    {% url 'donation_export' as export_url %}
+    {% include "partials/page_header.html" with title="Donaciones" icon="bi-heart" export_url=export_url export_query=request.GET.urlencode %}
 
     <!-- Filters -->
     <div class="card mb-4">

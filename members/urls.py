@@ -6,6 +6,7 @@ urlpatterns = [
     # Members
     path("", views.member_list, name="member_list"),
     path("create/", views.member_create, name="member_create"),
+    path("export/", views.member_export, name="member_export"),
     path("<uuid:pk>/", views.member_detail, name="member_detail"),
     path("<uuid:pk>/edit/", views.member_update, name="member_update"),
     path("<uuid:pk>/delete/", views.member_delete, name="member_delete"),

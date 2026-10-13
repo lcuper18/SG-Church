@@ -6,7 +6,8 @@
 {% block content %}
 <div class="container py-4">
     {% url 'expense_create' as create_url %}
-    {% include "partials/page_header.html" with title="Gastos" icon="bi-receipt" action_url=create_url action_label="Nuevo Gasto" %}
+    {% url 'expense_export' as export_url %}
+    {% include "partials/page_header.html" with title="Gastos" icon="bi-receipt" action_url=create_url action_label="Nuevo Gasto" export_url=export_url export_query=request.GET.urlencode %}
 
     <!-- Filters -->
     <div class="card mb-4">

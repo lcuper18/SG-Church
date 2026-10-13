@@ -9,7 +9,9 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
     TemplateView,
+    View,
 )
+from core.exports import csv_response, export_filename
 from core.mixins import ManageFinanceRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Count, Q
@@ -19,7 +21,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.conf import settings
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 import stripe
 
 from .models import Donation, Expense, Campaign
@@ -176,6 +178,83 @@ finance_dashboard = FinanceDashboardView.as_view()
 # ============================================================
 
 
+def filtered_donations(request):
+    """The tenant's donations narrowed by the list page's query-string filters
+    (shared by the list and its CSV export)."""
+    tenant = getattr(request.user, "tenant", None)
+    if not tenant:
+        return Donation.objects.none()
+
+    queryset = Donation.objects.filter(tenant=tenant)
+
+    status = request.GET.get("status")
+    if status:
+        queryset = queryset.filter(status=status)
+
+    campaign = request.GET.get("campaign")
+    if campaign:
+        queryset = queryset.filter(campaign=campaign)
+
+    member_id = request.GET.get("member")
+    if member_id:
+        queryset = queryset.filter(member_id=member_id)
+
+    # Whole days in the church's time zone: "hasta 31/10" includes the 31st
+    # (comparing the datetime to a bare date cut it off at midnight).
+    date_from = _parse_date(request.GET.get("date_from"))
+    if date_from:
+        queryset = queryset.filter(donation_date__date__gte=date_from)
+
+    date_to = _parse_date(request.GET.get("date_to"))
+    if date_to:
+        queryset = queryset.filter(donation_date__date__lte=date_to)
+
+    search = request.GET.get("search")
+    if search:
+        queryset = queryset.filter(
+            Q(donor_name__icontains=search)
+            | Q(donor_email__icontains=search)
+            | Q(member__first_name__icontains=search)
+            | Q(member__last_name__icontains=search)
+        )
+
+    return queryset.select_related("member").order_by("-donation_date")
+
+
+def filtered_expenses(request):
+    """The tenant's expenses narrowed by the list page's filters."""
+    tenant = getattr(request.user, "tenant", None)
+    if not tenant:
+        return Expense.objects.none()
+
+    queryset = Expense.objects.filter(tenant=tenant)
+
+    status = request.GET.get("status")
+    if status:
+        queryset = queryset.filter(status=status)
+
+    category = request.GET.get("category")
+    if category:
+        queryset = queryset.filter(category=category)
+
+    date_from = _parse_date(request.GET.get("date_from"))
+    if date_from:
+        queryset = queryset.filter(expense_date__gte=date_from)
+
+    date_to = _parse_date(request.GET.get("date_to"))
+    if date_to:
+        queryset = queryset.filter(expense_date__lte=date_to)
+
+    return queryset.order_by("-expense_date")
+
+
+def _parse_date(value):
+    try:
+        return date.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
 class DonationListView(ManageFinanceRequiredMixin, ListView):
     """List all donations with filters."""
 
@@ -185,47 +264,7 @@ class DonationListView(ManageFinanceRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        tenant = getattr(self.request.user, "tenant", None)
-        if not tenant:
-            return Donation.objects.none()
-
-        queryset = Donation.objects.filter(tenant=tenant)
-
-        # Filter by status
-        status = self.request.GET.get("status")
-        if status:
-            queryset = queryset.filter(status=status)
-
-        # Filter by campaign
-        campaign = self.request.GET.get("campaign")
-        if campaign:
-            queryset = queryset.filter(campaign=campaign)
-
-        # Filter by member
-        member_id = self.request.GET.get("member")
-        if member_id:
-            queryset = queryset.filter(member_id=member_id)
-
-        # Filter by date range
-        date_from = self.request.GET.get("date_from")
-        if date_from:
-            queryset = queryset.filter(donation_date__gte=date_from)
-
-        date_to = self.request.GET.get("date_to")
-        if date_to:
-            queryset = queryset.filter(donation_date__lte=date_to)
-
-        # Search
-        search = self.request.GET.get("search")
-        if search:
-            queryset = queryset.filter(
-                Q(donor_name__icontains=search)
-                | Q(donor_email__icontains=search)
-                | Q(member__first_name__icontains=search)
-                | Q(member__last_name__icontains=search)
-            )
-
-        return queryset.select_related("member").order_by("-donation_date")
+        return filtered_donations(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -271,32 +310,7 @@ class ExpenseListView(ManageFinanceRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        tenant = getattr(self.request.user, "tenant", None)
-        if not tenant:
-            return Expense.objects.none()
-
-        queryset = Expense.objects.filter(tenant=tenant)
-
-        # Filter by status
-        status = self.request.GET.get("status")
-        if status:
-            queryset = queryset.filter(status=status)
-
-        # Filter by category
-        category = self.request.GET.get("category")
-        if category:
-            queryset = queryset.filter(category=category)
-
-        # Filter by date range
-        date_from = self.request.GET.get("date_from")
-        if date_from:
-            queryset = queryset.filter(expense_date__gte=date_from)
-
-        date_to = self.request.GET.get("date_to")
-        if date_to:
-            queryset = queryset.filter(expense_date__lte=date_to)
-
-        return queryset.order_by("-expense_date")
+        return filtered_expenses(self.request)
 
 
 expense_list = ExpenseListView.as_view()
@@ -650,26 +664,31 @@ class IncomeStatementView(ManageFinanceRequiredMixin, TemplateView):
 
     template_name = "finance/reports/income_statement.html"
 
+    def _int_param(self, name, default, low, high):
+        try:
+            return min(max(int(self.request.GET.get(name, default)), low), high)
+        except (TypeError, ValueError):
+            return default
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["month_choices"] = range(1, 13)
-        context["year_choices"] = range(2024, 2027)
+        context["year_choices"] = range(2024, timezone.localdate().year + 1)
         tenant = getattr(self.request.user, "tenant", None)
 
         if not tenant:
             return context
 
-        # Get month/year from query params or use current
-        month = int(self.request.GET.get("month", timezone.now().month))
-        year = int(self.request.GET.get("year", timezone.now().year))
+        # Month/year from the query string (clamped, so junk can't crash the
+        # page), defaulting to the current month in the church's time zone.
+        today = timezone.localdate()
+        month = self._int_param("month", today.month, 1, 12)
+        year = self._int_param("year", today.year, 2024, today.year)
 
-        # Calculate date range
-        from calendar import monthrange
-
-        start_date = timezone.datetime(year, month, 1)
-        end_date = timezone.datetime(
-            year, month, day=monthrange(year, month)[1], hour=23, minute=59, second=59
-        )
+        # Calendar-month bounds in the church's time zone: start inclusive,
+        # end exclusive (first moment of the next month).
+        reference = timezone.make_aware(datetime(year, month, 1, 12))
+        start_date, end_date = FinanceDashboardView._month_bounds(reference, 0)
 
         # Donations by campaign
         donations_by_campaign = (
@@ -677,7 +696,7 @@ class IncomeStatementView(ManageFinanceRequiredMixin, TemplateView):
                 tenant=tenant,
                 status="completed",
                 donation_date__gte=start_date,
-                donation_date__lte=end_date,
+                donation_date__lt=end_date,
             )
             .values("campaign")
             .annotate(total=Sum("amount"))
@@ -691,7 +710,7 @@ class IncomeStatementView(ManageFinanceRequiredMixin, TemplateView):
             Expense.objects.filter(
                 tenant=tenant,
                 expense_date__gte=start_date.date(),
-                expense_date__lte=end_date.date(),
+                expense_date__lt=end_date.date(),
             )
             .values("category")
             .annotate(total=Sum("amount"))
@@ -772,3 +791,60 @@ donations_by_member = DonationsByMemberView.as_view()
 
 from django.db.models import Max
 from django.http import HttpResponse
+
+
+# ============================================================
+# CSV EXPORTS
+# ============================================================
+
+
+class DonationExportView(ManageFinanceRequiredMixin, View):
+    """Download the donations matching the list's current filters."""
+
+    def get(self, request):
+        rows = (
+            [
+                d.donation_date,
+                d.member.full_name if d.member else ("Anónimo" if d.anonymous else d.donor_name),
+                d.member.email if d.member else d.donor_email,
+                d.amount,
+                d.currency,
+                d.get_campaign_display(),
+                d.get_donation_type_display(),
+                d.get_status_display(),
+                d.payment_method,
+                d.notes,
+            ]
+            for d in filtered_donations(request)
+        )
+        header = [
+            "Fecha", "Donante", "Email", "Monto", "Moneda", "Campaña", "Tipo",
+            "Estado", "Método de pago", "Notas",
+        ]
+        return csv_response(export_filename("donaciones"), header, rows)
+
+
+donation_export = DonationExportView.as_view()
+
+
+class ExpenseExportView(ManageFinanceRequiredMixin, View):
+    """Download the expenses matching the list's current filters."""
+
+    def get(self, request):
+        rows = (
+            [
+                e.expense_date,
+                e.description,
+                e.get_category_display(),
+                e.vendor_name,
+                e.amount,
+                e.get_status_display(),
+                e.due_date,
+            ]
+            for e in filtered_expenses(request)
+        )
+        header = ["Fecha", "Descripción", "Categoría", "Proveedor", "Monto", "Estado", "Vence"]
+        return csv_response(export_filename("gastos"), header, rows)
+
+
+expense_export = ExpenseExportView.as_view()

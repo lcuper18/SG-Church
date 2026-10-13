@@ -20,6 +20,7 @@ from django.views.generic import (
     UpdateView,
 )
 
+from core.exports import csv_response, export_filename
 from core.mixins import ManageMembersRequiredMixin
 from education.models import Course
 from members.models import Member
@@ -302,48 +303,62 @@ class AttendanceView(ManageMembersRequiredMixin, View):
 event_attendance = AttendanceView.as_view()
 
 
+def _parse_date(value, default):
+    try:
+        return date.fromisoformat(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def attendance_report_data(request):
+    """Events in the requested range with registered/attended counts, and the
+    members who attended them (shared by the report page and its CSV export)."""
+    tenant = getattr(request.user, "tenant", None)
+    today = timezone.localdate()
+    start = _parse_date(request.GET.get("start"), today - timedelta(days=90))
+    end = _parse_date(request.GET.get("end"), today)
+    event_type = request.GET.get("type", "")
+
+    events = Event.objects.filter(
+        tenant=tenant, start_at__date__gte=start, start_at__date__lte=end
+    )
+    if event_type:
+        events = events.filter(event_type=event_type)
+
+    event_rows = events.annotate(
+        registered=Count(
+            "registrations", filter=Q(registrations__status="registered"), distinct=True
+        ),
+        attended=Count("attendances", distinct=True),
+    ).order_by("-start_at")
+
+    member_rows = (
+        Member.objects.filter(tenant=tenant, event_attendances__event__in=events)
+        .annotate(
+            attended=Count("event_attendances", distinct=True),
+            last_attended=Max("event_attendances__event__start_at"),
+        )
+        .order_by("-attended", "last_name", "first_name")
+    )
+    return {
+        "start": start,
+        "end": end,
+        "event_type": event_type,
+        "event_rows": event_rows,
+        "total_events": events.count(),
+        "member_rows": member_rows,
+    }
+
+
 class AttendanceReportView(ManageMembersRequiredMixin, View):
     """Attendance totals per event and per member over a date range."""
 
     template_name = "events/attendance_report.html"
 
-    @staticmethod
-    def _parse(value, default):
-        try:
-            return date.fromisoformat(value)
-        except (TypeError, ValueError):
-            return default
-
     def get(self, request):
-        tenant = getattr(request.user, "tenant", None)
-        today = timezone.localdate()
-        start = self._parse(request.GET.get("start"), today - timedelta(days=90))
-        end = self._parse(request.GET.get("end"), today)
-        event_type = request.GET.get("type", "")
-
-        events = Event.objects.filter(
-            tenant=tenant, start_at__date__gte=start, start_at__date__lte=end
-        )
-        if event_type:
-            events = events.filter(event_type=event_type)
-
-        event_rows = events.annotate(
-            registered=Count(
-                "registrations", filter=Q(registrations__status="registered"), distinct=True
-            ),
-            attended=Count("attendances", distinct=True),
-        ).order_by("-start_at")
-        total_events = events.count()
-
-        member_rows = (
-            Member.objects.filter(tenant=tenant, event_attendances__event__in=events)
-            .annotate(
-                attended=Count("event_attendances", distinct=True),
-                last_attended=Max("event_attendances__event__start_at"),
-            )
-            .order_by("-attended", "last_name", "first_name")
-        )
-        page = Paginator(member_rows, 50).get_page(request.GET.get("page"))
+        data = attendance_report_data(request)
+        total_events = data["total_events"]
+        page = Paginator(data["member_rows"], 50).get_page(request.GET.get("page"))
         for row in page:
             row.percent = round(row.attended * 100 / total_events) if total_events else 0
 
@@ -351,16 +366,47 @@ class AttendanceReportView(ManageMembersRequiredMixin, View):
             request,
             self.template_name,
             {
-                "start": start,
-                "end": end,
-                "event_type": event_type,
+                "start": data["start"],
+                "end": data["end"],
+                "event_type": data["event_type"],
                 "type_choices": Event.TYPE_CHOICES,
-                "event_rows": event_rows,
+                "event_rows": data["event_rows"],
                 "total_events": total_events,
-                "total_attendances": sum(r.attended for r in event_rows),
+                "total_attendances": sum(r.attended for r in data["event_rows"]),
                 "page": page,
             },
         )
 
 
 attendance_report = AttendanceReportView.as_view()
+
+
+class AttendanceExportView(ManageMembersRequiredMixin, View):
+    """CSV of the attendance report: `?kind=events` (default, one row per
+    event) or `?kind=members` (one row per member who attended)."""
+
+    def get(self, request):
+        data = attendance_report_data(request)
+        total_events = data["total_events"]
+        if request.GET.get("kind") == "members":
+            header = ["Nombre", "Apellido", "Email", "Asistencias", "% de eventos", "Última asistencia"]
+            rows = (
+                [
+                    m.first_name, m.last_name, m.email, m.attended,
+                    round(m.attended * 100 / total_events) if total_events else 0,
+                    m.last_attended,
+                ]
+                for m in data["member_rows"]
+            )
+            name = "asistencia-por-miembro"
+        else:
+            header = ["Fecha", "Evento", "Tipo", "Inscritos", "Asistieron"]
+            rows = (
+                [e.start_at, e.title, e.get_event_type_display(), e.registered, e.attended]
+                for e in data["event_rows"]
+            )
+            name = "asistencia-por-evento"
+        return csv_response(export_filename(name), header, rows)
+
+
+attendance_export = AttendanceExportView.as_view()

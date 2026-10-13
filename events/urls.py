@@ -6,6 +6,7 @@ urlpatterns = [
     path("", views.event_list, name="event_list"),
     path("create/", views.event_create, name="event_create"),
     path("attendance/report/", views.attendance_report, name="attendance_report"),
+    path("attendance/report/export/", views.attendance_export, name="attendance_export"),
     path("<uuid:pk>/", views.event_detail, name="event_detail"),
     path("<uuid:pk>/attendance/", views.event_attendance, name="event_attendance"),
     path("<uuid:pk>/edit/", views.event_update, name="event_update"),
