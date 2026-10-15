@@ -52,6 +52,41 @@
 
                         <hr class="my-4">
 
+                        <h5 class="mb-1 text-muted">Miembros de la familia</h5>
+                        <p class="form-text mt-0">
+                            Marca a quienes pertenecen a esta familia. Si alguien ya está en otra familia, se pasará a esta.
+                            La cabeza de familia siempre es parte de la familia.
+                        </p>
+                        <div class="row g-2 align-items-center mb-2">
+                            <div class="col-md-7">
+                                <label for="member-filter" class="visually-hidden">Buscar persona</label>
+                                <input type="search" id="member-filter" class="form-control" autocomplete="off" placeholder="Buscar por nombre…">
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="only-selected">
+                                    <label class="form-check-label" for="only-selected">Solo seleccionados (<span id="selected-count">0</span>)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border rounded overflow-auto mb-3" style="max-height: 320px;" id="member-picker">
+                            {% for person in form.fields.members.queryset %}
+                            <div class="form-check px-3 py-1 member-pick" data-search="{{ person.full_name|lower }} {{ person.email|default:''|lower }}">
+                                <input class="form-check-input member-box" type="checkbox" name="members" id="member_{{ person.id }}" value="{{ person.id }}" {% if person.id|stringformat:"s" in form.selected_member_ids %}checked{% endif %}>
+                                <label class="form-check-label w-100" for="member_{{ person.id }}">
+                                    {{ person.full_name }}
+                                    {% if person.family and person.family.pk != form.instance.pk %}<small class="text-muted">· ahora en {{ person.family.name }}</small>{% endif %}
+                                </label>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted p-3 mb-0">Aún no hay miembros registrados.</p>
+                            {% endfor %}
+                            <p class="text-muted p-3 mb-0 d-none" id="member-none">Nadie coincide con la búsqueda.</p>
+                        </div>
+                        {% include "partials/field_errors.html" with field=form.members %}
+
+                        <hr class="my-4">
+
                         <h5 class="mb-3 text-muted">Dirección</h5>
                         <div class="mb-3">
                             <label for="address" class="form-label">Dirección</label>
@@ -103,4 +138,38 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var filter = document.getElementById('member-filter');
+    var only = document.getElementById('only-selected');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.member-pick'));
+    var norm = function (t) { return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+    rows.forEach(function (r) { r.dataset.search = norm(r.dataset.search); });
+
+    function update() {
+        var terms = norm(filter.value.trim()).split(/\s+/).filter(Boolean);
+        var shown = 0;
+        rows.forEach(function (r) {
+            var ok = terms.every(function (t) { return r.dataset.search.indexOf(t) !== -1; });
+            if (only.checked) ok = ok && r.querySelector('.member-box').checked;
+            r.classList.toggle('d-none', !ok);
+            if (ok) shown++;
+        });
+        document.getElementById('selected-count').textContent =
+            rows.filter(function (r) { return r.querySelector('.member-box').checked; }).length;
+        var none = document.getElementById('member-none');
+        if (none) none.classList.toggle('d-none', shown !== 0 || rows.length === 0);
+    }
+
+    filter.addEventListener('input', update);
+    only.addEventListener('change', update);
+    document.getElementById('member-picker').addEventListener('change', update);
+    // Enter in the search box must not submit the whole form.
+    filter.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    update();
+})();
+</script>
 {% endblock %}

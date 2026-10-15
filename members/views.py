@@ -23,6 +23,7 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
 
+from .forms import FamilyForm
 from .models import Member, Family, Tag
 from tenants.models import Tenant
 from tenants.timezones import (
@@ -541,59 +542,63 @@ class FamilyListView(LoginRequiredMixin, ListView):
 family_list = FamilyListView.as_view()
 
 
-class FamilyCreateView(ManageMembersRequiredMixin, CreateView):
-    """Create a new family."""
+class FamilyDetailView(LoginRequiredMixin, DetailView):
+    """A family and the people who make it up."""
 
     model = Family
+    template_name = "families/detail.html"
+    context_object_name = "family"
+
+    def get_queryset(self):
+        tenant = getattr(self.request.user, "tenant", None)
+        if not tenant:
+            return Family.objects.none()
+        return Family.objects.filter(tenant=tenant).select_related("head_of_family")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        family = self.object
+        people = list(family.members.order_by("last_name", "first_name"))
+        # The head first, then everyone else alphabetically.
+        people.sort(key=lambda m: m.pk != family.head_of_family_id)
+        context["family_members"] = people
+        return context
+
+
+family_detail = FamilyDetailView.as_view()
+
+
+class FamilyFormMixin:
+    """Shared by create/update: the form with the member picker, scoped to
+    the user's church."""
+
+    model = Family
+    form_class = FamilyForm
     template_name = "families/form.html"
-    fields = [
-        "name",
-        "head_of_family",
-        "address",
-        "city",
-        "state",
-        "postal_code",
-        "home_phone",
-        "notes",
-    ]
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        tenant = getattr(self.request.user, "tenant", None)
-        if tenant:
-            form.fields["head_of_family"].queryset = Member.objects.filter(
-                tenant=tenant
-            )
-        return form
-
-    def form_valid(self, form):
-        tenant = getattr(self.request.user, "tenant", None)
-        if tenant:
-            form.instance.tenant = tenant
-        return super().form_valid(form)
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["tenant"] = getattr(self.request.user, "tenant", None)
+        return kwargs
 
     def get_success_url(self):
-        return reverse("family_list")
+        return reverse("family_detail", kwargs={"pk": self.object.pk})
+
+
+class FamilyCreateView(FamilyFormMixin, ManageMembersRequiredMixin, CreateView):
+    """Create a new family."""
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f"Familia \"{self.object.name}\" creada.")
+        return response
 
 
 family_create = FamilyCreateView.as_view()
 
 
-class FamilyUpdateView(ManageMembersRequiredMixin, UpdateView):
-    """Update an existing family."""
-
-    model = Family
-    template_name = "families/form.html"
-    fields = [
-        "name",
-        "head_of_family",
-        "address",
-        "city",
-        "state",
-        "postal_code",
-        "home_phone",
-        "notes",
-    ]
+class FamilyUpdateView(FamilyFormMixin, ManageMembersRequiredMixin, UpdateView):
+    """Update an existing family and its members."""
 
     def get_queryset(self):
         tenant = getattr(self.request.user, "tenant", None)
@@ -601,17 +606,10 @@ class FamilyUpdateView(ManageMembersRequiredMixin, UpdateView):
             return Family.objects.none()
         return Family.objects.filter(tenant=tenant)
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        tenant = getattr(self.request.user, "tenant", None)
-        if tenant:
-            form.fields["head_of_family"].queryset = Member.objects.filter(
-                tenant=tenant
-            )
-        return form
-
-    def get_success_url(self):
-        return reverse("family_list")
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Familia actualizada.")
+        return response
 
 
 family_update = FamilyUpdateView.as_view()

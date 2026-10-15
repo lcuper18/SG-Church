@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ family.name }} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'family_list' %}">Familias</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ family.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h4>{{ family.name }}</h4>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted">Cabeza de familia</td>
+                            <td>
+                                {% if family.head_of_family %}
+                                <a href="{% url 'member_detail' family.head_of_family.pk %}">{{ family.head_of_family.full_name }}</a>
+                                {% else %}-{% endif %}
+                            </td>
+                        </tr>
+                        <tr><td class="text-muted">Miembros</td><td>{{ family_members|length }}</td></tr>
+                        <tr><td class="text-muted">Teléfono</td><td>{{ family.home_phone|default:"-" }}</td></tr>
+                        <tr>
+                            <td class="text-muted">Dirección</td>
+                            <td>
+                                {{ family.address|default:"-" }}
+                                {% if family.city or family.state %}<br><small class="text-muted">{{ family.city }}{% if family.city and family.state %}, {% endif %}{{ family.state }} {{ family.postal_code }}</small>{% endif %}
+                            </td>
+                        </tr>
+                        {% if family.notes %}
+                        <tr><td class="text-muted">Notas</td><td>{{ family.notes|linebreaksbr }}</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+                {% if user.can_manage_members %}
+                <div class="card-footer bg-white">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'family_update' family.pk %}" class="btn btn-primary">
+                            <i class="bi bi-pencil" aria-hidden="true"></i> Editar familia y miembros
+                        </a>
+                        <a href="{% url 'family_delete' family.pk %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash" aria-hidden="true"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Miembros de la familia</h5>
+                    {% if user.can_manage_members %}
+                    <a href="{% url 'family_update' family.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-person-plus" aria-hidden="true"></i> Agregar o quitar
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Nombre</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Teléfono</th>
+                                <th scope="col">Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for person in family_members %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'member_detail' person.pk %}">{{ person.full_name }}</a>
+                                    {% if person.pk == family.head_of_family_id %}<span class="badge bg-primary ms-1">Cabeza</span>{% endif %}
+                                </td>
+                                <td>{{ person.get_member_status_display }}</td>
+                                <td>{{ person.phone|default:"-" }}</td>
+                                <td>{{ person.email|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    Esta familia aún no tiene miembros.
+                                    {% if user.can_manage_members %}
+                                    <a href="{% url 'family_update' family.pk %}" class="btn btn-sm btn-primary ms-2">Agregar miembros</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

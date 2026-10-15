@@ -34,7 +34,7 @@
                         {% for family in families %}
                         <tr>
                             <td>
-                                <a href="{% url 'family_update' family.pk %}">{{ family.name }}</a>
+                                <a href="{% url 'family_detail' family.pk %}">{{ family.name }}</a>
                             </td>
                             <td>{{ family.head_of_family|default:"-" }}</td>
                             <td>
@@ -44,6 +44,9 @@
                             <td>{{ family.city|default:"-" }}</td>
                             <td>
                                 <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'family_detail' family.pk %}" class="btn btn-outline-secondary" title="Ver miembros">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
                                     <a href="{% url 'family_update' family.pk %}" class="btn btn-outline-primary" title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </a>

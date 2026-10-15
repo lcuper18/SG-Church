@@ -141,7 +141,7 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
                             {% if member.family %}
-                            <h5>{{ member.family.name }}</h5>
+                            <h5><a href="{% url 'family_detail' member.family.pk %}">{{ member.family.name }}</a></h5>
                             <p class="text-muted">Cabeza de familia: {{ member.family.head_of_family|default:"-" }}</p>
                             <hr>
                             <h6>Otros miembros:</h6>

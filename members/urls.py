@@ -13,6 +13,7 @@ urlpatterns = [
     # Families
     path("families/", views.family_list, name="family_list"),
     path("families/create/", views.family_create, name="family_create"),
+    path("families/<uuid:pk>/", views.family_detail, name="family_detail"),
     path("families/<uuid:pk>/edit/", views.family_update, name="family_update"),
     path("families/<uuid:pk>/delete/", views.family_delete, name="family_delete"),
     # Tags
