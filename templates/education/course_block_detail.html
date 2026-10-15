@@ -30,13 +30,39 @@
                     <h6 class="text-muted">Cursos del bloque</h6>
                     <ul class="list-group list-group-flush">
                         {% for block_course in courses %}
-                        <li class="list-group-item">
-                            <a href="{% url 'course_detail' block_course.pk %}">{{ block_course.title }}</a>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><span class="text-muted me-1">{{ forloop.counter }}.</span><a href="{% url 'course_detail' block_course.pk %}">{{ block_course.title }}</a></span>
+                            {% if user.can_manage_education %}
+                            <form method="post" action="{% url 'block_remove_course' course_block.pk block_course.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Quitar del bloque" aria-label="Quitar {{ block_course.title }} del bloque">
+                                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                            {% endif %}
                         </li>
                         {% empty %}
                         <li class="list-group-item text-muted">Sin cursos todavía.</li>
                         {% endfor %}
                     </ul>
+                    {% if user.can_manage_education %}
+                    <form method="post" action="{% url 'block_add_course' course_block.pk %}" class="mt-3">
+                        {% csrf_token %}
+                        <label for="add-course" class="form-label small text-muted mb-1">Agregar un curso existente</label>
+                        <div class="input-group">
+                            <select class="form-select" id="add-course" name="course" required>
+                                <option value="">{% if available_courses %}Seleccionar curso...{% else %}No hay cursos sin bloque{% endif %}</option>
+                                {% for option in available_courses %}
+                                <option value="{{ option.id }}">{{ option.title }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-primary" {% if not available_courses %}disabled{% endif %}>Agregar</button>
+                        </div>
+                    </form>
+                    <a href="{% url 'course_create' %}?block={{ course_block.pk }}" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="bi bi-plus-circle" aria-hidden="true"></i> Crear curso nuevo en este bloque
+                    </a>
+                    {% endif %}
                 </div>
                 {% if user.can_manage_education %}
                 <div class="card-footer bg-white">

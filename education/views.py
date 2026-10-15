@@ -4,6 +4,8 @@ Course, course block, and enrollment views.
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
+from django.db.models import Max
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
@@ -13,6 +15,12 @@ from core.mixins import ManageEducationRequiredMixin, ManageMembersRequiredMixin
 from members.models import Member, User
 
 from .models import BlockCertificate, Course, CourseBlock, Enrollment
+
+
+def _next_order(block):
+    """Position after the block's last course."""
+    last = block.courses.aggregate(last=Max("order_in_block"))["last"]
+    return 1 if last is None else last + 1
 
 
 # ============================================================
@@ -102,6 +110,25 @@ class CourseCreateView(ManageEducationRequiredMixin, CreateView):
             )
         return form
 
+    def _block_from_query(self):
+        """The block named by `?block=<uuid>` (the "new course in this block"
+        link), only if it belongs to the user's church."""
+        tenant = getattr(self.request.user, "tenant", None)
+        try:
+            return CourseBlock.objects.filter(
+                tenant=tenant, pk=self.request.GET.get("block")
+            ).first()
+        except (ValidationError, ValueError):
+            return None
+
+    def get_initial(self):
+        initial = super().get_initial()
+        block = self._block_from_query()
+        if block:
+            initial["course_block"] = block.pk
+            initial["order_in_block"] = _next_order(block)
+        return initial
+
     def form_valid(self, form):
         tenant = getattr(self.request.user, "tenant", None)
         if tenant:
@@ -109,6 +136,10 @@ class CourseCreateView(ManageEducationRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
+        # Coming from a block's page, go back to it.
+        block = self._block_from_query()
+        if block:
+            return reverse("course_block_detail", kwargs={"pk": block.pk})
         return reverse("course_detail", kwargs={"pk": self.object.pk})
 
 
@@ -244,10 +275,64 @@ class CourseBlockDetailView(LoginRequiredMixin, DetailView):
 
         context["courses"] = courses
         context["progress"] = progress
+        if self.request.user.can_manage_education:
+            context["available_courses"] = Course.objects.filter(
+                tenant=block.tenant, course_block__isnull=True, is_active=True
+            ).order_by("title")
         return context
 
 
 course_block_detail = CourseBlockDetailView.as_view()
+
+
+class BlockAddCourseView(ManageEducationRequiredMixin, View):
+    """Put an existing standalone course into a block (POST only), after the
+    block's last course."""
+
+    def post(self, request, pk):
+        tenant = getattr(request.user, "tenant", None)
+        block = get_object_or_404(CourseBlock, pk=pk, tenant=tenant)
+        try:
+            course = Course.objects.filter(
+                tenant=tenant, pk=request.POST.get("course")
+            ).first()
+        except (ValidationError, ValueError):
+            course = None
+
+        if course is None:
+            messages.error(request, "Elige un curso de la lista.")
+        elif course.course_block_id is not None:
+            messages.error(
+                request,
+                f"\"{course.title}\" ya pertenece a otro bloque. "
+                "Quítalo de ese bloque primero.",
+            )
+        else:
+            course.course_block = block
+            course.order_in_block = _next_order(block)
+            course.save(update_fields=["course_block", "order_in_block"])
+            messages.success(request, f"\"{course.title}\" se agregó al bloque.")
+        return redirect("course_block_detail", pk=block.pk)
+
+
+block_add_course = BlockAddCourseView.as_view()
+
+
+class BlockRemoveCourseView(ManageEducationRequiredMixin, View):
+    """Take a course out of its block, leaving it standalone (POST only)."""
+
+    def post(self, request, pk, course_pk):
+        tenant = getattr(request.user, "tenant", None)
+        block = get_object_or_404(CourseBlock, pk=pk, tenant=tenant)
+        course = get_object_or_404(Course, pk=course_pk, tenant=tenant, course_block=block)
+        course.course_block = None
+        course.order_in_block = 0
+        course.save(update_fields=["course_block", "order_in_block"])
+        messages.success(request, f"\"{course.title}\" ya no pertenece al bloque.")
+        return redirect("course_block_detail", pk=block.pk)
+
+
+block_remove_course = BlockRemoveCourseView.as_view()
 
 
 class CourseBlockCreateView(ManageEducationRequiredMixin, CreateView):

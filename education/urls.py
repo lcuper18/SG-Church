@@ -14,6 +14,16 @@ urlpatterns = [
     path("blocks/create/", views.course_block_create, name="course_block_create"),
     path("blocks/<uuid:pk>/", views.course_block_detail, name="course_block_detail"),
     path(
+        "blocks/<uuid:pk>/add-course/",
+        views.block_add_course,
+        name="block_add_course",
+    ),
+    path(
+        "blocks/<uuid:pk>/remove-course/<uuid:course_pk>/",
+        views.block_remove_course,
+        name="block_remove_course",
+    ),
+    path(
         "blocks/<uuid:pk>/edit/",
         views.course_block_update,
         name="course_block_update",
