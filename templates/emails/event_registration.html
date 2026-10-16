@@ -1,0 +1,30 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Inscripción confirmada{% endblock %}
+
+{% block content %}
+<h2 style="color: #1f2937; margin-bottom: 16px;">¡Estás inscrito/a, {{ member.first_name }}!</h2>
+
+<p style="color: #4b5563; margin-bottom: 20px;">
+    Tu inscripción en <strong>{{ event.title }}</strong> quedó confirmada.
+</p>
+
+<div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 6px 0; color: #6b7280;">Cuándo:</td>
+            <td style="padding: 6px 0; text-align: right; color: #1f2937;">{{ event.start_at|date:"l d \d\e F \d\e Y, H:i" }}</td>
+        </tr>
+        {% if event.location %}
+        <tr>
+            <td style="padding: 6px 0; color: #6b7280;">Dónde:</td>
+            <td style="padding: 6px 0; text-align: right; color: #1f2937;">{{ event.location }}</td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+{% if event_url %}
+<p style="text-align: center;"><a href="{{ event_url }}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;">Ver el evento</a></p>
+{% endif %}
+{% endblock %}

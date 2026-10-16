@@ -1,165 +1,71 @@
 """
-Email service using Resend API.
+Sending e-mail through Django's configured backend (EMAIL_BACKEND).
+
+SMTP works with any provider (Gmail, Brevo, Mailgun, the church's own server)
+and with self-hosted installs. Without credentials the default console backend
+just prints messages to the log, so nothing breaks on a fresh install or demo.
 """
 
 import logging
-from typing import Any
+import re
+
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils import timezone, translation
+from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
 
+# Reserved domains that can never receive mail (RFC 2606/6761). The demo data
+# uses @demo.sgchurch.test; sending there would only produce bounces.
+_UNDELIVERABLE_TLDS = ("test", "invalid", "example", "localhost")
+_UNDELIVERABLE_DOMAINS = ("example.com", "example.org", "example.net")
 
-class ResendEmailService:
-    """
-    Service class for sending emails using the Resend API.
-    """
 
-    def __init__(self):
-        self.api_key = getattr(settings, "RESEND_API_KEY", None)
-        self.from_email = getattr(
-            settings, "DEFAULT_FROM_EMAIL", "noreply@sgchurch.com"
+def is_deliverable(address):
+    """False for empty/malformed addresses and reserved test domains."""
+    if not address or "@" not in address:
+        return False
+    domain = address.rsplit("@", 1)[1].strip().lower()
+    if "." not in domain or domain in _UNDELIVERABLE_DOMAINS:
+        return False
+    return domain.rsplit(".", 1)[1] not in _UNDELIVERABLE_TLDS
+
+
+def render_email(template_name, context, tenant=None):
+    """Render emails/<template_name>.html (and .txt) in the church's time zone
+    and in Spanish, regardless of who triggered the e-mail."""
+    context = {
+        "church_name": tenant.name if tenant else "SG Church",
+        "tenant": tenant,
+        **context,
+    }
+    zone_name = getattr(tenant, "timezone", None) or settings.TIME_ZONE
+    with timezone.override(zone_name), translation.override("es"):
+        html = render_to_string(f"emails/{template_name}.html", context)
+        try:
+            text = render_to_string(f"emails/{template_name}.txt", context)
+        except Exception:  # no .txt written for this e-mail: derive one
+            text = re.sub(r"\n\s*\n+", "\n\n", strip_tags(html)).strip()
+    return html, text.strip()
+
+
+def send_message(to_email, subject, html, text, from_name=None, reply_to=None):
+    """Send one message. Returns {"success": bool, "error": str}; never raises."""
+    from_address = settings.DEFAULT_FROM_EMAIL
+    sender = f"{from_name} <{from_address}>" if from_name else from_address
+    try:
+        message = EmailMultiAlternatives(
+            subject=subject,
+            body=text,
+            from_email=sender,
+            to=[to_email],
+            reply_to=[reply_to] if reply_to else None,
         )
-        self.from_name = getattr(settings, "EMAIL_FROM_NAME", "SG Church")
-
-    def is_configured(self) -> bool:
-        """Check if Resend API is properly configured."""
-        return bool(self.api_key and self.api_key.startswith("re_"))
-
-    def send_email(
-        self,
-        to_email: str,
-        subject: str,
-        template_name: str | None = None,
-        html_content: str | None = None,
-        text_content: str | None = None,
-        context: dict[str, Any] | None = None,
-        from_name: str | None = None,
-    ) -> dict[str, Any]:
-        """
-        Send an email using Resend API.
-
-        Args:
-            to_email: Recipient email address
-            subject: Email subject line
-            template_name: Name of HTML template to render
-            html_content: HTML content (alternative to template_name)
-            text_content: Plain text content
-            context: Context dict for template rendering
-            from_name: Override default sender name
-
-        Returns:
-            Dict with 'success', 'message_id', and optional 'error' keys
-        """
-        if not self.is_configured():
-            logger.warning("Resend API not configured, email not sent")
-            return {"success": False, "error": "Resend API not configured"}
-
-        try:
-            import resend
-
-            resend.api_key = self.api_key
-
-            # Prepare email content
-            html = html_content
-            if template_name and context:
-                html = render_to_string(f"emails/{template_name}.html", context)
-            elif template_name:
-                html = render_to_string(f"emails/{template_name}.html", {})
-
-            # Build the email params
-            params = {
-                "from": f"{from_name or self.from_name} <{self.from_email}>",
-                "to": to_email,
-                "subject": subject,
-                "html": html,
-            }
-
-            if text_content:
-                params["text"] = text_content
-
-            # Send via Resend
-            response = resend.Emails.send(params)
-
-            logger.info(f"Email sent successfully to {to_email}: {response.get('id')}")
-
-            return {
-                "success": True,
-                "message_id": response.get("id", ""),
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {str(e)}")
-            return {"success": False, "error": str(e)}
-
-    def send_bulk_emails(
-        self,
-        recipients: list[dict[str, str]],
-        subject: str,
-        template_name: str | None = None,
-        html_content: str | None = None,
-        context: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """
-        Send bulk emails using Resend's batch API.
-
-        Args:
-            recipients: List of dicts with 'email' and 'name' keys
-            subject: Email subject line
-            template_name: Name of HTML template to render
-            html_content: HTML content (alternative to template_name)
-            context: Context dict for template rendering
-
-        Returns:
-            Dict with 'success', 'batch_id', and optional 'error' keys
-        """
-        if not self.is_configured():
-            logger.warning("Resend API not configured, bulk email not sent")
-            return {"success": False, "error": "Resend API not configured"}
-
-        try:
-            import resend
-
-            resend.api_key = self.api_key
-
-            # Prepare batch emails
-            emails = []
-            for recipient in recipients:
-                html = html_content
-                if template_name and context:
-                    # Merge recipient-specific context
-                    full_context = {
-                        **(context or {}),
-                        "recipient_name": recipient.get("name", ""),
-                    }
-                    html = render_to_string(
-                        f"emails/{template_name}.html", full_context
-                    )
-
-                emails.append(
-                    {
-                        "from": f"{self.from_name} <{self.from_email}>",
-                        "to": recipient["email"],
-                        "subject": subject,
-                        "html": html,
-                    }
-                )
-
-            # Send batch
-            response = resend.Emails.send_batch(emails)
-
-            logger.info(f"Bulk email sent successfully: {len(recipients)} recipients")
-
-            return {
-                "success": True,
-                "batch_id": response.get("id", ""),
-                "sent_count": len(recipients),
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to send bulk email: {str(e)}")
-            return {"success": False, "error": str(e)}
-
-
-# Singleton instance
-email_service = ResendEmailService()
+        message.attach_alternative(html, "text/html")
+        message.send(fail_silently=False)
+        return {"success": True, "error": ""}
+    except Exception as error:  # SMTP down, bad credentials, rejected address...
+        logger.warning("Email to %s failed: %s", to_email, error)
+        return {"success": False, "error": str(error)[:500]}

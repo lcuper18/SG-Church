@@ -23,6 +23,7 @@ from core.forms import (
     UserEditForm,
 )
 from core.mixins import ChurchAdminRequiredMixin
+from emails import notify
 from members.models import Member, User
 from tenants.models import Tenant
 from finance.models import Donation
@@ -212,7 +213,12 @@ class UserCreateView(ChurchUsersMixin, CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, f"Usuario {self.object.email} creado.")
+        sent = notify.account_created(self.object, self.request)
+        messages.success(
+            self.request,
+            f"Usuario {self.object.email} creado."
+            + (" Le enviamos un correo con el enlace para elegir su contraseña." if sent else ""),
+        )
         return response
 
 

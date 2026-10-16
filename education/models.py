@@ -56,9 +56,11 @@ class CourseBlock(models.Model):
             ).values_list("course_id", flat=True)
         )
         if block_course_ids <= completed_ids:
-            return BlockCertificate.objects.create(
+            certificate = BlockCertificate.objects.create(
                 tenant=self.tenant, member=member, course_block=self
             )
+            certificate.just_issued = True  # lets callers e-mail it only once
+            return certificate
         return None
 
 

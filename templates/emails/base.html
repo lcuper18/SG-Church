@@ -131,7 +131,7 @@
             
             <div class="email-footer">
                 {% block footer %}
-                <p>&copy; 2026 {% if church_name %}{{ church_name }}{% else %}SG Church{% endif %}. Todos los derechos reservados.</p>
+                <p>&copy; {% now 'Y' %} {% if church_name %}{{ church_name }}{% else %}SG Church{% endif %}. Todos los derechos reservados.</p>
                 <p>Este es un email automático, por favor no respondas directamente a este mensaje.</p>
                 {% endblock %}
             </div>

@@ -1,0 +1,12 @@
+¡Hola{% if user.first_name %}, {{ user.first_name }}{% endif %}!
+
+Se creó una cuenta para ti en {{ church_name }} con el rol de {{ role }}.
+Tu usuario es este correo: {{ user.email }}
+{% if password_url %}
+Si prefieres elegir tu propia contraseña (el enlace caduca en unos días):
+{{ password_url }}
+{% endif %}{% if login_url %}
+Para entrar al sistema: {{ login_url }}
+{% endif %}
+La contraseña inicial te la comparte directamente quien creó tu cuenta; no viaja por correo.
+Si no esperabas este mensaje, puedes ignorarlo.

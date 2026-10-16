@@ -1,0 +1,25 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Inscripción confirmada{% endblock %}
+
+{% block content %}
+<h2 style="color: #1f2937; margin-bottom: 16px;">¡Bienvenido/a al curso, {{ member.first_name }}!</h2>
+
+<p style="color: #4b5563; margin-bottom: 20px;">
+    Quedaste inscrito/a en <strong>{{ course.title }}</strong>.
+</p>
+
+{% if course.description %}
+<p style="color: #4b5563; margin-bottom: 20px;">{{ course.description }}</p>
+{% endif %}
+
+{% if course.course_block %}
+<p style="color: #6b7280; font-size: 14px; margin-bottom: 24px;">
+    Este curso es parte del bloque <strong>{{ course.course_block.name }}</strong>: al completar todos sus cursos recibirás un certificado.
+</p>
+{% endif %}
+
+{% if course_url %}
+<p style="text-align: center;"><a href="{{ course_url }}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;">Ver el curso</a></p>
+{% endif %}
+{% endblock %}

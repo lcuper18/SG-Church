@@ -1,0 +1,6 @@
+{% autoescape off %}Hola:
+
+Alguien pidió restablecer la contraseña de este correo, pero no hay ninguna cuenta registrada con esta dirección.
+
+Si fuiste tú, prueba con el correo con el que te dieron de alta. Si no lo pediste, ignora este mensaje.
+{% endautoescape %}

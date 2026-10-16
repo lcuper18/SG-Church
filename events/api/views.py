@@ -6,6 +6,7 @@ from rest_framework import filters, viewsets
 from rest_framework.exceptions import ValidationError
 
 from core.permissions import CanManageMembers
+from emails import notify
 from events.models import Event, EventAttendance, EventRegistration
 
 from .serializers import (
@@ -61,7 +62,8 @@ class EventRegistrationViewSet(viewsets.ModelViewSet):
         allowed, reason = event.can_register(member)
         if not allowed:
             raise ValidationError(reason)
-        serializer.save(tenant=self.request.user.tenant)
+        registration = serializer.save(tenant=self.request.user.tenant)
+        notify.event_registration(registration, self.request)
 
     def perform_destroy(self, instance):
         instance.status = "cancelled"

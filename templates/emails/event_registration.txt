@@ -1,0 +1,9 @@
+¡Estás inscrito/a, {{ member.first_name }}!
+
+Tu inscripción en "{{ event.title }}" quedó confirmada.
+
+Cuándo: {{ event.start_at|date:"l d \d\e F \d\e Y, H:i" }}
+{% if event.location %}Dónde: {{ event.location }}
+{% endif %}{% if event_url %}
+Más detalles: {{ event_url }}
+{% endif %}

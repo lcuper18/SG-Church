@@ -1,0 +1,20 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Tu certificado{% endblock %}
+
+{% block content %}
+<h2 style="color: #1f2937; margin-bottom: 16px;">¡Felicidades, {{ member.first_name }}!</h2>
+
+<p style="color: #4b5563; margin-bottom: 20px;">
+    Completaste todos los cursos del bloque <strong>{{ block.name }}</strong> y se emitió tu certificado.
+</p>
+
+<div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
+    <div style="color: #6b7280; font-size: 14px;">Número de certificado</div>
+    <div style="color: #1f2937; font-size: 20px; font-weight: bold;">{{ certificate.certificate_number }}</div>
+</div>
+
+{% if certificate_url %}
+<p style="text-align: center;"><a href="{{ certificate_url }}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;">Ver e imprimir mi certificado</a></p>
+{% endif %}
+{% endblock %}

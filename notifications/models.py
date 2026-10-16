@@ -45,7 +45,8 @@ class Notification(models.Model):
 
     # Related object IDs (optional)
     content_type = models.CharField(max_length=50, blank=True, default="")
-    object_id = models.PositiveIntegerField(null=True, blank=True)
+    # Every model here uses a UUID primary key, so this holds a string, not an int.
+    object_id = models.CharField(max_length=64, blank=True, default="")
 
     # Read status
     is_read = models.BooleanField(default=False)
@@ -87,7 +88,7 @@ def create_notification(
     notification_type: str,
     link: str = "",
     content_type: str = "",
-    object_id: int | None = None,
+    object_id: str = "",
 ) -> "Notification":
     """
     Helper function to create a notification.
@@ -100,5 +101,5 @@ def create_notification(
         notification_type=notification_type,
         link=link,
         content_type=content_type,
-        object_id=object_id,
+        object_id=str(object_id) if object_id else "",
     )

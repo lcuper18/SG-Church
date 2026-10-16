@@ -1,0 +1,32 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Tu cuenta en {{ church_name }}{% endblock %}
+
+{% block content %}
+<h2 style="color: #1f2937; margin-bottom: 16px;">¡Hola{% if user.first_name %}, {{ user.first_name }}{% endif %}!</h2>
+
+<p style="color: #4b5563; margin-bottom: 16px;">
+    Se creó una cuenta para ti en <strong>{{ church_name }}</strong> con el rol de <strong>{{ role }}</strong>.
+    Tu usuario es este correo: <strong>{{ user.email }}</strong>.
+</p>
+
+{% if password_url %}
+<p style="color: #4b5563; margin-bottom: 24px;">
+    Si prefieres elegir tu propia contraseña, hazlo aquí. El enlace caduca en unos días.
+</p>
+<p style="text-align: center; margin-bottom: 24px;">
+    <a href="{{ password_url }}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;">Elegir mi contraseña</a>
+</p>
+{% endif %}
+
+{% if login_url %}
+<p style="color: #4b5563; margin-bottom: 8px;">
+    Para entrar al sistema: <a href="{{ login_url }}">{{ login_url }}</a>
+</p>
+{% endif %}
+
+<p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
+    La contraseña inicial te la comparte directamente quien creó tu cuenta; no viaja por correo.
+    Si no esperabas este mensaje, puedes ignorarlo.
+</p>
+{% endblock %}

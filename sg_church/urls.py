@@ -3,7 +3,7 @@ URL configuration for SG Church project.
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
@@ -12,6 +12,9 @@ from allauth.account.views import (
     AccountInactiveView,
     LoginView,
     LogoutView,
+    PasswordResetDoneView,
+    PasswordResetFromKeyDoneView,
+    PasswordResetFromKeyView,
     PasswordResetView,
     SignupView,
 )
@@ -62,13 +65,35 @@ allauth_url_patterns = [
     ),
     path(
         "password/reset/",
-        PasswordResetView.as_view(),
+        PasswordResetView.as_view(template_name="account/password_reset.html"),
         name="password_reset",
     ),
     path(
         "password/reset/",
-        PasswordResetView.as_view(),
+        PasswordResetView.as_view(template_name="account/password_reset.html"),
         name="account_reset_password",  # Alias for allauth
+    ),
+    # The rest of the reset flow. allauth's own URLconf is not included (the
+    # views above are overridden one by one), so these names must exist here or
+    # the reset form crashes with NoReverseMatch when it sends the e-mail.
+    path(
+        "password/reset/done/",
+        PasswordResetDoneView.as_view(template_name="account/password_reset_done.html"),
+        name="account_reset_password_done",
+    ),
+    re_path(
+        r"^password/reset/key/(?P<uidb36>[0-9A-Za-z]+)-(?P<key>.+)/$",
+        PasswordResetFromKeyView.as_view(
+            template_name="account/password_reset_from_key.html"
+        ),
+        name="account_reset_password_from_key",
+    ),
+    path(
+        "password/reset/key/done/",
+        PasswordResetFromKeyDoneView.as_view(
+            template_name="account/password_reset_from_key_done.html"
+        ),
+        name="account_reset_password_from_key_done",
     ),
 ]
 

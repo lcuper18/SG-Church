@@ -6,6 +6,7 @@ from rest_framework import filters, viewsets
 from rest_framework.exceptions import ValidationError
 
 from core.permissions import CanManageEducation, CanManageMembers
+from emails import notify
 from education.models import BlockCertificate, Course, CourseBlock, Enrollment
 
 from .serializers import (
@@ -97,14 +98,17 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         if not allowed:
             raise ValidationError(reason)
 
-        serializer.save(tenant=tenant)
+        enrollment = serializer.save(tenant=tenant)
+        notify.course_enrollment(enrollment, self.request)
 
     def perform_update(self, serializer):
         """Route a status="completed" update through mark_completed() so
         the block-certificate check actually runs, instead of letting the
         serializer blindly overwrite the field."""
         if serializer.validated_data.get("status") == "completed":
-            serializer.instance.mark_completed()
+            certificate = serializer.instance.mark_completed()
+            if certificate and getattr(certificate, "just_issued", False):
+                notify.certificate_issued(certificate, self.request)
         else:
             serializer.save()
 

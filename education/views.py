@@ -12,6 +12,7 @@ from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from core.mixins import ManageEducationRequiredMixin, ManageMembersRequiredMixin
+from emails import notify
 from members.models import Member, User
 
 from .models import BlockCertificate, Course, CourseBlock, Enrollment
@@ -425,6 +426,7 @@ class EnrollmentCreateView(ManageMembersRequiredMixin, View):
             enrollment.completed_at = None
             enrollment.save(update_fields=["status", "completed_at"])
 
+        notify.course_enrollment(enrollment, request)
         messages.success(request, f"{member.full_name} fue inscrito/a en el curso.")
         return redirect("course_detail", pk=course.pk)
 
@@ -441,6 +443,8 @@ class EnrollmentCompleteView(ManageEducationRequiredMixin, View):
         enrollment = get_object_or_404(Enrollment, pk=pk, tenant=tenant)
 
         certificate = enrollment.mark_completed()
+        if certificate and getattr(certificate, "just_issued", False):
+            notify.certificate_issued(certificate, request)
         if certificate:
             messages.success(
                 request,

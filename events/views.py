@@ -22,6 +22,7 @@ from django.views.generic import (
 
 from core.exports import csv_response, export_filename
 from core.mixins import ManageMembersRequiredMixin
+from emails import notify
 from education.models import Course
 from members.models import Member
 
@@ -202,6 +203,7 @@ class RegistrationCreateView(ManageMembersRequiredMixin, View):
             registration.status = "registered"
             registration.save(update_fields=["status"])
 
+        notify.event_registration(registration, request)
         messages.success(request, f"{member.full_name} fue inscrito/a en el evento.")
         return redirect("event_detail", pk=event.pk)
 

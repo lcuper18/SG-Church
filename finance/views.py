@@ -607,7 +607,8 @@ def handle_checkout_session(session):
         donor_email=donor_email or "",
     )
 
-    # Create notification for church admins
+    # In-app notification for church admins. Kept apart from the receipt below
+    # so a failure in one never silently skips the other.
     try:
         from tenants.models import Tenant
         from notifications.models import create_notification
@@ -633,17 +634,21 @@ def handle_checkout_session(session):
                 content_type="finance.donation",
                 object_id=donation.pk,
             )
-
-        # Send receipt email to donor asynchronously
-        from emails.tasks import send_donation_receipt_task
-
-        send_donation_receipt_task.delay(donation.pk)
-
     except Exception as e:
         # Log error but don't break the donation flow
         import logging
 
-        logging.error(f"Error creating notification: {e}")
+        logging.exception(f"Error creating donation notification: {e}")
+
+    # Receipt e-mail to the donor, asynchronously.
+    try:
+        from emails.tasks import send_donation_receipt_task
+
+        send_donation_receipt_task.delay(donation.pk)
+    except Exception as e:
+        import logging
+
+        logging.exception(f"Error queueing donation receipt: {e}")
 
 
 def handle_payment_failed(invoice):

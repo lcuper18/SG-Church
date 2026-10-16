@@ -1,0 +1,10 @@
+¡Bienvenido/a al curso, {{ member.first_name }}!
+
+Quedaste inscrito/a en "{{ course.title }}".
+{% if course.description %}
+{{ course.description }}
+{% endif %}{% if course.course_block %}
+Este curso es parte del bloque "{{ course.course_block.name }}": al completar todos sus cursos recibirás un certificado.
+{% endif %}{% if course_url %}
+Más detalles: {{ course_url }}
+{% endif %}

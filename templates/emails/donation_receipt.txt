@@ -1,0 +1,11 @@
+¡Gracias por tu donación a {{ church_name }}!
+{% load ui %}
+Fecha: {{ donation.donation_date|date:"d/m/Y" }}
+Donante: {{ donor_name }}
+Tipo: {{ donation.get_campaign_display }}
+Monto: {% money donation.amount donation.currency %}
+
+Conserva este correo como comprobante de tu donación.
+
+Con cariño,
+El equipo de {{ church_name }}
