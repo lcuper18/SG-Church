@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Revisar importación - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'member_list' %}">Miembros</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'member_import' %}">Importar desde CSV</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Revisar</li>
+        </ol>
+    </nav>
+
+    {% include "partials/page_header.html" with title="Revisar importación" icon="bi-clipboard-check" subtitle=filename %}
+
+    <div class="alert alert-info" role="status">
+        Todavía no se guardó nada. Revisa el resumen y confirma abajo.
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
+            <div class="h2 mb-0 text-success" id="count-create">{{ plan.count_create }}</div>
+            <div class="text-muted">Nuevos</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
+            <div class="h2 mb-0 text-primary" id="count-update">{{ plan.count_update }}</div>
+            <div class="text-muted">A actualizar</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
+            <div class="h2 mb-0 text-secondary" id="count-skip">{{ plan.count_skip }}</div>
+            <div class="text-muted">Omitidos</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
+            <div class="h2 mb-0 text-danger" id="count-error">{{ plan.count_error }}</div>
+            <div class="text-muted">Con errores</div></div></div></div>
+    </div>
+
+    {% if plan.ignored_headers %}
+    <div class="alert alert-warning">
+        Estas columnas no se reconocieron y se ignoran: <strong>{{ plan.ignored_headers|join:", " }}</strong>.
+    </div>
+    {% endif %}
+
+    {% if problem_rows %}
+    <div class="card mb-4">
+        <div class="card-header">Filas que no se importarán{% if plan.rows|length > 100 %} (primeras 100){% endif %}</div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th scope="col">Fila</th><th scope="col">Persona</th><th scope="col">Motivo</th></tr></thead>
+                <tbody>
+                    {% for row in problem_rows %}
+                    <tr>
+                        <td>{{ row.number }}</td>
+                        <td>{{ row.label|default:"—" }}</td>
+                        <td>
+                            <span class="badge bg-{% if row.action == 'error' %}danger{% else %}secondary{% endif %} me-1">{% if row.action == 'error' %}Error{% else %}Omitido{% endif %}</span>
+                            {{ row.messages|join:" " }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if sample_rows %}
+    <div class="card mb-4">
+        <div class="card-header">Así quedarían las primeras filas</div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr><th scope="col">Fila</th><th scope="col">Acción</th><th scope="col">Persona</th><th scope="col">Email</th><th scope="col">Familia</th><th scope="col">Etiquetas</th></tr></thead>
+                <tbody>
+                    {% for row in sample_rows %}
+                    <tr>
+                        <td>{{ row.number }}</td>
+                        <td><span class="badge bg-{% if row.action == 'create' %}success{% else %}primary{% endif %}">{% if row.action == 'create' %}Nuevo{% else %}Actualizar{% endif %}</span></td>
+                        <td>{{ row.label }}</td>
+                        <td>{{ row.data.email|default:"—" }}</td>
+                        <td>{{ row.family|default:"—" }}</td>
+                        <td>{{ row.tags|join:", "|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'member_import_confirm' %}" class="d-flex gap-2">
+        {% csrf_token %}
+        <input type="hidden" name="token" value="{{ token }}">
+        {% if plan.importable %}
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check2-circle" aria-hidden="true"></i>
+            Importar {{ plan.importable }} persona{{ plan.importable|pluralize }}
+        </button>
+        {% else %}
+        <button type="button" class="btn btn-success" disabled>No hay nada que importar</button>
+        {% endif %}
+        <a href="{% url 'member_import' %}" class="btn btn-outline-secondary">Elegir otro archivo</a>
+    </form>
+</div>
+{% endblock %}

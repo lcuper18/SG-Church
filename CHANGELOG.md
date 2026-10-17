@@ -23,6 +23,10 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- CSV import of members (Miembros → Importar CSV): loose header matching, `,` `;` and
+  tab delimiters, UTF-8/Excel encodings, preview with per-row errors before saving,
+  duplicate detection (skip or update), families and tags created on the fly, one
+  audit line per import; also accepts our own export
 - Audit trail (Bitácora, admins only): every create/change/delete/restore of members,
   families, tags, users, donations, expenses, courses, blocks, enrollments, events and
   the church settings, with who did it and a field-by-field diff (passwords and

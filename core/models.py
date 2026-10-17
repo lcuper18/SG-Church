@@ -42,6 +42,7 @@ class AuditLog(models.Model):
         ("delete", "Envió a la papelera"),
         ("restore", "Restauró"),
         ("purge", "Eliminó definitivamente"),
+        ("import", "Importó"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

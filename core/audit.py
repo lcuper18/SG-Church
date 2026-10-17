@@ -8,6 +8,7 @@ having to remember. The acting user comes from the current request (stored by
 is "Sistema". A failure to write an entry never breaks the action itself.
 """
 
+import contextlib
 import contextvars
 import logging
 from datetime import date, datetime
@@ -18,6 +19,7 @@ from django.db.models.signals import post_save, pre_save
 logger = logging.getLogger(__name__)
 
 _current_request = contextvars.ContextVar("audit_request", default=None)
+_suppressed = contextvars.ContextVar("audit_suppressed", default=False)
 
 # Never stored, not even as a value change.
 ALWAYS_SKIP = {
@@ -33,6 +35,17 @@ def current_user():
     request = _current_request.get()
     user = getattr(request, "user", None)
     return user if getattr(user, "is_authenticated", False) else None
+
+
+@contextlib.contextmanager
+def suppressed():
+    """Skip the per-record entries inside the block (a bulk job writes one
+    summary line with `log_note` instead)."""
+    token = _suppressed.set(True)
+    try:
+        yield
+    finally:
+        _suppressed.reset(token)
 
 
 def set_request(request):
@@ -90,6 +103,24 @@ def _write(instance, action, user, changes=None):
         logger.exception("Could not write the audit entry")
 
 
+def log_note(tenant, user, action, model_label, text):
+    """One free-text entry, e.g. "Importación CSV: 40 nuevos"."""
+    from core.models import AuditLog
+
+    try:
+        AuditLog.objects.create(
+            tenant=tenant,
+            user=user,
+            user_label=(user.email or user.get_full_name()) if user else "Sistema",
+            action=action,
+            model_label=model_label,
+            object_id="",
+            object_repr=text[:255],
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("Could not write the audit entry")
+
+
 def log_action(instance, action, user=None):
     """Record delete/restore/purge (create/update come from signals)."""
     if type(instance) in REGISTRY:
@@ -98,6 +129,8 @@ def log_action(instance, action, user=None):
 
 def _before_save(sender, instance, **kwargs):
     instance._audit_before = None
+    if _suppressed.get():
+        return
     if instance._state.adding or instance.pk is None:
         return
     try:
@@ -108,6 +141,8 @@ def _before_save(sender, instance, **kwargs):
 
 
 def _after_save(sender, instance, created, **kwargs):
+    if _suppressed.get():
+        return
     if created:
         _write(instance, "create", current_user())
         return

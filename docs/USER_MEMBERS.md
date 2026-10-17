@@ -172,12 +172,36 @@ Las **etiquetas** te permiten categorizar miembros:
 
 ## 📤 Exportar Miembros
 
-### Exportar a Excel/CSV
+### Exportar a CSV
 
-1. En la lista de miembros
-2. Click en **"Exportar"**
-3. Selecciona el formato (Excel o CSV)
-4. El archivo se descargará automáticamente
+1. En la lista de miembros (con los filtros que quieras aplicar)
+2. Click en **"Exportar CSV"**
+3. El archivo se descarga y abre bien en Excel
+
+---
+
+## 📥 Importar Miembros desde CSV
+
+Sirve para pasar a tu iglesia una lista que ya tienes en Excel o Google Sheets.
+
+1. En la lista de miembros, click en **"Importar CSV"**
+2. Descarga la **plantilla** (o usa un archivo exportado desde aquí) y llénala. Solo
+   *Nombre* y *Apellido* son obligatorios
+3. Guarda la hoja como **CSV** y súbela
+4. Elige qué hacer con quienes ya existen: **omitirlos** o **actualizar** sus datos
+5. Click en **"Revisar archivo"**: verás cuántos son nuevos, cuántos se omiten y cuáles
+   filas tienen errores (con el número de fila y el motivo). **Todavía no se guarda nada**
+6. Si todo está bien, click en **"Importar N personas"**
+
+**Cosas que conviene saber**
+
+- Las filas con errores no se importan; las demás sí. Corrige el archivo y vuelve a subirlo
+  si quieres incluirlas (las ya importadas se omitirán como duplicadas)
+- Los duplicados se detectan por correo electrónico, o por nombre más teléfono o fecha de nacimiento
+- Las familias y etiquetas que no existan se crean; las que existen se reutilizan
+- Las fechas pueden ir como `2026-10-17` o `17/10/2026`; *Bautizado* como Sí o No
+- Las notas pastorales solo las importan administradores y pastores
+- Todo queda en la **Bitácora** como una sola línea de importación
 
 ---
 
@@ -186,9 +210,10 @@ Las **etiquetas** te permiten categorizar miembros:
 ### Consideraciones importantes
 
 ⚠️ **Antes de eliminar**:
-- Verifica que el miembro no tenga donaciones activas
-- Considera cambiar el estado a "Inactivo" en lugar de eliminar
-- La eliminación es permanente
+- El miembro va a la **Papelera** (menú de usuario → Papelera, solo administradores), donde
+  puedes restaurarlo con sus cursos e inscripciones; se borra definitivamente a los 90 días
+- Sus donaciones se conservan siempre
+- Considera cambiar el estado a "Inactivo" si solo dejó de asistir
 
 ### Cómo eliminar
 

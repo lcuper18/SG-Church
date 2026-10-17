@@ -3,6 +3,7 @@ Django base settings for SG Church project.
 """
 
 import os
+import tempfile
 from pathlib import Path
 
 # Build paths
@@ -233,6 +234,11 @@ BACKUP_S3_ENDPOINT_URL = os.environ.get("BACKUP_S3_ENDPOINT_URL", "")
 BACKUP_S3_PREFIX = os.environ.get("BACKUP_S3_PREFIX", "sg-church")
 
 # Days a deleted record stays in the trash before the nightly job removes it for good.
+# Where an uploaded CSV waits between the preview and the confirmation.
+IMPORT_TMP_DIR = os.environ.get(
+    "IMPORT_TMP_DIR", str(Path(tempfile.gettempdir()) / "sgchurch-imports")
+)
+
 TRASH_RETENTION_DAYS = int(os.environ.get("TRASH_RETENTION_DAYS", "90"))
 CELERY_BEAT_SCHEDULE["purge-trash"] = {
     "task": "core.tasks.purge_trash",

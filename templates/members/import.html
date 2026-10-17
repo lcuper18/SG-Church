@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Importar miembros - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'member_list' %}">Miembros</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Importar desde CSV</li>
+        </ol>
+    </nav>
+
+    {% include "partials/page_header.html" with title="Importar miembros" icon="bi-upload" subtitle="Sube una hoja de cálculo guardada como CSV. Antes de guardar nada verás un resumen." %}
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Archivo CSV</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv,text/csv" required>
+                            <div class="form-text">Hasta {{ max_mb }} MB y {{ max_rows }} personas por archivo.</div>
+                        </div>
+
+                        <fieldset class="mb-3">
+                            <legend class="form-label fs-6">Si la persona ya existe en tu iglesia</legend>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="policy" id="policy_skip" value="skip" checked>
+                                <label class="form-check-label" for="policy_skip">Omitirla (no cambiar nada)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="policy" id="policy_update" value="update">
+                                <label class="form-check-label" for="policy_update">Actualizar sus datos con lo que traiga el archivo (las celdas vacías no borran nada)</label>
+                            </div>
+                        </fieldset>
+
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-search" aria-hidden="true"></i> Revisar archivo</button>
+                        <a href="{% url 'member_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header">Cómo preparar el archivo</div>
+                <div class="card-body small">
+                    <p>La primera fila lleva los títulos. Solo <strong>Nombre</strong> y <strong>Apellido</strong> son obligatorios.</p>
+                    <p class="mb-2">Reconocemos estas columnas (con o sin acentos):</p>
+                    <p class="text-muted">Nombre, Apellido, Email, Teléfono, Fecha de nacimiento, Género, Estado civil, Bautizado, Fecha de bautismo, Estado (visitante, asistente, miembro o inactivo), Fecha de membresía, Familia, Dirección, Ciudad, Estado/Provincia, Código postal, Etiquetas{% if user.can_view_pastoral_notes %}, Notas{% endif %}.</p>
+                    <ul class="mb-3">
+                        <li>Fechas como <code>2026-10-17</code> o <code>17/10/2026</code>.</li>
+                        <li>Bautizado: Sí o No.</li>
+                        <li>Etiquetas separadas por coma. Si no existen, se crean.</li>
+                        <li>Si pones una familia que no existe, se crea.</li>
+                        <li>Detectamos duplicados por correo (o por nombre y teléfono/fecha de nacimiento).</li>
+                    </ul>
+                    <a href="{% url 'member_import_template' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-download" aria-hidden="true"></i> Descargar plantilla</a>
+                    <a href="{% url 'member_export' %}" class="btn btn-outline-secondary btn-sm">Exportar los actuales</a>
+                    <p class="text-muted mt-3 mb-0">También puedes volver a subir un archivo exportado desde aquí.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -2,14 +2,20 @@
 Uso: {% include "partials/page_header.html" with title="Miembros" icon="bi-people" subtitle="..." action_url=url action_label="Nuevo" %}
 `action_url` y `action_icon` son opcionales.
 `export_url` (+ `export_query`) agrega un botón «Exportar CSV» que conserva los filtros.
+`import_url` agrega un botón «Importar CSV».
 {% endcomment %}
 <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
         <h1>{% if icon %}<i class="bi {{ icon }}" aria-hidden="true"></i> {% endif %}{{ title }}</h1>
         {% if subtitle %}<p class="text-muted mb-0">{{ subtitle }}</p>{% endif %}
     </div>
-    {% if action_url or export_url %}
+    {% if action_url or export_url or import_url %}
     <div class="d-flex flex-wrap gap-2">
+        {% if import_url %}
+        <a href="{{ import_url }}" class="btn btn-outline-secondary">
+            <i class="bi bi-upload" aria-hidden="true"></i> Importar CSV
+        </a>
+        {% endif %}
         {% if export_url %}
         <a href="{{ export_url }}{% if export_query %}?{{ export_query }}{% endif %}" class="btn btn-outline-secondary">
             <i class="bi bi-download" aria-hidden="true"></i> Exportar CSV
