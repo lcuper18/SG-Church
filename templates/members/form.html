@@ -60,6 +60,15 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label for="national_id" class="form-label">{{ request.user.tenant.id_label }}</label>
+                                <input type="text" class="form-control {{ form.national_id|invalid }}" id="national_id" name="national_id" value="{{ form.national_id.value|default:'' }}" maxlength="30" autocomplete="off">
+                                <div class="form-text">Distingue a personas con el mismo nombre y aparece en sus certificados. Se puede dejar vacío (por ejemplo, para menores).</div>
+                                {% include "partials/field_errors.html" with field=form.national_id %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label for="date_of_birth" class="form-label">Fecha de Nacimiento</label>
                                 <input type="date" class="form-control {{ form.date_of_birth|invalid }}" id="date_of_birth" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}">
                                 {% include "partials/field_errors.html" with field=form.date_of_birth %}

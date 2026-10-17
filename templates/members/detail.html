@@ -100,7 +100,11 @@
                         <div class="card-body">
                             <table class="table table-borderless">
                                 <tr>
-                                    <td class="text-muted" width="40%">Fecha de Nacimiento</td>
+                                    <td class="text-muted" width="40%">{{ request.user.tenant.id_label }}</td>
+                                    <td>{{ member.national_id|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Fecha de Nacimiento</td>
                                     <td>{{ member.date_of_birth|default:"-" }}</td>
                                 </tr>
                                 <tr>

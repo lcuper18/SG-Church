@@ -24,9 +24,10 @@ _suppressed = contextvars.ContextVar("audit_suppressed", default=False)
 # Never stored, not even as a value change.
 ALWAYS_SKIP = {
     "id", "created_at", "updated_at", "last_login", "search_text", "deleted_at", "deleted_by",
+    "national_id_key",
 }
 # Recorded as "changed" without showing the content.
-MASKED = {"password", "notes", "photo"}
+MASKED = {"password", "notes", "photo", "national_id"}
 
 REGISTRY = {}  # model -> Spanish name
 
@@ -151,10 +152,13 @@ def _after_save(sender, instance, created, **kwargs):
         return
     after = _snapshot(instance)
     changes = {}
+    # attname ("family_id") -> field name ("family"); stripping "_id" by hand would
+    # also mangle fields like national_id and defeat the masking below.
+    names = {f.attname: f.name for f in _tracked_fields(type(instance))}
     for name, old in before.items():
         new = after.get(name)
         if old != new:
-            field = name[:-3] if name.endswith("_id") else name
+            field = names.get(name, name)
             changes[field] = ["•••", "•••"] if field in MASKED else [old, new]
     if changes:
         _write(instance, "update", current_user(), changes)
@@ -195,7 +199,7 @@ class AuditContextMiddleware:
 FIELD_LABELS = {
     "first_name": "Nombre", "last_name": "Apellido", "email": "Correo", "phone": "Teléfono",
     "date_of_birth": "Fecha de nacimiento", "gender": "Género", "marital_status": "Estado civil",
-    "is_baptized": "Bautizado", "baptism_date": "Fecha de bautismo", "member_status": "Estado",
+    "national_id": "Identificación", "is_baptized": "Bautizado", "baptism_date": "Fecha de bautismo", "member_status": "Estado",
     "membership_date": "Fecha de membresía", "family": "Familia", "address": "Dirección",
     "city": "Ciudad", "state": "Estado/provincia", "postal_code": "Código postal",
     "notes": "Notas", "photo": "Foto", "user": "Usuario", "name": "Nombre", "color": "Color",

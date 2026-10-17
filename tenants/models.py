@@ -173,6 +173,9 @@ class Tenant(models.Model):
     date_format = models.CharField(
         max_length=20, choices=DATE_FORMAT_CHOICES, default="DD/MM/YYYY"
     )
+    # What this country calls the national ID ("Cédula", "DNI", "RUT"...). Empty =
+    # the default for the church's country (see `id_label`).
+    national_id_label = models.CharField(max_length=30, blank=True)
     # Printed under the signature line of block certificates.
     certificate_signer_name = models.CharField(max_length=120, blank=True)
     certificate_signer_title = models.CharField(max_length=80, blank=True, default="Pastor")
@@ -191,6 +194,18 @@ class Tenant(models.Model):
         verbose_name = "Tenant"
         verbose_name_plural = "Tenants"
         ordering = ["name"]
+
+    ID_LABELS = {
+        "CR": "Cédula", "CO": "Cédula", "PA": "Cédula", "VE": "Cédula", "EC": "Cédula", "CU": "Carné de identidad",
+        "MX": "CURP", "AR": "DNI", "PE": "DNI", "ES": "DNI", "UY": "Cédula", "PY": "Cédula",
+        "CL": "RUT", "BO": "Cédula", "GT": "DPI", "HN": "DNI", "SV": "DUI", "NI": "Cédula",
+        "DO": "Cédula", "BR": "CPF",
+    }
+
+    @property
+    def id_label(self):
+        """Name of the national ID in this church's country, as shown on screens and certificates."""
+        return self.national_id_label.strip() or self.ID_LABELS.get(self.country or "", "") or "Identificación"
 
     def __str__(self):
         return self.name

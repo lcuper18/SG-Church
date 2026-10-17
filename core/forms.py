@@ -68,6 +68,7 @@ class ChurchSettingsForm(BootstrapFormMixin, forms.ModelForm):
             "timezone",
             "enable_families",
             "enable_tags",
+            "national_id_label",
             "certificate_signer_name",
             "certificate_signer_title",
         ]
@@ -81,12 +82,16 @@ class ChurchSettingsForm(BootstrapFormMixin, forms.ModelForm):
             "phone": "Teléfono",
             "email": "Email de contacto",
             "currency": "Moneda",
+            "national_id_label": "Cómo se llama el documento de identidad",
             "certificate_signer_name": "Nombre de quien firma",
             "certificate_signer_title": "Cargo de quien firma",
             "enable_families": "Usar familias",
             "enable_tags": "Usar etiquetas",
         }
-        help_texts = {"country": ""}
+        help_texts = {
+            "country": "",
+            "national_id_label": "Por ejemplo: Cédula, DNI, RUT. Déjalo vacío para usar el habitual de tu país.",
+        }
         widgets = {"address": forms.Textarea(attrs={"rows": 2})}
 
     def __init__(self, *args, **kwargs):

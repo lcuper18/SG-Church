@@ -23,6 +23,12 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- National ID on members ("Cédula" / DNI / RUT...): unique per church (formats like
+  `1-1234-5678` and `112345678` are the same number), searchable, shown in list/detail/portal,
+  in the CSV export and import (duplicates are detected by ID first), printed on PDF
+  certificates, and shown only as its last digits in pickers and on the public check
+  page. The label follows the church's country and can be renamed in Configuración. Audit
+  entries record that it changed but never the number
 - Block certificates as PDF (landscape Letter, ReportLab): church logo, the member's name,
   the block and its courses, issue date in Spanish, signer name/title (set in Configuración →
   Certificados), number and a QR to a public check page (`/education/certificates/verify/<number>/`)
@@ -70,6 +76,8 @@ section reflects real history (from `git log`), not a plan.
   members or financial data regardless of role
 
 #### Fixed
+- The audit trail stripped a trailing `_id` from every field name, which would have
+  logged `national_id` in clear; field names now come from the model
 - Removed N+1 queries: course-block progress (144 → 10 queries with 520 members),
   event list (37 → 6), family list (31 → 6), finance dashboard (32 → 8)
 - Event list is paginated and shows upcoming events first; the donor report is

@@ -36,6 +36,10 @@ COLUMN_ALIASES = {
     "last_name": ["apellido", "apellidos", "last name", "last_name"],
     "email": ["email", "e-mail", "correo", "correo electronico", "mail"],
     "phone": ["telefono", "tel", "celular", "movil", "phone", "telefono celular"],
+    "national_id": [
+        "identificacion", "cedula", "cedula de identidad", "documento", "documento de identidad", "dni",
+        "id", "numero de identificacion", "national id", "national_id", "curp", "rut", "dui", "cpf",
+    ],
     "date_of_birth": [
         "fecha de nacimiento", "nacimiento", "cumpleanos", "fecha nacimiento",
         "birth date", "date of birth", "date_of_birth",
@@ -57,13 +61,13 @@ COLUMN_ALIASES = {
 ALIAS_TO_FIELD = {fold(a): f for f, aliases in COLUMN_ALIASES.items() for a in aliases}
 
 TEMPLATE_HEADER = [
-    "Nombre", "Apellido", "Email", "Teléfono", "Fecha de nacimiento", "Género", "Estado civil",
-    "Bautizado", "Fecha de bautismo", "Estado", "Fecha de membresía", "Familia", "Dirección",
+    "Nombre", "Apellido", "Email", "Teléfono", "Identificación", "Fecha de nacimiento", "Género",
+    "Estado civil", "Bautizado", "Fecha de bautismo", "Estado", "Fecha de membresía", "Familia", "Dirección",
     "Ciudad", "Estado/Provincia", "Código postal", "Etiquetas",
 ]
 TEMPLATE_EXAMPLE = [
-    "María", "Rodríguez Mora", "maria@ejemplo.com", "+506 8888 1234", "1990-05-17", "Femenino",
-    "Casado/a", "Sí", "2010-08-01", "Miembro", "2012-03-04", "Familia Rodríguez",
+    "María", "Rodríguez Mora", "maria@ejemplo.com", "+506 8888 1234", "1-1234-5678", "1990-05-17",
+    "Femenino", "Casado/a", "Sí", "2010-08-01", "Miembro", "2012-03-04", "Familia Rodríguez",
     "100 m norte de la iglesia", "San José", "San José", "10101", "Jóvenes, Alabanza",
 ]
 
@@ -258,7 +262,7 @@ def _clean_row(raw, columns, can_see_notes):
 
 def name_label(field_name):
     return {
-        "first_name": "Nombre", "last_name": "Apellido", "email": "Email", "phone": "Teléfono",
+        "first_name": "Nombre", "last_name": "Apellido", "email": "Email", "phone": "Teléfono", "national_id": "Identificación",
         "date_of_birth": "Fecha de nacimiento", "gender": "Género", "marital_status": "Estado civil",
         "is_baptized": "Bautizado", "baptism_date": "Fecha de bautismo", "member_status": "Estado",
         "membership_date": "Fecha de membresía", "family": "Familia", "address": "Dirección",
@@ -269,18 +273,26 @@ def name_label(field_name):
 
 def _find_existing(tenant):
     """Lookups of the church's live members to detect duplicates."""
-    by_email, by_identity = {}, {}
+    by_email, by_identity, by_id = {}, {}, {}
     for member in Member.objects.filter(tenant=tenant).only(
-        "id", "first_name", "last_name", "email", "phone", "date_of_birth"
+        "id", "first_name", "last_name", "email", "phone", "date_of_birth", "national_id_key"
     ):
+        if member.national_id_key:
+            by_id.setdefault(member.national_id_key, member)
         if member.email:
             by_email.setdefault(member.email.lower(), member)
         key = fold(f"{member.first_name} {member.last_name}")
         by_identity.setdefault(key, []).append(member)
-    return by_email, by_identity
+    return by_email, by_identity, by_id
 
 
-def _match(data, by_email, by_identity):
+def _match(data, by_email, by_identity, by_id):
+    """The existing member this row is about, if any. The national ID is the
+    surest sign (two people can share a name, even an e-mail address), then the
+    e-mail, then name plus phone or birth date."""
+    id_key = Member.normalize_national_id(data.get("national_id"))
+    if id_key and id_key in by_id:
+        return by_id[id_key]
     email = data.get("email")
     if email and email in by_email:
         return by_email[email]
@@ -292,6 +304,26 @@ def _match(data, by_email, by_identity):
             if same_phone or same_birth:
                 return candidate
     return None
+
+
+def _identity_clash(data, id_key, existing, by_email, by_id):
+    """A row whose ID and e-mail point at different people, or that would give
+    someone an ID that is already taken, is a mistake in the sheet: report it
+    instead of guessing."""
+    owner = by_id.get(id_key) if id_key else None
+    email_owner = by_email.get(data.get("email")) if data.get("email") else None
+    if owner and email_owner and owner.pk != email_owner.pk:
+        return (
+            f"La identificación pertenece a {owner.first_name} {owner.last_name} "
+            f"pero el correo pertenece a {email_owner.first_name} {email_owner.last_name}."
+        )
+    if id_key and existing is not None and not owner and existing.national_id_key \
+            and existing.national_id_key != id_key:
+        return (
+            f"{existing.first_name} {existing.last_name} ya tiene otra identificación registrada; "
+            "revisa el número."
+        )
+    return ""
 
 
 def build_plan(raw, tenant, policy="skip", can_see_notes=False):
@@ -322,7 +354,7 @@ def build_plan(raw, tenant, policy="skip", can_see_notes=False):
     if len(body) > MAX_ROWS:
         raise ImportFileError(f"Demasiadas filas ({len(body)}); el máximo por archivo es {MAX_ROWS}.")
 
-    by_email, by_identity = _find_existing(tenant)
+    by_email, by_identity, by_id = _find_existing(tenant)
     seen_in_file = set()
     results = []
     for number, raw_row in body:
@@ -330,11 +362,15 @@ def build_plan(raw, tenant, policy="skip", can_see_notes=False):
         result = RowResult(number=number, data=data, action="error", messages=messages,
                            tags=tags, family=family)
         if not messages:
-            key = data.get("email") or fold(
+            id_key = Member.normalize_national_id(data.get("national_id"))
+            key = ("id:" + id_key) if id_key else (data.get("email") or fold(
                 f"{data['first_name']} {data['last_name']} {data.get('phone', '')} {data.get('date_of_birth', '')}"
-            )
-            existing = _match(data, by_email, by_identity)
-            if key in seen_in_file:
+            ))
+            existing = _match(data, by_email, by_identity, by_id)
+            clash = _identity_clash(data, id_key, existing, by_email, by_id)
+            if clash:
+                result.messages = [clash]
+            elif key in seen_in_file:
                 result.action, result.messages = "skip", ["Repetido dentro del mismo archivo."]
             elif existing is not None:
                 result.existing_id = str(existing.pk)

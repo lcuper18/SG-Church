@@ -204,6 +204,12 @@
             row.className = 'list-group-item list-group-item-action member-pick' + (picked ? ' disabled' : '');
             row.dataset.id = person.id;
             row.textContent = person.name;
+            if (person.id_hint) {
+                var hint = document.createElement('small');
+                hint.className = 'text-muted ms-2';
+                hint.textContent = person.id_hint;
+                row.appendChild(hint);
+            }
             if (picked) {
                 var done = document.createElement('small');
                 done.className = 'text-success ms-2';

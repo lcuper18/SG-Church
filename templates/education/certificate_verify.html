@@ -15,6 +15,10 @@
                     <dl class="row text-start mb-0">
                         <dt class="col-sm-5">A nombre de</dt>
                         <dd class="col-sm-7">{{ certificate.member.full_name }}</dd>
+                        {% if certificate.member.national_id_hint %}
+                        <dt class="col-sm-5">{{ certificate.tenant.id_label }}</dt>
+                        <dd class="col-sm-7">{{ certificate.member.national_id_hint }} <span class="text-muted small">(últimos dígitos)</span></dd>
+                        {% endif %}
                         <dt class="col-sm-5">Por completar el bloque</dt>
                         <dd class="col-sm-7">{{ certificate.course_block.name }}</dd>
                         <dt class="col-sm-5">Fecha de emisión</dt>

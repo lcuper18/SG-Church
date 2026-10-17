@@ -28,7 +28,28 @@ class PastoralNotesMixin:
         return validated
 
 
-class MemberSerializer(PastoralNotesMixin, serializers.ModelSerializer):
+class NationalIdMixin:
+    """An ID may belong to only one live member of the church."""
+
+    def validate_national_id(self, value):
+        value = (value or "").strip()
+        key = Member.normalize_national_id(value)
+        if not key:
+            return value
+        request = self.context.get("request")
+        tenant = getattr(getattr(request, "user", None), "tenant", None)
+        if tenant is None:
+            return value
+        clash = Member.objects.filter(tenant=tenant, national_id_key=key)
+        if self.instance is not None:
+            clash = clash.exclude(pk=self.instance.pk)
+        found = clash.first()
+        if found:
+            raise serializers.ValidationError(f"Esta identificación ya pertenece a {found.full_name}.")
+        return value
+
+
+class MemberSerializer(NationalIdMixin, PastoralNotesMixin, serializers.ModelSerializer):
     """
     Serializer for Member model.
     """
@@ -45,6 +66,7 @@ class MemberSerializer(PastoralNotesMixin, serializers.ModelSerializer):
             "full_name",
             "email",
             "phone",
+            "national_id",
             "date_of_birth",
             "gender",
             "marital_status",
@@ -70,7 +92,7 @@ class MemberSerializer(PastoralNotesMixin, serializers.ModelSerializer):
         return obj.family.name if obj.family else None
 
 
-class MemberCreateSerializer(PastoralNotesMixin, serializers.ModelSerializer):
+class MemberCreateSerializer(NationalIdMixin, PastoralNotesMixin, serializers.ModelSerializer):
     """
     Serializer for creating a new Member.
     """
@@ -82,6 +104,7 @@ class MemberCreateSerializer(PastoralNotesMixin, serializers.ModelSerializer):
             "last_name",
             "email",
             "phone",
+            "national_id",
             "date_of_birth",
             "gender",
             "marital_status",

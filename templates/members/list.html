@@ -57,6 +57,7 @@
                         <tr>
                             <th class="d-none d-md-table-cell">Foto</th>
                             <th>Nombre</th>
+                            <th class="d-none d-lg-table-cell">{{ request.user.tenant.id_label }}</th>
                             <th class="d-none d-lg-table-cell">Email</th>
                             <th class="d-none d-lg-table-cell">Teléfono</th>
                             <th>Estado</th>
@@ -79,6 +80,7 @@
                             <td>
                                 <a href="{% url 'member_detail' member.pk %}">{{ member.full_name }}</a>
                             </td>
+                            <td class="d-none d-lg-table-cell text-nowrap">{{ member.national_id|default:'-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ member.email|default:'-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ member.phone|default:'-' }}</td>
                             <td>
@@ -104,7 +106,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7">
+                            <td colspan="8">
                                 {% if request.GET.search or request.GET.status or request.GET.family %}
                                 {% include "partials/empty_state.html" with icon="bi-search" message="Ningún miembro coincide con los filtros." %}
                                 {% else %}

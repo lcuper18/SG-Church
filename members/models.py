@@ -6,7 +6,10 @@ from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.urls import reverse
+import re
 import uuid
+
+from django.core.exceptions import ValidationError
 
 from core.softdelete import SoftDeleteModel
 from core.text import fold
@@ -152,6 +155,13 @@ class Member(SoftDeleteModel):
     email = models.EmailField(null=True, blank=True)
     phone = models.CharField(max_length=20, blank=True)
 
+    # National ID (cédula, DNI, DIMEX, passport...): tells apart people who share a
+    # name, and is printed on certificates. `national_id_key` is the same value
+    # without spaces/hyphens/dots, upper-case, so "1-1234-5678" and "112345678"
+    # are the same person; that is what must be unique among live members.
+    national_id = models.CharField(max_length=30, blank=True)
+    national_id_key = models.CharField(max_length=30, blank=True, editable=False)
+
     # Demographics
     date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
@@ -224,6 +234,14 @@ class Member(SoftDeleteModel):
         verbose_name = "Member"
         verbose_name_plural = "Members"
         ordering = ["last_name", "first_name"]
+        constraints = [
+            # One person per ID within a church (people in the trash don't count).
+            models.UniqueConstraint(
+                fields=["tenant", "national_id_key"],
+                condition=models.Q(deleted_at__isnull=True) & ~models.Q(national_id_key=""),
+                name="unique_live_national_id_per_tenant",
+            )
+        ]
         indexes = [
             models.Index(fields=["last_name", "first_name"]),
             models.Index(fields=["email"]),
@@ -231,16 +249,46 @@ class Member(SoftDeleteModel):
             models.Index(fields=["tenant", "member_status"]),
         ]
 
-    SEARCH_SOURCE_FIELDS = ("first_name", "last_name", "email", "phone")
+    SEARCH_SOURCE_FIELDS = ("first_name", "last_name", "email", "phone", "national_id")
+
+    @staticmethod
+    def normalize_national_id(value):
+        return re.sub(r"[^0-9A-Za-z]", "", str(value or "")).upper()
+
+    @property
+    def national_id_hint(self):
+        """Last digits only (···5678): enough to tell homonyms apart in pickers
+        without showing the whole number to everyone."""
+        key = self.national_id_key or self.normalize_national_id(self.national_id)
+        return f"···{key[-4:]}" if key else ""
 
     def build_search_text(self):
-        return fold(" ".join(str(getattr(self, name) or "") for name in self.SEARCH_SOURCE_FIELDS))
+        parts = [str(getattr(self, name) or "") for name in self.SEARCH_SOURCE_FIELDS]
+        parts.append(self.normalize_national_id(self.national_id))  # searchable without hyphens
+        return fold(" ".join(parts))
+
+    def clean(self):
+        super().clean()
+        self.national_id = (self.national_id or "").strip()
+        key = self.normalize_national_id(self.national_id)
+        if key and self.tenant_id:
+            clash = (
+                Member.objects.filter(tenant_id=self.tenant_id, national_id_key=key)
+                .exclude(pk=self.pk)
+                .first()
+            )
+            if clash:
+                raise ValidationError(
+                    {"national_id": f"Esta identificación ya pertenece a {clash.full_name}."}
+                )
 
     def save(self, *args, **kwargs):
+        self.national_id = (self.national_id or "").strip()
+        self.national_id_key = self.normalize_national_id(self.national_id)
         self.search_text = self.build_search_text()
         update_fields = kwargs.get("update_fields")
         if update_fields is not None and set(update_fields) & set(self.SEARCH_SOURCE_FIELDS):
-            kwargs["update_fields"] = {*update_fields, "search_text"}
+            kwargs["update_fields"] = {*update_fields, "search_text", "national_id_key"}
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -23,6 +23,7 @@
                         <tr><td class="text-muted" width="40%">Email</td><td>{{ member.email|default:"-" }}</td></tr>
                         <tr><td class="text-muted">Teléfono</td><td>{{ member.phone|default:"-" }}</td></tr>
                         <tr><td class="text-muted">Dirección</td><td>{{ member.address|default:"-" }}{% if member.city %}, {{ member.city }}{% endif %}</td></tr>
+                        <tr><td class="text-muted">{{ request.user.tenant.id_label }}</td><td>{{ member.national_id|default:"-" }}</td></tr>
                         <tr><td class="text-muted">Cumpleaños</td><td>{{ member.date_of_birth|date:"d/m/Y"|default:"-" }}</td></tr>
                         <tr><td class="text-muted">Bautizado/a</td><td>{% if member.is_baptized %}Sí{% if member.baptism_date %} ({{ member.baptism_date|date:"d/m/Y" }}){% endif %}{% else %}No{% endif %}</td></tr>
                     </table>

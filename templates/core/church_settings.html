@@ -49,6 +49,14 @@
         </div>
 
         <div class="card mb-4">
+            <div class="card-header">Documento de identidad</div>
+            <div class="card-body">
+                {% include "partials/form_field.html" with field=form.national_id_label %}
+                <div class="form-text">Cada persona puede tener su número de identificación; sirve para distinguir a quienes se llaman igual y aparece en los certificados.</div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
             <div class="card-header">Certificados</div>
             <div class="card-body">
                 <div class="row">

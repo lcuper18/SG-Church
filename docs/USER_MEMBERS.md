@@ -172,6 +172,14 @@ Las **etiquetas** te permiten categorizar miembros:
 
 ## 📤 Exportar Miembros
 
+### Identificación (cédula)
+
+En el formulario de miembro hay un campo con el nombre del documento de tu país (Cédula, DNI,
+RUT...; puedes cambiarlo en Configuración). Sirve para distinguir a dos personas que se llaman
+igual: **no se puede repetir** dentro de la iglesia (`1-1234-5678` y `112345678` cuentan como
+el mismo número) y puede quedar vacío, por ejemplo para menores. Se puede buscar por él, se
+incluye al exportar e importar CSV y aparece en los certificados.
+
 ### Exportar a CSV
 
 1. En la lista de miembros (con los filtros que quieras aplicar)

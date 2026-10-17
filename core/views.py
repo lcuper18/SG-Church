@@ -374,7 +374,7 @@ class TrashActionView(LoginRequiredMixin, ChurchAdminRequiredMixin, View):
             except IntegrityError:
                 messages.error(
                     request,
-                    f"No se puede restaurar «{name}»: ya existe otro registro con el mismo nombre. "
+                    f"No se puede restaurar «{name}»: ya existe otro registro con el mismo nombre o identificación. "
                     "Renombra el que está activo y vuelve a intentarlo.",
                 )
             else:

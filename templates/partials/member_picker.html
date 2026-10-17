@@ -36,10 +36,11 @@ directory.
             button.value = person.id;
             button.className = 'list-group-item list-group-item-action member-option';
             button.textContent = person.name;
-            if (person.email) {
+            var detail = [person.id_hint, person.email].filter(Boolean).join('  ·  ');
+            if (detail) {
                 var small = document.createElement('small');
                 small.className = 'text-muted d-block';
-                small.textContent = person.email;
+                small.textContent = detail;
                 button.appendChild(small);
             }
             list.insertBefore(button, none);

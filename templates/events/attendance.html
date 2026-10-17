@@ -75,12 +75,12 @@
                         </thead>
                         <tbody>
                             {% for person in members %}
-                            <tr class="attendance-row" data-search="{{ person.full_name|lower }} {{ person.email|lower }}" data-registered="{% if person.id in registered_ids %}1{% endif %}" {% if event.attendance_open %}style="cursor:pointer"{% endif %}>
+                            <tr class="attendance-row" data-search="{{ person.search_text }}" data-registered="{% if person.id in registered_ids %}1{% endif %}" {% if event.attendance_open %}style="cursor:pointer"{% endif %}>
                                 <td>
                                     <input type="hidden" name="shown" value="{{ person.id }}">
                                     <input type="checkbox" class="form-check-input attendance-box" name="present" value="{{ person.id }}" {% if person.id in present_ids %}checked{% endif %} {% if not event.attendance_open %}disabled{% endif %}>
                                 </td>
-                                <td>{{ person.full_name }}</td>
+                                <td>{{ person.full_name }}{% if person.national_id_hint %} <small class="text-muted">{{ person.national_id_hint }}</small>{% endif %}</td>
                                 <td>
                                     {% if person.id in registered_ids %}
                                     <span class="badge bg-success">Inscrito</span>

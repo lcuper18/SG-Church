@@ -112,6 +112,7 @@ class Command(BaseCommand):
             tenant=tenant, email__endswith=f"@{DEMO_DOMAIN}"
         ).exists()
         if already and not opts["force"]:
+            ids = self._fill_national_ids(tenant)
             updated, removed = self._event_requirements(tenant)
             added = self._attendance(tenant)
             self.stdout.write(
@@ -119,6 +120,7 @@ class Command(BaseCommand):
                 f"Requirements applied to {updated} events ({removed} ineligible "
                 f"registrations/attendances removed). "
                 f"Attendance backfilled for {added} past events."
+                f" National IDs filled in for {ids} adults."
             )
             return
 
@@ -130,6 +132,7 @@ class Command(BaseCommand):
             self._courses(tenant, members)
             events = self._events(tenant, members)
             self._attendance(tenant)
+            self._fill_national_ids(tenant)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -137,6 +140,34 @@ class Command(BaseCommand):
                 f"{expenses} expenses, {events} events into '{tenant.subdomain}'."
             )
         )
+
+    def _fill_national_ids(self, tenant):
+        """Give every demo adult a made-up Costa Rican-style cédula (unique, so the
+        demo shows how the ID tells homonyms apart). Idempotent: only fills blanks."""
+        taken = set(
+            Member.objects.filter(tenant=tenant).exclude(national_id_key="").values_list("national_id_key", flat=True)
+        )
+        today = date.today()
+        todo = []
+        counter = len(taken)
+        for member in Member.objects.filter(
+            tenant=tenant, email__endswith=f"@{DEMO_DOMAIN}", national_id=""
+        ).order_by("last_name", "first_name", "pk"):
+            adult = member.date_of_birth is None or (today - member.date_of_birth).days >= 18 * 365
+            if not adult:
+                continue
+            while True:
+                counter += 1
+                number = f"{1 + counter % 7}{100 + counter // 7:04d}{(counter * 7919) % 10000:04d}"
+                if number not in taken:
+                    break
+            taken.add(number)
+            member.national_id = f"{number[0]}-{number[1:5]}-{number[5:]}"
+            member.national_id_key = member.normalize_national_id(member.national_id)
+            member.search_text = member.build_search_text()
+            todo.append(member)
+        Member.objects.bulk_update(todo, ["national_id", "national_id_key", "search_text"], batch_size=500)
+        return len(todo)
 
     def _get_tenant(self, subdomain):
         if subdomain:

@@ -120,19 +120,24 @@ def render_certificate_pdf(certificate, verify_url=""):
     pdf.setLineWidth(0.8)
     half = min(max(200, stringWidth(name, "Times-BoldItalic", size) / 2 + 12), middle - 70)
     pdf.line(middle - half, top - 138, middle + half, top - 138)
+    if member.national_id:
+        _centered(
+            pdf, middle, top - 154, _safe(f"{tenant.id_label}: {member.national_id}"),
+            "Helvetica", 11, MUTED,
+        )
 
-    _centered(pdf, middle, top - 170, "completó satisfactoriamente todos los cursos del bloque",
+    _centered(pdf, middle, top - 182, "completó satisfactoriamente todos los cursos del bloque",
               "Times-Roman", 15, INK)
     block_name = _safe(block.name)
     block_size = _fit(block_name, "Times-Bold", 26, width - 170, 14)
-    _centered(pdf, middle, top - 204, block_name, "Times-Bold", block_size, BRAND)
+    _centered(pdf, middle, top - 216, block_name, "Times-Bold", block_size, BRAND)
 
     courses = [
         _safe(c.title) for c in block.courses.filter(is_active=True).order_by("order_in_block", "title")
     ]
     if courses:
         listing = "Cursos: " + "  ·  ".join(courses)
-        y = top - 232
+        y = top - 244
         for line in simpleSplit(listing, "Helvetica", 9.5, width - 200)[:3]:
             _centered(pdf, middle, y, line, "Helvetica", 9.5, MUTED)
             y -= 13

@@ -345,13 +345,13 @@ class MemberExportView(ManageMembersRequiredMixin, View):
 
     def get(self, request):
         header = [
-            "Nombre", "Apellido", "Email", "Teléfono", "Fecha de nacimiento", "Género",
+            "Nombre", "Apellido", "Email", "Teléfono", "Identificación", "Fecha de nacimiento", "Género",
             "Estado civil", "Bautizado", "Fecha de bautismo", "Estado", "Fecha de membresía",
             "Familia", "Dirección", "Ciudad", "Estado/Provincia", "Código postal", "Etiquetas",
         ]
         rows = (
             [
-                m.first_name, m.last_name, m.email, m.phone, m.date_of_birth,
+                m.first_name, m.last_name, m.email, m.phone, m.national_id, m.date_of_birth,
                 m.get_gender_display(), m.get_marital_status_display(), m.is_baptized,
                 m.baptism_date, m.get_member_status_display(), m.membership_date,
                 m.family.name if m.family else "", m.address, m.city, m.state,
@@ -418,6 +418,7 @@ class MemberCreateView(
         "last_name",
         "email",
         "phone",
+        "national_id",
         "date_of_birth",
         "gender",
         "marital_status",
@@ -439,6 +440,7 @@ class MemberCreateView(
         form = super().get_form(form_class)
         tenant = getattr(self.request.user, "tenant", None)
         if tenant:
+            form.instance.tenant = tenant  # lets Member.clean() check the ID is unique here
             form.fields["family"].queryset = Family.objects.filter(tenant=tenant)
             form.fields["tags"].queryset = Tag.objects.filter(tenant=tenant)
         if not self.request.user.can_view_pastoral_notes:
@@ -471,6 +473,7 @@ class MemberUpdateView(
         "last_name",
         "email",
         "phone",
+        "national_id",
         "date_of_birth",
         "gender",
         "marital_status",
@@ -880,6 +883,7 @@ class MemberLookupView(LoginRequiredMixin, View):
                         "id": str(person.pk),
                         "name": person.full_name,
                         "email": person.email or "",
+                        "id_hint": person.national_id_hint,
                         "family": person.family.name if person.family else "",
                         "family_id": str(person.family_id) if person.family_id else "",
                     }
