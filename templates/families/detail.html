@@ -34,7 +34,7 @@
                                 {% if family.city or family.state %}<br><small class="text-muted">{{ family.city }}{% if family.city and family.state %}, {% endif %}{{ family.state }} {{ family.postal_code }}</small>{% endif %}
                             </td>
                         </tr>
-                        {% if family.notes %}
+                        {% if family.notes and user.can_view_pastoral_notes %}
                         <tr><td class="text-muted">Notas</td><td>{{ family.notes|linebreaksbr }}</td></tr>
                         {% endif %}
                     </table>

@@ -90,3 +90,12 @@ class FamilyForm(forms.ModelForm):
                 pk__in=chosen_ids
             ).update(family=None)
         return family
+
+
+class MyContactForm(forms.ModelForm):
+    """What a member may change about their own record: how to reach them.
+    Everything else (status, baptism, notes, family...) is the church's call."""
+
+    class Meta:
+        model = Member
+        fields = ["phone", "address", "city", "state", "postal_code"]

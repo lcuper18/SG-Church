@@ -79,7 +79,8 @@
             </div>
         </div>
 
-        <!-- Member Progress -->
+        <!-- Member Progress (staff only: it names people) -->
+        {% if user.can_view_roster %}
         <div class="col-md-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
@@ -99,7 +100,7 @@
                                 {% for row in progress %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'member_detail' row.member.pk %}">{{ row.member.full_name }}</a>
+                                        {% if user.can_manage_members %}<a href="{% url 'member_detail' row.member.pk %}">{{ row.member.full_name }}</a>{% else %}{{ row.member.full_name }}{% endif %}
                                     </td>
                                     <td>
                                         <div class="progress" style="height: 20px;">
@@ -131,6 +132,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

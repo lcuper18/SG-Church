@@ -6,7 +6,29 @@ from rest_framework import serializers
 from members.models import Member, Family, Tag
 
 
-class MemberSerializer(serializers.ModelSerializer):
+class PastoralNotesMixin:
+    """`notes` is visible to, and writable by, only the roles allowed to see
+    pastoral notes; for everyone else the key is dropped in both directions."""
+
+    def _can_see_notes(self):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        return bool(user and user.is_authenticated and user.can_view_pastoral_notes)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if not self._can_see_notes():
+            data.pop("notes", None)
+        return data
+
+    def to_internal_value(self, data):
+        validated = super().to_internal_value(data)
+        if not self._can_see_notes():
+            validated.pop("notes", None)
+        return validated
+
+
+class MemberSerializer(PastoralNotesMixin, serializers.ModelSerializer):
     """
     Serializer for Member model.
     """
@@ -48,7 +70,7 @@ class MemberSerializer(serializers.ModelSerializer):
         return obj.family.name if obj.family else None
 
 
-class MemberCreateSerializer(serializers.ModelSerializer):
+class MemberCreateSerializer(PastoralNotesMixin, serializers.ModelSerializer):
     """
     Serializer for creating a new Member.
     """
@@ -77,7 +99,7 @@ class MemberCreateSerializer(serializers.ModelSerializer):
         ]
 
 
-class FamilySerializer(serializers.ModelSerializer):
+class FamilySerializer(PastoralNotesMixin, serializers.ModelSerializer):
     """
     Serializer for Family model.
     """

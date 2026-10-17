@@ -100,6 +100,17 @@ class User(AbstractUser):
     def can_manage_education(self):
         return self.is_superuser or self.role in ["admin", "teacher"]
 
+    @property
+    def can_view_roster(self):
+        """See who is enrolled in a course or block (names only). Wider than
+        the member directory: teachers need it to certify their students."""
+        return self.can_manage_members or self.can_manage_education
+
+    @property
+    def can_view_pastoral_notes(self):
+        """Pastoral notes are the most sensitive free text in the system."""
+        return self.is_superuser or self.role in ["admin", "pastor"]
+
 
 class Member(models.Model):
     """

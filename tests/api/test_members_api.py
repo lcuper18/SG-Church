@@ -154,14 +154,14 @@ class TestTagsAPI:
 @pytest.mark.integration
 @pytest.mark.django_db
 class TestMembersAPIPermissions:
-    """A 'member'/'volunteer' role user can read the member directory but
-    must not be able to write; a 'church_admin' role user can still write."""
+    """A plain 'member' role user gets no access to the directory (reads
+    included: it carries phones, addresses and birth dates); an admin still can."""
 
-    def test_member_role_can_list_members(
+    def test_member_role_cannot_list_members(
         self, regular_api_client_same_tenant, member
     ):
         response = regular_api_client_same_tenant.get("/api/v1/members/")
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_member_role_cannot_create_member(self, regular_api_client_same_tenant):
         data = {

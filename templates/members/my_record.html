@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load ui %}
+
+{% block title %}Mi ficha - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% include "partials/page_header.html" with title="Mi ficha" icon="bi-person-vcard" subtitle="Tus datos, tus cursos y tus actividades en la iglesia" %}
+
+    {% if not member %}
+    <div class="alert alert-info" role="status">
+        <h5 class="alert-heading">Tu usuario aún no está vinculado a una ficha</h5>
+        <p class="mb-0">Pídele a un administrador de la iglesia que vincule tu usuario con tu ficha de miembro para ver aquí tus cursos, certificados y actividades.</p>
+    </div>
+    {% else %}
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h4 class="mb-1">{{ member.full_name }}</h4>
+                    <p class="text-muted mb-3">{{ member.get_member_status_display }}{% if member.family %} · {{ member.family.name }}{% endif %}</p>
+                    <table class="table table-borderless table-sm mb-0">
+                        <tr><td class="text-muted" width="40%">Email</td><td>{{ member.email|default:"-" }}</td></tr>
+                        <tr><td class="text-muted">Teléfono</td><td>{{ member.phone|default:"-" }}</td></tr>
+                        <tr><td class="text-muted">Dirección</td><td>{{ member.address|default:"-" }}{% if member.city %}, {{ member.city }}{% endif %}</td></tr>
+                        <tr><td class="text-muted">Cumpleaños</td><td>{{ member.date_of_birth|date:"d/m/Y"|default:"-" }}</td></tr>
+                        <tr><td class="text-muted">Bautizado/a</td><td>{% if member.is_baptized %}Sí{% if member.baptism_date %} ({{ member.baptism_date|date:"d/m/Y" }}){% endif %}{% else %}No{% endif %}</td></tr>
+                    </table>
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{% url 'my_record_edit' %}" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-pencil"></i> Actualizar mis datos de contacto
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white"><h5 class="mb-0">Mis cursos</h5></div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for enrollment in enrollments %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{% url 'course_detail' enrollment.course.pk %}">{{ enrollment.course.title }}</a>
+                            <span class="badge bg-{% if enrollment.status == 'completed' %}success{% else %}warning{% endif %}">{{ enrollment.get_status_display }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">Aún no estás inscrito/a en ningún curso.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white"><h5 class="mb-0">Mis certificados</h5></div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for certificate in certificates %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-award text-success"></i> {{ certificate.course_block.name }} <span class="text-muted">· {{ certificate.issued_at|date:"d/m/Y" }}</span></span>
+                            <a href="{% url 'block_certificate_detail' certificate.pk %}" class="btn btn-sm btn-outline-success">Ver certificado</a>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">Todavía no tienes certificados.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white"><h5 class="mb-0">Mis próximos eventos</h5></div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for registration in registrations %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{% url 'event_detail' registration.event.pk %}">{{ registration.event.title }}</a>
+                            <span class="text-muted">{{ registration.event.start_at|date:"d/m/Y H:i" }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">No estás inscrito/a en eventos próximos.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white"><h5 class="mb-0">Mis donaciones</h5></div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for donation in donations %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ donation.donation_date|date:"d/m/Y" }} <span class="text-muted">· {{ donation.get_campaign_display }}</span></span>
+                            <strong>{% money donation.amount donation.currency %}</strong>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">No hay donaciones registradas a tu nombre.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

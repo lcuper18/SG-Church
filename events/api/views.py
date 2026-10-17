@@ -5,7 +5,7 @@ Views for Events API.
 from rest_framework import filters, viewsets
 from rest_framework.exceptions import ValidationError
 
-from core.permissions import CanManageMembers
+from core.permissions import CanManageEvents, CanManageMembers
 from emails import notify
 from events.models import Event, EventAttendance, EventRegistration
 
@@ -20,7 +20,7 @@ class EventViewSet(viewsets.ModelViewSet):
     """ViewSet for managing events."""
 
     serializer_class = EventSerializer
-    permission_classes = [CanManageMembers]
+    permission_classes = [CanManageEvents]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "location"]
     ordering_fields = ["start_at", "title"]

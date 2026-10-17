@@ -189,6 +189,7 @@
                             </div>
                         </div>
 
+                        {% if form.notes %}
                         <hr class="my-4">
 
                         <h5 class="mb-3 text-muted">Notas</h5>
@@ -197,6 +198,7 @@
                             <textarea class="form-control {{ form.notes|invalid }}" id="notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
                             {% include "partials/field_errors.html" with field=form.notes %}
                         </div>
+                        {% endif %}
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'member_list' %}" class="btn btn-secondary">Cancelar</a>

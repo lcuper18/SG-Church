@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load ui %}
+
+{% block title %}Mis datos de contacto - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'my_record' %}">Mi ficha</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Datos de contacto</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header"><h4 class="mb-0">Mis datos de contacto</h4></div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% include "partials/form_errors.html" %}
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control {{ form.phone|invalid }}" id="phone" name="phone" value="{{ form.phone.value|default:'' }}">
+                            {% include "partials/field_errors.html" with field=form.phone %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Dirección</label>
+                            <textarea class="form-control {{ form.address|invalid }}" id="address" name="address" rows="2">{{ form.address.value|default:'' }}</textarea>
+                            {% include "partials/field_errors.html" with field=form.address %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control {{ form.city|invalid }}" id="city" name="city" value="{{ form.city.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.city %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="state" class="form-label">Estado / provincia</label>
+                                <input type="text" class="form-control {{ form.state|invalid }}" id="state" name="state" value="{{ form.state.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.state %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="postal_code" class="form-label">Código postal</label>
+                                <input type="text" class="form-control {{ form.postal_code|invalid }}" id="postal_code" name="postal_code" value="{{ form.postal_code.value|default:'' }}">
+                                {% include "partials/field_errors.html" with field=form.postal_code %}
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'my_record' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

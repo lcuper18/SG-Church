@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
@@ -59,50 +59,40 @@ def dashboard(request):
     now = timezone.now()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    # Total members
-    total_members = Member.objects.filter(tenant=tenant).count()
+    context = {"tenant": tenant}
 
-    # New members this month
-    new_members_this_month = Member.objects.filter(
-        tenant=tenant, created_at__gte=month_start
-    ).count()
+    # Each block is computed only for the roles that may see it; the template
+    # checks the same permissions, so nothing else leaks through the numbers.
+    if user.can_manage_members:
+        counts = Member.objects.filter(tenant=tenant).aggregate(
+            total=Count("id"),
+            new_this_month=Count("id", filter=Q(created_at__gte=month_start)),
+            as_member=Count("id", filter=Q(member_status="member")),
+            as_visitor=Count("id", filter=Q(member_status="visitor")),
+            as_attendee=Count("id", filter=Q(member_status="attendee")),
+            inactive=Count("id", filter=Q(member_status="inactive")),
+        )
+        context.update(
+            {
+                "total_members": counts["total"],
+                "new_members_this_month": counts["new_this_month"],
+                "members_as_member": counts["as_member"],
+                "members_as_visitor": counts["as_visitor"],
+                "members_as_attendee": counts["as_attendee"],
+                "members_inactive": counts["inactive"],
+                "recent_members": Member.objects.filter(tenant=tenant).order_by(
+                    "-created_at"
+                )[:5],
+            }
+        )
 
-    # Members by status
-    members_as_member = Member.objects.filter(
-        tenant=tenant, member_status="member"
-    ).count()
-    members_as_visitor = Member.objects.filter(
-        tenant=tenant, member_status="visitor"
-    ).count()
-    members_as_attendee = Member.objects.filter(
-        tenant=tenant, member_status="attendee"
-    ).count()
-    members_inactive = Member.objects.filter(
-        tenant=tenant, member_status="inactive"
-    ).count()
-
-    # Donations this month
-    donations_this_month = (
-        Donation.objects.filter(
-            tenant=tenant, status="completed", donation_date__gte=month_start
-        ).aggregate(total=Sum("amount"))["total"]
-        or 0
-    )
-
-    # Recent members
-    recent_members = Member.objects.filter(tenant=tenant).order_by("-created_at")[:5]
-
-    context = {
-        "tenant": tenant,
-        "total_members": total_members,
-        "new_members_this_month": new_members_this_month,
-        "members_as_member": members_as_member,
-        "members_as_visitor": members_as_visitor,
-        "members_as_attendee": members_as_attendee,
-        "members_inactive": members_inactive,
-        "donations_this_month": donations_this_month,
-        "recent_members": recent_members,
-    }
+    if user.can_manage_finance:
+        context["donations_this_month"] = (
+            Donation.objects.filter(
+                tenant=tenant, status="completed", donation_date__gte=month_start
+            ).aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
 
     return render(request, "core/dashboard.html", context)
 

@@ -67,7 +67,7 @@ class TestDetail:
         assert authenticated_client.get(url).status_code == 404
         assert Client().get(url).status_code == 302
 
-    def test_read_only_roles_can_view_but_not_see_edit_buttons(self, admin_user):
+    def test_plain_members_cannot_open_a_family_page(self, admin_user):
         family = Family.objects.create(tenant=admin_user.tenant, name="Mora")
         viewer = User.objects.create_user(
             email="v@t.com", password="x-Strong-pass-1", role="member", tenant=admin_user.tenant
@@ -77,8 +77,7 @@ class TestDetail:
 
         response = client.get(reverse("family_detail", args=[family.pk]))
 
-        assert response.status_code == 200
-        assert reverse("family_update", args=[family.pk]) not in response.content.decode()
+        assert response.status_code == 403
 
     def test_list_and_member_pages_link_to_it(self, authenticated_client, admin_user, people):
         family = Family.objects.create(tenant=admin_user.tenant, name="Mora")

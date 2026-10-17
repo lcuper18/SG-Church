@@ -5,7 +5,7 @@ Views for Education (courses) API.
 from rest_framework import filters, viewsets
 from rest_framework.exceptions import ValidationError
 
-from core.permissions import CanManageEducation, CanManageMembers
+from core.permissions import CanManageEducation, CanManageMembers, CanViewRoster
 from emails import notify
 from education.models import BlockCertificate, Course, CourseBlock, Enrollment
 
@@ -79,6 +79,9 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ["partial_update", "update"]:
             return [CanManageEducation()]
+        if self.action in ["list", "retrieve"]:
+            # Teachers read the roster to certify; they do not enrol people.
+            return [CanViewRoster()]
         return [CanManageMembers()]
 
     def get_queryset(self):
@@ -123,7 +126,7 @@ class BlockCertificateViewSet(viewsets.ReadOnlyModelViewSet):
     """Read-only: certificates are issued automatically, not created via API."""
 
     serializer_class = BlockCertificateSerializer
-    permission_classes = [CanManageMembers]
+    permission_classes = [CanViewRoster]
 
     def get_queryset(self):
         user = self.request.user

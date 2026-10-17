@@ -7,7 +7,9 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
-from members.models import User
+from django.db.models import Q
+
+from members.models import Member, User
 from tenants.models import Tenant
 from tenants.timezones import TIMEZONE_CHOICES
 
@@ -95,11 +97,11 @@ class ChurchSettingsForm(BootstrapFormMixin, forms.ModelForm):
 
 ROLE_HELP = {
     "admin": "Acceso total: miembros, finanzas, cursos, configuración y usuarios.",
-    "pastor": "Gestiona miembros, familias, etiquetas y eventos.",
+    "pastor": "Gestiona miembros, familias, etiquetas y eventos; es de los pocos que ven las notas pastorales.",
     "treasurer": "Gestiona donaciones, gastos y reportes de finanzas.",
-    "teacher": "Gestiona cursos, bloques y certificados.",
-    "volunteer": "Gestiona miembros y eventos (inscripciones y asistencia).",
-    "member": "Solo consulta; no puede crear ni modificar datos.",
+    "teacher": "Gestiona cursos, bloques y certificados, y ve quién está inscrito en cada curso.",
+    "volunteer": "Gestiona miembros y eventos (inscripciones y asistencia). No ve notas pastorales ni donaciones.",
+    "member": "Ve el calendario de eventos, el catálogo de cursos y su propia ficha (datos, cursos, certificados y donaciones). No accede a datos de otras personas.",
 }
 
 
@@ -137,7 +139,28 @@ class _PasswordPairMixin:
                     self.add_error("password1", error)
 
 
-class UserCreateForm(_PasswordPairMixin, BootstrapFormMixin, forms.ModelForm):
+class _MemberLinkMixin:
+    """Optional link between a login and the member record it belongs to; it
+    powers "Mi ficha". Only people of the same church who aren't already
+    linked to another login can be picked."""
+
+    def _add_member_link_field(self, tenant, current=None):
+        free = Member.objects.filter(tenant=tenant, linked_user__isnull=True)
+        if current is not None:
+            free = Member.objects.filter(
+                Q(pk=current.pk) | Q(tenant=tenant, linked_user__isnull=True)
+            )
+        self.fields["member_profile"] = forms.ModelChoiceField(
+            label="Ficha de miembro",
+            queryset=free.order_by("last_name", "first_name") if tenant else Member.objects.none(),
+            required=False,
+            empty_label="— Sin vincular —",
+            help_text="Permite a esta persona ver su propia ficha, cursos y certificados.",
+        )
+        self.fields["member_profile"].widget.attrs["class"] = "form-select"
+
+
+class UserCreateForm(_MemberLinkMixin, _PasswordPairMixin, BootstrapFormMixin, forms.ModelForm):
     """Create a login for a person in the administrator's own church."""
 
     class Meta:
@@ -156,6 +179,7 @@ class UserCreateForm(_PasswordPairMixin, BootstrapFormMixin, forms.ModelForm):
         self.fields["email"].required = True
         self.fields["first_name"].required = True
         self._add_password_fields(required=True)
+        self._add_member_link_field(tenant)
 
     def clean_email(self):
         email = User.objects.normalize_email(self.cleaned_data["email"]).strip()
@@ -183,10 +207,21 @@ class UserCreateForm(_PasswordPairMixin, BootstrapFormMixin, forms.ModelForm):
             last_name=self.cleaned_data["last_name"],
             role=self.cleaned_data["role"],
             tenant=self.tenant,
+            member_profile=self._member_to_link(email),
         )
 
+    def _member_to_link(self, email):
+        """The picked record, or else the one in this church that has the same
+        e-mail and is still free."""
+        picked = self.cleaned_data.get("member_profile")
+        if picked is not None:
+            return picked
+        return Member.objects.filter(
+            tenant=self.tenant, email__iexact=email, linked_user__isnull=True
+        ).first()
 
-class UserEditForm(_PasswordPairMixin, BootstrapFormMixin, forms.ModelForm):
+
+class UserEditForm(_MemberLinkMixin, _PasswordPairMixin, BootstrapFormMixin, forms.ModelForm):
     """Change a user's name, role, active state and (optionally) password.
 
     Administrators can't change their own role or deactivate themselves, so a
@@ -194,7 +229,7 @@ class UserEditForm(_PasswordPairMixin, BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "role", "is_active"]
+        fields = ["first_name", "last_name", "role", "is_active", "member_profile"]
         labels = {
             "first_name": "Nombre",
             "last_name": "Apellido",
@@ -205,6 +240,9 @@ class UserEditForm(_PasswordPairMixin, BootstrapFormMixin, forms.ModelForm):
     def __init__(self, *args, editing_self=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.editing_self = editing_self
+        self._add_member_link_field(self.instance.tenant, current=self.instance.member_profile)
+        if self.instance.member_profile_id:
+            self.initial["member_profile"] = self.instance.member_profile_id
         if editing_self:
             for name in ("role", "is_active"):
                 self.fields[name].disabled = True

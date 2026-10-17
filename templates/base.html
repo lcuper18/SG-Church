@@ -47,6 +47,7 @@
                                 <i class="bi bi-speedometer2"></i> Dashboard
                             </a>
                         </li>
+                        {% if user.can_manage_members %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle {% if path|slice:':9' == '/members/' %}active{% endif %}"
                                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -62,6 +63,8 @@
                                 {% endif %}
                             </ul>
                         </li>
+                        {% endif %}
+                        {% if user.can_manage_finance %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle {% if path|slice:':9' == '/finance/' %}active{% endif %}"
                                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -76,6 +79,7 @@
                                 <li><a class="dropdown-item" href="{% url 'donations_by_member' %}"><i class="bi bi-person-lines-fill me-2"></i>Donaciones por miembro</a></li>
                             </ul>
                         </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link {% if path|slice:':11' == '/education/' %}active{% endif %}"
                                {% if path|slice:':11' == '/education/' %}aria-current="page"{% endif %}
@@ -119,6 +123,7 @@
                                 <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'my_record' %}"><i class="bi bi-person-vcard me-2"></i>Mi ficha</a></li>
                                 <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>Mi perfil</a></li>
                                 {% if user.is_church_admin %}
                                 <li><a class="dropdown-item" href="{% url 'church_settings' %}"><i class="bi bi-gear me-2"></i>Configuración</a></li>

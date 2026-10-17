@@ -10,6 +10,8 @@ urlpatterns = [
     path("dashboard/", views.dashboard, name="dashboard"),
     # Profile and church settings
     path("profile/", views.profile, name="profile"),
+    path("me/", members_views.my_record, name="my_record"),
+    path("me/edit/", members_views.my_record_update, name="my_record_edit"),
     path("settings/", views.ChurchSettingsView.as_view(), name="church_settings"),
     # User management (church administrators)
     path("users/", views.UserListView.as_view(), name="user_list"),

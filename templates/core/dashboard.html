@@ -5,17 +5,25 @@
 
 {% block content %}
 <div class="container py-4">
+    {% if user.can_manage_members %}
     {% url 'member_create' as member_create_url %}
     {% include "partials/page_header.html" with title=tenant.name subtitle="Bienvenido de nuevo" action_url=member_create_url action_label="Agregar Miembro" %}
+    {% else %}
+    {% include "partials/page_header.html" with title=tenant.name subtitle="Bienvenido de nuevo" %}
+    {% endif %}
 
-    <!-- Stats Cards -->
+    <!-- Stats Cards: each one only for the roles allowed to see its data -->
+    {% if user.can_manage_members or user.can_manage_finance %}
     <div class="row g-4 mb-4">
+        {% if user.can_manage_members %}
         <div class="col-6 col-lg-3">
             {% include "partials/kpi_card.html" with label="Total Miembros" value=total_members icon="bi-people" color="primary" %}
         </div>
         <div class="col-6 col-lg-3">
             {% include "partials/kpi_card.html" with label="Nuevos este Mes" value=new_members_this_month icon="bi-person-plus" color="success" %}
         </div>
+        {% endif %}
+        {% if user.can_manage_finance %}
         <div class="col-6 col-lg-3">
             <div class="card kpi-card dashboard-card h-100">
                 <div class="card-body">
@@ -31,10 +39,14 @@
                 </div>
             </div>
         </div>
+        {% endif %}
+        {% if user.can_manage_members %}
         <div class="col-6 col-lg-3">
             {% include "partials/kpi_card.html" with label="Miembros Activos" value=members_as_member icon="bi-person-check" color="info" %}
         </div>
+        {% endif %}
     </div>
+    {% endif %}
 
     <!-- Quick Actions and Recent Members -->
     <div class="row g-4">
@@ -44,24 +56,38 @@
                 <div class="card-header">Acciones Rápidas</div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
+                        <a href="{% url 'my_record' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-person-vcard"></i> Mi ficha
+                        </a>
+                        <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-mortarboard"></i> Cursos
+                        </a>
+                        <a href="{% url 'event_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-calendar-event"></i> Eventos
+                        </a>
+                        {% if user.can_manage_members %}
                         <a href="{% url 'member_create' %}" class="btn btn-outline-primary">
                             <i class="bi bi-person-plus"></i> Agregar Miembro
-                        </a>
-                        <a href="{% url 'donation_list' %}" class="btn btn-outline-success">
-                            <i class="bi bi-cash"></i> Ver Donaciones
                         </a>
                         <a href="{% url 'family_list' %}" class="btn btn-outline-info">
                             <i class="bi bi-people"></i> Gestionar Familias
                         </a>
+                        {% endif %}
+                        {% if user.can_manage_finance %}
+                        <a href="{% url 'donation_list' %}" class="btn btn-outline-success">
+                            <i class="bi bi-cash"></i> Ver Donaciones
+                        </a>
                         <a href="{% url 'income_statement' %}" class="btn btn-outline-secondary">
                             <i class="bi bi-file-earmark-text"></i> Ver Reportes
                         </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Recent Members -->
+        {% if user.can_manage_members %}
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -101,9 +127,11 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <!-- Member Status Overview -->
+    {% if user.can_manage_members %}
     <div class="row g-4 mt-2">
         <div class="col-12">
             <div class="card">
@@ -131,5 +159,6 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

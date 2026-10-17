@@ -2,6 +2,7 @@
 Member, Family, and Tag views.
 """
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import (
     ListView,
     DetailView,
@@ -11,19 +12,19 @@ from django.views.generic import (
     TemplateView,
     View,
 )
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 from core.exports import csv_response, export_filename
 from core.mixins import ManageMembersRequiredMixin
 from django.contrib.auth import login
 from django.db import models
 from django.urls import reverse, reverse_lazy
+from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
 
-from .forms import FamilyForm
+from .forms import FamilyForm, MyContactForm
 from .models import Member, Family, Tag
 from tenants.models import Tenant
 from tenants.timezones import (
@@ -308,7 +309,7 @@ def filtered_members(request):
     )
 
 
-class MemberListView(LoginRequiredMixin, ListView):
+class MemberListView(ManageMembersRequiredMixin, ListView):
     """List all members with filtering and search."""
 
     model = Member
@@ -360,7 +361,7 @@ class MemberExportView(ManageMembersRequiredMixin, View):
 member_export = MemberExportView.as_view()
 
 
-class MemberDetailView(LoginRequiredMixin, DetailView):
+class MemberDetailView(ManageMembersRequiredMixin, DetailView):
     """Member detail view with tabs."""
 
     model = Member
@@ -377,8 +378,10 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         member = self.object
 
-        # Get donations for this member
-        context["donations"] = member.donations.all()[:10]
+        # Giving history is finance data; the pastoral notes sit behind their own
+        # role (the template checks it).
+        if self.request.user.can_manage_finance:
+            context["donations"] = member.donations.all()[:10]
 
         return context
 
@@ -434,6 +437,9 @@ class MemberCreateView(
         if tenant:
             form.fields["family"].queryset = Family.objects.filter(tenant=tenant)
             form.fields["tags"].queryset = Tag.objects.filter(tenant=tenant)
+        if not self.request.user.can_view_pastoral_notes:
+            # Whoever can't read the notes can't overwrite them either.
+            form.fields.pop("notes")
         return form
 
     def form_valid(self, form):
@@ -490,6 +496,9 @@ class MemberUpdateView(
         if tenant:
             form.fields["family"].queryset = Family.objects.filter(tenant=tenant)
             form.fields["tags"].queryset = Tag.objects.filter(tenant=tenant)
+        if not self.request.user.can_view_pastoral_notes:
+            # Whoever can't read the notes can't overwrite them either.
+            form.fields.pop("notes")
         return form
 
     def get_success_url(self):
@@ -524,7 +533,7 @@ member_delete = MemberDeleteView.as_view()
 # ============================================================
 
 
-class FamilyListView(LoginRequiredMixin, ListView):
+class FamilyListView(ManageMembersRequiredMixin, ListView):
     """List all families."""
 
     model = Family
@@ -542,7 +551,7 @@ class FamilyListView(LoginRequiredMixin, ListView):
 family_list = FamilyListView.as_view()
 
 
-class FamilyDetailView(LoginRequiredMixin, DetailView):
+class FamilyDetailView(ManageMembersRequiredMixin, DetailView):
     """A family and the people who make it up."""
 
     model = Family
@@ -580,6 +589,12 @@ class FamilyFormMixin:
         kwargs = super().get_form_kwargs()
         kwargs["tenant"] = getattr(self.request.user, "tenant", None)
         return kwargs
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if not self.request.user.can_view_pastoral_notes:
+            form.fields.pop("notes", None)
+        return form
 
     def get_success_url(self):
         return reverse("family_detail", kwargs={"pk": self.object.pk})
@@ -640,7 +655,7 @@ family_delete = FamilyDeleteView.as_view()
 # ============================================================
 
 
-class TagListView(LoginRequiredMixin, ListView):
+class TagListView(ManageMembersRequiredMixin, ListView):
     """List all tags."""
 
     model = Tag
@@ -716,3 +731,77 @@ class TagDeleteView(ManageMembersRequiredMixin, DeleteView):
 
 
 tag_delete = TagDeleteView.as_view()
+
+
+# ============================================================
+# MEMBER'S OWN RECORD ("Mi ficha")
+# ============================================================
+
+
+class MyRecordMixin(LoginRequiredMixin):
+    """Resolve the record linked to the logged-in user (never another one)."""
+
+    def get_member(self):
+        user = self.request.user
+        member = user.member_profile
+        if member is None or member.tenant_id != user.tenant_id:
+            return None
+        return member
+
+
+class MyRecordView(MyRecordMixin, TemplateView):
+    """The user's own record: their data, courses, certificates, events and
+    giving. Open to every role; it only ever shows the linked member."""
+
+    template_name = "members/my_record.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        member = self.get_member()
+        context["member"] = member
+        if member is None:
+            return context
+        context["enrollments"] = (
+            member.enrollments.exclude(status="dropped")
+            .select_related("course", "course__course_block")
+            .order_by("-enrolled_at")
+        )
+        context["certificates"] = member.block_certificates.select_related(
+            "course_block"
+        ).order_by("-issued_at")
+        context["registrations"] = (
+            member.event_registrations.filter(
+                status="registered", event__start_at__gte=timezone.now()
+            )
+            .select_related("event")
+            .order_by("event__start_at")
+        )
+        context["donations"] = member.donations.filter(status="completed").order_by(
+            "-donation_date"
+        )[:20]
+        return context
+
+
+my_record = MyRecordView.as_view()
+
+
+class MyRecordUpdateView(MyRecordMixin, UpdateView):
+    """Let members keep their own contact details up to date."""
+
+    form_class = MyContactForm
+    template_name = "members/my_record_form.html"
+    success_url = reverse_lazy("my_record")
+
+    def get_object(self, queryset=None):
+        member = self.get_member()
+        if member is None:
+            raise Http404("Tu usuario no está vinculado a una ficha de miembro.")
+        return member
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Tus datos de contacto se actualizaron.")
+        return response
+
+
+my_record_update = MyRecordUpdateView.as_view()

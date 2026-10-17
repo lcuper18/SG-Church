@@ -103,7 +103,8 @@
             {% endif %}
         </div>
 
-        <!-- Enrolled Members -->
+        <!-- Enrolled Members (staff only: it names people) -->
+        {% if user.can_view_roster %}
         <div class="col-md-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
@@ -124,7 +125,7 @@
                                 {% for enrollment in enrollments %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'member_detail' enrollment.member.pk %}">{{ enrollment.member.full_name }}</a>
+                                        {% if user.can_manage_members %}<a href="{% url 'member_detail' enrollment.member.pk %}">{{ enrollment.member.full_name }}</a>{% else %}{{ enrollment.member.full_name }}{% endif %}
                                     </td>
                                     <td>
                                         <span class="badge bg-{% if enrollment.status == 'completed' %}success{% else %}warning{% endif %}">
@@ -166,6 +167,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

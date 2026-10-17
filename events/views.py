@@ -96,7 +96,7 @@ class EventDetailView(LoginRequiredMixin, DetailView):
         context["attended_count"] = len(attended_ids)
         context["no_show_count"] = len(registered_ids - attended_ids)
         context["attended_ids"] = attended_ids
-        if tenant:
+        if tenant and self.request.user.can_manage_members:
             context["registrable_members"] = Member.objects.filter(
                 tenant=tenant
             ).exclude(id__in=registrations.values_list("member_id", flat=True))

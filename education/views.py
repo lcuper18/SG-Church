@@ -64,10 +64,13 @@ class CourseDetailView(LoginRequiredMixin, DetailView):
         tenant = getattr(self.request.user, "tenant", None)
         course = self.object
 
+        if not self.request.user.can_view_roster:
+            return context
+
         context["enrollments"] = course.enrollments.select_related("member").exclude(
             status="dropped"
         )
-        if tenant:
+        if tenant and self.request.user.can_manage_members:
             enrolled_member_ids = course.enrollments.exclude(
                 status="dropped"
             ).values_list("member_id", flat=True)
@@ -251,6 +254,9 @@ class CourseBlockDetailView(LoginRequiredMixin, DetailView):
         courses = list(block.courses.filter(is_active=True))
         total = len(courses)
         course_ids = [c.id for c in courses]
+        context["courses"] = courses
+        if not self.request.user.can_view_roster:
+            return context
 
         member_ids = (
             Enrollment.objects.filter(course_id__in=course_ids)
@@ -488,10 +494,15 @@ class BlockCertificateDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "certificate"
 
     def get_queryset(self):
-        tenant = getattr(self.request.user, "tenant", None)
+        user = self.request.user
+        tenant = getattr(user, "tenant", None)
         if not tenant:
             return BlockCertificate.objects.none()
-        return BlockCertificate.objects.filter(tenant=tenant)
+        certificates = BlockCertificate.objects.filter(tenant=tenant)
+        if user.can_view_roster:
+            return certificates
+        # Anyone else only gets their own.
+        return certificates.filter(member_id=user.member_profile_id)
 
 
 block_certificate_detail = BlockCertificateDetailView.as_view()

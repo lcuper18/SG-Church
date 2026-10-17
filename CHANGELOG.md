@@ -11,6 +11,22 @@ Nothing tagged as a release yet — all work so far lives on `main`. This
 section reflects real history (from `git log`), not a plan.
 
 #### Security
+- Closed the member directory to plain members: list/detail of members,
+  families and tags, the CSV export and the matching API endpoints now require
+  a member-management role (admin, pastor, volunteer). Who is enrolled in a
+  course or registered for an event is limited to staff; certificates can be
+  opened only by their owner or staff
+- Pastoral notes (members and families) are visible and editable only by admins
+  and pastors, in the web UI and the API; a member's giving history on their
+  page is limited to admins and treasurers
+- The dashboard computes and shows member and giving figures only to the roles
+  allowed to see them, and the menus hide sections a role cannot open
+
+#### Added
+- "Mi ficha" (/me/): every user sees their own record, courses, certificates,
+  upcoming events and donations, and can update their contact details; admins
+  link a login to a member record from the user form (or automatically by
+  matching e-mail)
 - Removed insecure fallback defaults for `SECRET_KEY`/`DATABASE_PASSWORD`
   (the app now fails to start instead of running with a guessable key or a
   known password); `DEBUG` no longer defaults to `True`
