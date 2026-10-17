@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 # Blocks a push when the checks fail. Skip once with:  SKIP_CHECKS=1 git push
 # (or `git push --no-verify`). Use CHECK_MODE=fast to leave out the E2E tests.
+# Pushing the same commit to several remotes only runs the checks once.
 [ "${SKIP_CHECKS:-}" = "1" ] && exit 0
-exec "$(git rev-parse --show-toplevel)/scripts/check.sh"
+root="$(git rev-parse --show-toplevel)"
+head="$(git rev-parse HEAD)"
+stamp="$(git rev-parse --git-dir)/checked-head"
+if [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$head" ] && [ -z "$(git status --porcelain)" ]; then
+    echo "Checks already passed for ${head:0:7}; not running them again."
+    exit 0
+fi
+"$root/scripts/check.sh" && echo "$head" > "$stamp"
