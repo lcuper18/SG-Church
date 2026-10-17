@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import HttpResponse
+from core.health import health_check
 import allauth.urls
 from allauth.account.views import (
     AccountInactiveView,
@@ -18,11 +18,6 @@ from allauth.account.views import (
     PasswordResetView,
     SignupView,
 )
-
-
-# Simple health check endpoint
-def health_check(request):
-    return HttpResponse("OK")
 
 
 # Override allauth URLs to use custom templates

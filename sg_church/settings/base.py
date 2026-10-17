@@ -202,8 +202,27 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 USE_TZ = True
 
-# Celery Beat Scheduler
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# Celery Beat. The schedule lives in code (below) and beat remembers its state
+# in a local file, so it needs neither extra Django apps nor database tables.
+CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
+CELERY_BEAT_SCHEDULE = {}
+
+# Backups (see core/backup.py and docs/DEPLOYMENT.md). Local files are kept in
+# BACKUP_DIR (mount a volume there); set BACKUP_S3_BUCKET to also copy each one
+# to an S3-compatible bucket (MinIO, AWS...) using the AWS_* credentials.
+BACKUP_DIR = os.environ.get("BACKUP_DIR", str(BASE_DIR / "backups"))
+BACKUP_KEEP = int(os.environ.get("BACKUP_KEEP", "14"))
+BACKUP_HOUR = int(os.environ.get("BACKUP_HOUR", "3"))
+BACKUP_S3_BUCKET = os.environ.get("BACKUP_S3_BUCKET", "")
+BACKUP_S3_ENDPOINT_URL = os.environ.get("BACKUP_S3_ENDPOINT_URL", "")
+BACKUP_S3_PREFIX = os.environ.get("BACKUP_S3_PREFIX", "sg-church")
+if os.environ.get("BACKUP_ENABLED", "true").lower() == "true":
+    from celery.schedules import crontab
+
+    CELERY_BEAT_SCHEDULE["nightly-backup"] = {
+        "task": "core.tasks.run_backup",
+        "schedule": crontab(hour=BACKUP_HOUR, minute=0),
+    }
 
 # Email
 EMAIL_BACKEND = os.environ.get(

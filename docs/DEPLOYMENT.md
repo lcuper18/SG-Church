@@ -713,27 +713,17 @@ sentry_sdk.init(
 
 ### Health Checks
 
-```python
-# health/views.py
-from django.http import JsonResponse
-from django.db import connection
+`GET /health/` (sin iniciar sesión) devuelve JSON y sirve para el monitoreo:
 
-def health_check(request):
-    # Check database
-    try:
-        connection.ensure_connection()
-        db_status = 'healthy'
-    except Exception:
-        db_status = 'unhealthy'
-    
-    return JsonResponse({
-        'status': 'healthy' if db_status == 'healthy' else 'unhealthy',
-        'database': db_status,
-    })
-
-# URLs
-# path('health/', health_check, name='health_check'),
+```json
+{"status": "ok", "database": "ok", "broker": "ok"}
 ```
+
+- `200` + `"ok"`: todo bien.
+- `200` + `"degraded"`: Redis no responde. La web sigue funcionando (los
+  correos se envían en el momento), pero las tareas en segundo plano y los
+  respaldos programados no correrán: conviene alertar.
+- `503` + `"down"`: la base de datos no responde.
 
 ### Monitoring con Uptime Robot
 
@@ -744,7 +734,59 @@ Agregar endpoint de health a uptime monitoring:
 
 ## Backups
 
-### PostgreSQL Backup Script
+### Respaldos automáticos (incluidos)
+
+El sistema respalda solo cada noche, sin scripts externos. El servicio `beat`
+de `docker-compose.yml` dispara la tarea y el worker de Celery la ejecuta:
+
+- **Qué se guarda:** la base de datos (`pg_dump` en PostgreSQL, la copia en
+  línea de SQLite en modo autoinstalable) y los archivos subidos (fotos, recibos).
+- **Dónde:** `BACKUP_DIR` (por defecto `/app/backups`, un volumen Docker
+  `backup_data`). Se conservan los últimos `BACKUP_KEEP` de cada tipo (14).
+- **Cuándo:** todos los días a las `BACKUP_HOUR` (3, hora del servidor). Se
+  desactiva con `BACKUP_ENABLED=false`.
+- **Copia fuera del servidor (recomendado):** un respaldo en la misma máquina
+  no protege de perder la máquina. Define `BACKUP_S3_BUCKET` (y, si no es AWS,
+  `BACKUP_S3_ENDPOINT_URL`, por ejemplo tu MinIO) más `AWS_ACCESS_KEY_ID` /
+  `AWS_SECRET_ACCESS_KEY`; cada respaldo nuevo se sube a ese bucket bajo
+  `BACKUP_S3_PREFIX` (`sg-church`). La limpieza de copias viejas en el bucket
+  se hace con una regla de ciclo de vida del propio bucket.
+
+```env
+BACKUP_KEEP=14
+BACKUP_HOUR=3
+# BACKUP_S3_BUCKET=respaldos
+# BACKUP_S3_ENDPOINT_URL=https://minio.tudominio.com
+# BACKUP_S3_PREFIX=sg-church
+# AWS_ACCESS_KEY_ID=...
+# AWS_SECRET_ACCESS_KEY=...
+```
+
+Para respaldar a mano (antes de un cambio delicado) o probar la configuración:
+
+```bash
+docker compose exec web python manage.py backup_data
+docker compose exec web ls -lh /app/backups
+```
+
+En el modo autoinstalable no hay Redis ni `beat`; programa el comando con el
+`cron` del servidor, por ejemplo cada noche a las 3:
+`0 3 * * * docker compose -f docker-compose.standalone.yml exec -T web python manage.py backup_data`.
+
+**Restaurar** (probado con PostgreSQL 16): copia el archivo `db-….sql.gz` al
+servidor y cárgalo en una base vacía:
+
+```bash
+gunzip -c db-20261017-030000.sql.gz | docker compose exec -T db psql -U sgchurch -d sgchurch
+# archivos subidos:
+tar -xzf media-20261017-030000.tar.gz -C /ruta/del/volumen/media --strip-components=1
+```
+
+Con SQLite el archivo `db-….sqlite3.gz` es la base completa: descomprímelo y
+reemplaza `db.sqlite3` con la aplicación detenida. Si el sistema tuvo que usar
+el volcado portátil (`db-….json.gz`), se restaura con `manage.py loaddata`.
+
+### PostgreSQL Backup Script (alternativa manual)
 
 ```bash
 #!/bin/bash

@@ -60,6 +60,9 @@ def _enable_sqlite_wal(sender, connection, **kwargs):
 
 connection_created.connect(_enable_sqlite_wal)
 
+# Keep backups next to the database so one volume covers both.
+BACKUP_DIR = os.environ.get("BACKUP_DIR", str(_DATA_DIR / "backups"))
+
 # No Redis for a single-church install: run Celery tasks synchronously.
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True

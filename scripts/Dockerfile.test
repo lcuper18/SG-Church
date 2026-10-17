@@ -1,0 +1,8 @@
+# Test image used by scripts/check.sh when the host has no Python environment
+# with the project's dependencies. Built from the repo root:
+#   docker build -f scripts/Dockerfile.test -t sgchurch-test .
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install --no-cache-dir -q -r requirements-dev.txt pytest-playwright playwright \
+ && playwright install --with-deps chromium

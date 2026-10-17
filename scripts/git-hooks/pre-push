@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Blocks a push when the checks fail. Skip once with:  SKIP_CHECKS=1 git push
+# (or `git push --no-verify`). Use CHECK_MODE=fast to leave out the E2E tests.
+[ "${SKIP_CHECKS:-}" = "1" ] && exit 0
+exec "$(git rev-parse --show-toplevel)/scripts/check.sh"

@@ -23,6 +23,15 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Nightly backups (database + uploaded files) run by a new Celery `beat` service:
+  `pg_dump`/SQLite online backup, retention (`BACKUP_KEEP`), optional copy to an
+  S3-compatible bucket, `manage.py backup_data` for manual runs; restore tested
+  against PostgreSQL 16 (see docs/DEPLOYMENT.md)
+- `/health/` now reports the database (503 when down) and Redis (200 `degraded`)
+  as JSON
+- `scripts/check.sh` (Django check, pending migrations, syntax errors, tests; local
+  Python or Docker) and a versioned `pre-push` hook (`scripts/install-hooks.sh`),
+  replacing a hosted CI service
 - "Mi ficha" (/me/): every user sees their own record, courses, certificates,
   upcoming events and donations, and can update their contact details; admins
   link a login to a member record from the user form (or automatically by

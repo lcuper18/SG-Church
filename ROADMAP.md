@@ -65,7 +65,7 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
   - [x] Configurar Bootstrap 5
   - [x] Configurar Django ORM con PostgreSQL
   - [x] Configurar Django REST Framework
-  - [ ] Setup CI/CD con GitHub Actions
+  - [x] Verificación previa al push con `scripts/check.sh` + hook de git (sin CI externo, por decisión del proyecto)
 
 - [x] **Infraestructura Multi-Tenant**
   - [x] Implementar tenant resolution middleware

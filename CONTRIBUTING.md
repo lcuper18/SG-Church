@@ -94,7 +94,15 @@ Docker, son los pasos habituales de Django (`.env`, `migrate`,
 ### Verificar Setup
 
 ```bash
-# Ejecutar tests
+# Todo en uno: chequeo de Django, migraciones pendientes, errores de sintaxis y tests.
+# Usa tu Python si tiene las dependencias; si no, un contenedor Docker.
+scripts/check.sh        # completo (incluye los tests de navegador)
+scripts/check.sh fast   # sin los tests de navegador
+
+# Hacer que `git push` lo corra antes de subir (una vez por clon):
+scripts/install-hooks.sh
+
+# Ejecutar solo los tests
 pytest
 
 # Ejecutar linter
