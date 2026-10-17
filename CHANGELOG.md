@@ -23,6 +23,14 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Audit trail (Bitácora, admins only): every create/change/delete/restore of members,
+  families, tags, users, donations, expenses, courses, blocks, enrollments, events and
+  the church settings, with who did it and a field-by-field diff (passwords and
+  pastoral notes are recorded as changed but never shown)
+- Trash (Papelera, admins only): deleting a member, family, event, course, block or
+  expense hides it instead of destroying it; admins can restore it (with its
+  enrolments, registrations and certificates) or remove it for good. Items are purged
+  after `TRASH_RETENTION_DAYS` (90) by a nightly job. Donations are never deletable
 - People pickers (register for an event, enrol in a course, choose a family's members)
   now search on demand through `/members/lookup/` instead of embedding every
   member in the page; the family form shows the chosen people as chips

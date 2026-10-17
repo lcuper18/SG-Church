@@ -64,6 +64,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "tenants.middleware.TenantMiddleware",
+    # Last, so signal handlers can tell which user is acting (see core.audit).
+    "core.audit.AuditContextMiddleware",
 ]
 
 ROOT_URLCONF = "sg_church.urls"
@@ -215,6 +217,8 @@ USE_TZ = True
 
 # Celery Beat. The schedule lives in code (below) and beat remembers its state
 # in a local file, so it needs neither extra Django apps nor database tables.
+from celery.schedules import crontab  # noqa: E402
+
 CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
 CELERY_BEAT_SCHEDULE = {}
 
@@ -227,9 +231,14 @@ BACKUP_HOUR = int(os.environ.get("BACKUP_HOUR", "3"))
 BACKUP_S3_BUCKET = os.environ.get("BACKUP_S3_BUCKET", "")
 BACKUP_S3_ENDPOINT_URL = os.environ.get("BACKUP_S3_ENDPOINT_URL", "")
 BACKUP_S3_PREFIX = os.environ.get("BACKUP_S3_PREFIX", "sg-church")
-if os.environ.get("BACKUP_ENABLED", "true").lower() == "true":
-    from celery.schedules import crontab
 
+# Days a deleted record stays in the trash before the nightly job removes it for good.
+TRASH_RETENTION_DAYS = int(os.environ.get("TRASH_RETENTION_DAYS", "90"))
+CELERY_BEAT_SCHEDULE["purge-trash"] = {
+    "task": "core.tasks.purge_trash",
+    "schedule": crontab(hour=3, minute=30),
+}
+if os.environ.get("BACKUP_ENABLED", "true").lower() == "true":
     CELERY_BEAT_SCHEDULE["nightly-backup"] = {
         "task": "core.tasks.run_backup",
         "schedule": crontab(hour=BACKUP_HOUR, minute=0),

@@ -22,6 +22,19 @@ urlpatterns = [
         views.UserToggleActiveView.as_view(),
         name="user_toggle_active",
     ),
+    # Audit trail and trash (church administrators)
+    path("audit/", views.AuditLogView.as_view(), name="audit_log"),
+    path("trash/", views.TrashView.as_view(), name="trash"),
+    path(
+        "trash/restore/<str:model>/<uuid:pk>/",
+        views.TrashActionView.as_view(action="restore"),
+        name="trash_restore",
+    ),
+    path(
+        "trash/purge/<str:model>/<uuid:pk>/",
+        views.TrashActionView.as_view(action="purge"),
+        name="trash_purge",
+    ),
     # Onboarding
     path(
         "onboarding/",

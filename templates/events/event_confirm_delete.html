@@ -4,7 +4,7 @@
 
 {% block delete_body %}
 <p>¿Estás seguro de que deseas eliminar el evento <strong>{{ event.title }}</strong>?</p>
-<p class="text-muted mb-0">Las inscripciones a este evento también se eliminarán.</p>
+<p class="text-muted mb-0">Se enviará a la papelera y podrás restaurarlo, con sus inscripciones.</p>
 {% endblock %}
 
 {% block cancel_url %}{% url 'event_detail' event.pk %}{% endblock %}

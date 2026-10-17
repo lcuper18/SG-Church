@@ -4,7 +4,7 @@
 
 {% block delete_body %}
 <p>¿Estás seguro de que deseas eliminar el bloque <strong>{{ course_block.name }}</strong>?</p>
-<p class="text-muted mb-0">Los cursos de este bloque no serán eliminados, pero quedarán como cursos independientes.</p>
+<p class="text-muted mb-0">Se enviará a la papelera y podrás restaurarlo. Los cursos del bloque no se eliminan: quedarán como cursos independientes.</p>
 {% endblock %}
 
 {% block cancel_url %}{% url 'course_block_list' %}{% endblock %}

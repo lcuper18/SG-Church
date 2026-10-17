@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Bitácora - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% include "partials/page_header.html" with title="Bitácora" icon="bi-journal-text" subtitle="Quién creó, cambió, eliminó o restauró cada cosa." %}
+
+    <form method="get" class="card card-body mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="model" class="form-label">Qué</label>
+                <select class="form-select" id="model" name="model">
+                    <option value="">Todo</option>
+                    {% for value, label in model_choices %}
+                    <option value="{{ value }}" {% if request.GET.model == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="action" class="form-label">Acción</label>
+                <select class="form-select" id="action" name="action">
+                    <option value="">Todas</option>
+                    {% for value, label in action_choices %}
+                    <option value="{{ value }}" {% if request.GET.action == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="q" class="form-label">Buscar (nombre o usuario)</label>
+                <input type="search" class="form-control" id="q" name="q" value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">Desde</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.GET.date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">Hasta</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.GET.date_to }}">
+            </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a href="{% url 'audit_log' %}" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Cuándo</th>
+                        <th scope="col">Quién</th>
+                        <th scope="col">Acción</th>
+                        <th scope="col">Qué</th>
+                        <th scope="col">Cambios</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr>
+                        <td class="text-nowrap">{{ entry.created_at|date:"d/m/Y H:i" }}</td>
+                        <td>{{ entry.user_label }}</td>
+                        <td>
+                            <span class="badge bg-{% if entry.action == 'create' %}success{% elif entry.action == 'update' %}primary{% elif entry.action == 'restore' %}info text-dark{% else %}danger{% endif %}">{{ entry.get_action_display }}</span>
+                        </td>
+                        <td><span class="text-muted">{{ entry.type_label }}:</span> {{ entry.object_repr }}</td>
+                        <td>
+                            {% for field, old, new in entry.change_rows %}
+                            <div class="small"><strong>{{ field }}:</strong>
+                                <span class="text-muted">{{ old|default_if_none:"(vacío)"|default:"(vacío)" }}</span>
+                                → {{ new|default_if_none:"(vacío)"|default:"(vacío)" }}</div>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">No hay registros con esos filtros.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% include "partials/pagination.html" %}
+</div>
+{% endblock %}

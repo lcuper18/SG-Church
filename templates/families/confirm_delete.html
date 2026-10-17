@@ -4,7 +4,7 @@
 
 {% block delete_body %}
 <p>¿Estás seguro de que deseas eliminar la familia <strong>{{ family.name }}</strong>?</p>
-<p class="text-muted mb-0">Los miembros de esta familia no serán eliminados, pero perderán su asociación con la familia.</p>
+<p class="text-muted mb-0">Se enviará a la papelera y podrás restaurarla. Mientras tanto, sus miembros no serán eliminados, pero quedarán sin familia.</p>
 {% endblock %}
 
 {% block cancel_url %}{% url 'family_list' %}{% endblock %}

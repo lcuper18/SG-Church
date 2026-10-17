@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Papelera - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% include "partials/page_header.html" with title="Papelera" icon="bi-trash3" subtitle="Lo que se eliminó se conserva aquí para poder restaurarlo." %}
+
+    <div class="alert alert-info" role="note">
+        Los elementos se eliminan definitivamente a los <strong>{{ retention_days }} días</strong>.
+        Al restaurar un miembro vuelve con sus cursos, inscripciones y certificados; una familia vuelve sin sus
+        miembros y un bloque sin sus cursos.
+    </div>
+
+    {% for group in groups %}
+    <div class="card mb-4">
+        <div class="card-header">{{ group.label }} <span class="badge bg-secondary">{{ group.items|length }}</span></div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Elemento</th>
+                        <th scope="col">Eliminado</th>
+                        <th scope="col">Por</th>
+                        <th scope="col" class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in group.items %}
+                    <tr>
+                        <td>{{ item }}</td>
+                        <td>{{ item.deleted_at|date:"d/m/Y H:i" }}</td>
+                        <td>{{ item.deleted_by.get_full_name|default:"Sistema" }}</td>
+                        <td class="text-end">
+                            <form method="post" action="{% url 'trash_restore' group.key item.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Restaurar
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'trash_purge' group.key item.pk %}" class="d-inline"
+                                  onsubmit="return confirm('¿Eliminar definitivamente? Esta acción no se puede deshacer.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-x-circle" aria-hidden="true"></i> Eliminar definitivamente
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    {% include "partials/empty_state.html" with icon="bi-trash3" message="La papelera está vacía." %}
+    {% endfor %}
+</div>
+{% endblock %}

@@ -8,6 +8,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.urls import reverse
 import uuid
 
+from core.softdelete import SoftDeleteModel
 from core.text import fold
 from core.validators import FileSizeValidator
 
@@ -113,7 +114,7 @@ class User(AbstractUser):
         return self.is_superuser or self.role in ["admin", "pastor"]
 
 
-class Member(models.Model):
+class Member(SoftDeleteModel):
     """
     Represents a church member.
     """
@@ -252,8 +253,12 @@ class Member(models.Model):
     def get_absolute_url(self):
         return reverse("member_detail", kwargs={"pk": self.pk})
 
+    def on_soft_delete(self):
+        # A trashed person can no longer head a family.
+        Family.all_objects.filter(head_of_family=self).update(head_of_family=None)
 
-class Family(models.Model):
+
+class Family(SoftDeleteModel):
     """
     Represents a family unit within a church.
     """
@@ -298,7 +303,15 @@ class Family(models.Model):
         verbose_name = "Family"
         verbose_name_plural = "Families"
         ordering = ["name"]
-        unique_together = ["tenant", "name"]
+        constraints = [
+            # Names are unique among live families, so a trashed one doesn't
+            # block reusing its name.
+            models.UniqueConstraint(
+                fields=["tenant", "name"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_live_family_name_per_tenant",
+            )
+        ]
 
     def __str__(self):
         return self.name

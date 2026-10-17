@@ -6,6 +6,7 @@
 {% block delete_body %}
 <p>¿Estás seguro de que deseas eliminar el gasto <strong>{{ expense.description }}</strong>?</p>
 <p class="text-muted mb-0">Monto: {% money expense.amount %}</p>
+<p class="text-muted mb-0">Se enviará a la papelera y podrás restaurarlo.</p>
 {% endblock %}
 
 {% block cancel_url %}{% url 'expense_list' %}{% endblock %}

@@ -4,7 +4,7 @@
 
 {% block delete_body %}
 <p>¿Estás seguro de que deseas eliminar el curso <strong>{{ course.title }}</strong>?</p>
-<p class="text-muted mb-0">Las inscripciones de miembros a este curso también se eliminarán.</p>
+<p class="text-muted mb-0">Se enviará a la papelera y podrás restaurarlo, con sus inscripciones.</p>
 {% endblock %}
 
 {% block cancel_url %}{% url 'course_list' %}{% endblock %}

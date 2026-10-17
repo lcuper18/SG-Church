@@ -7,8 +7,10 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+from core.softdelete import SoftDeleteModel, alive_through
 
-class Event(models.Model):
+
+class Event(SoftDeleteModel):
     """A church event or special activity members can register for."""
 
     TYPE_CHOICES = [
@@ -118,6 +120,8 @@ class Event(models.Model):
 class EventRegistration(models.Model):
     """A member's registration for an event."""
 
+    objects = alive_through("member", "event")
+
     STATUS_CHOICES = [
         ("registered", "Inscrito"),
         ("cancelled", "Cancelado"),
@@ -151,6 +155,8 @@ class EventRegistration(models.Model):
 class EventAttendance(models.Model):
     """A member who attended an event. A row means "attended"; unmarking
     deletes it. Any member of the church can be marked, registered or not."""
+
+    objects = alive_through("member", "event")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant = models.ForeignKey(

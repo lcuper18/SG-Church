@@ -7,6 +7,7 @@ from django.core.validators import FileExtensionValidator
 from django.db import models
 import uuid
 
+from core.softdelete import SoftDeleteModel
 from core.validators import FileSizeValidator
 
 
@@ -102,7 +103,7 @@ class Donation(models.Model):
         return f"${self.amount} - {self.campaign} - Anonymous"
 
 
-class Expense(models.Model):
+class Expense(SoftDeleteModel):
     """
     Represents a church expense.
     """

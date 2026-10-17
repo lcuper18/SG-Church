@@ -2,17 +2,19 @@
 Core views for SG Church.
 """
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, UpdateView, View
+from django.views.generic import CreateView, ListView, TemplateView, UpdateView, View
 from django.utils import timezone
-from datetime import timedelta
+from datetime import date, timedelta
 
 from core.forms import (
     ROLE_HELP,
@@ -250,3 +252,134 @@ class UserToggleActiveView(ChurchUsersMixin, View):
                 f"{'ya puede' if target.is_active else 'ya no puede'} iniciar sesión.",
             )
         return redirect("user_list")
+
+
+# ============================================================
+# AUDIT TRAIL AND TRASH (church administrators)
+# ============================================================
+
+
+def trash_models():
+    """(label_lower, model, Spanish name) for every model with a trash."""
+    from core.audit import REGISTRY
+    from core.softdelete import SoftDeleteModel
+
+    return [
+        (model._meta.label_lower, model, label)
+        for model, label in REGISTRY.items()
+        if issubclass(model, SoftDeleteModel)
+    ]
+
+
+class AuditLogView(LoginRequiredMixin, ChurchAdminRequiredMixin, ListView):
+    """Who changed what, newest first, with simple filters."""
+
+    template_name = "core/audit_log.html"
+    context_object_name = "entries"
+    paginate_by = 50
+
+    def get_queryset(self):
+        from core.models import AuditLog
+
+        queryset = AuditLog.objects.filter(tenant=self.request.user.tenant)
+        get = self.request.GET
+        if get.get("model"):
+            queryset = queryset.filter(model_label=get["model"])
+        if get.get("action"):
+            queryset = queryset.filter(action=get["action"])
+        if get.get("q"):
+            queryset = queryset.filter(
+                Q(object_repr__icontains=get["q"]) | Q(user_label__icontains=get["q"])
+            )
+        start = _parse_iso_date(get.get("date_from"))
+        end = _parse_iso_date(get.get("date_to"))
+        if start:
+            queryset = queryset.filter(created_at__date__gte=start)
+        if end:
+            queryset = queryset.filter(created_at__date__lte=end)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        from core.audit import field_label, label_for
+        from core.models import AuditLog
+
+        context = super().get_context_data(**kwargs)
+        for entry in context["entries"]:
+            entry.type_label = label_for(entry.model_label)
+            entry.change_rows = [
+                (field_label(name), old, new) for name, (old, new) in entry.changes.items()
+            ]
+        context["model_choices"] = [
+            (label_lower, label) for label_lower, _model, label in audited_models()
+        ]
+        context["action_choices"] = AuditLog.ACTION_CHOICES
+        return context
+
+
+def audited_models():
+    from core.audit import REGISTRY
+
+    return [(model._meta.label_lower, model, label) for model, label in REGISTRY.items()]
+
+
+def _parse_iso_date(value):
+    try:
+        return date.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
+class TrashView(LoginRequiredMixin, ChurchAdminRequiredMixin, TemplateView):
+    """What was deleted, with the way back (or out for good)."""
+
+    template_name = "core/trash.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tenant = self.request.user.tenant
+        groups = []
+        for label_lower, model, label in trash_models():
+            items = list(
+                model.all_objects.filter(tenant=tenant, deleted_at__isnull=False)
+                .select_related("deleted_by")
+                .order_by("-deleted_at")
+            )
+            if items:
+                groups.append({"key": label_lower, "label": label, "items": items})
+        context["groups"] = groups
+        context["retention_days"] = settings.TRASH_RETENTION_DAYS
+        return context
+
+
+class TrashActionView(LoginRequiredMixin, ChurchAdminRequiredMixin, View):
+    """POST-only: restore or permanently delete one trashed record."""
+
+    action = None  # "restore" | "purge"
+
+    def post(self, request, model, pk):
+        models_by_label = {label: m for label, m, _ in trash_models()}
+        if model not in models_by_label:
+            raise Http404("Tipo desconocido.")
+        item = get_object_or_404(
+            models_by_label[model].all_objects,
+            pk=pk,
+            tenant=request.user.tenant,
+            deleted_at__isnull=False,
+        )
+        name = str(item)
+        if self.action == "restore":
+            try:
+                with transaction.atomic():
+                    item.restore(user=request.user)
+            except IntegrityError:
+                messages.error(
+                    request,
+                    f"No se puede restaurar «{name}»: ya existe otro registro con el mismo nombre. "
+                    "Renombra el que está activo y vuelve a intentarlo.",
+                )
+            else:
+                messages.success(request, f"«{name}» fue restaurado.")
+        else:
+            item.hard_delete(user=request.user)
+            messages.success(request, f"«{name}» se eliminó definitivamente.")
+        return redirect("trash")

@@ -7,8 +7,10 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+from core.softdelete import SoftDeleteModel, alive_through
 
-class CourseBlock(models.Model):
+
+class CourseBlock(SoftDeleteModel):
     """A named group of courses. Completing every course in a block earns
     the member a BlockCertificate."""
 
@@ -29,13 +31,23 @@ class CourseBlock(models.Model):
         verbose_name = "Course Block"
         verbose_name_plural = "Course Blocks"
         ordering = ["name"]
-        unique_together = ["tenant", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant", "name"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_live_block_name_per_tenant",
+            )
+        ]
 
     def __str__(self):
         return self.name
 
     def courses_count(self):
         return self.courses.count()
+
+    def on_soft_delete(self):
+        # Like a real delete, its courses become standalone again.
+        Course.all_objects.filter(course_block=self).update(course_block=None)
 
     def check_and_issue_certificate(self, member):
         """If `member` has completed every active course in this block,
@@ -64,7 +76,7 @@ class CourseBlock(models.Model):
         return None
 
 
-class Course(models.Model):
+class Course(SoftDeleteModel):
     """A single course. May stand alone (course_block is None) or belong to
     one CourseBlock."""
 
@@ -158,6 +170,8 @@ class Course(models.Model):
 class Enrollment(models.Model):
     """A member's enrollment in a course."""
 
+    objects = alive_through("member", "course")
+
     STATUS_CHOICES = [
         ("enrolled", "Inscrito"),
         ("completed", "Completado"),
@@ -209,6 +223,8 @@ class Enrollment(models.Model):
 
 class BlockCertificate(models.Model):
     """A persisted record that a member completed every course in a block."""
+
+    objects = alive_through("member", "course_block")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant = models.ForeignKey(

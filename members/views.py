@@ -746,7 +746,7 @@ class MyRecordMixin(LoginRequiredMixin):
     def get_member(self):
         user = self.request.user
         member = user.member_profile
-        if member is None or member.tenant_id != user.tenant_id:
+        if member is None or member.tenant_id != user.tenant_id or member.is_deleted:
             return None
         return member
 
