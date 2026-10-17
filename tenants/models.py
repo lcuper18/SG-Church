@@ -9,6 +9,9 @@ from django.urls import reverse
 from django.utils.text import slugify
 import uuid
 
+from django.utils.functional import cached_property
+
+from core.softdelete import SoftDeleteModel
 from core.validators import FileSizeValidator
 
 
@@ -213,7 +216,29 @@ class Tenant(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.subdomain or self.name)
+        creating = self._state.adding
         super().save(*args, **kwargs)
+        if creating:
+            self.main_site()  # every church starts with its one site
+
+    def main_site(self):
+        """The church's main site, created ("Sede principal") if it has none, so
+        code can always attach an event to a site."""
+        site = Site.objects.filter(tenant=self, is_main=True).first()
+        if site:
+            return site
+        first = Site.objects.filter(tenant=self).order_by("sort_order", "name").first()
+        if first:
+            first.is_main = True
+            first.save(update_fields=["is_main"])
+            return first
+        return Site.objects.create(tenant=self, name="Sede principal", is_main=True)
+
+    @cached_property
+    def uses_sites(self):
+        """More than one active site: only then do screens show site pickers,
+        columns and filters, so single-site churches never see them."""
+        return Site.objects.filter(tenant=self, is_active=True).count() > 1
 
     def get_absolute_url(self):
         return reverse("tenant_dashboard", kwargs={"subdomain": self.subdomain})
@@ -239,3 +264,57 @@ class TenantDomain(models.Model):
 
     def __str__(self):
         return f"{self.domain} ({self.tenant.name})"
+
+
+class Site(SoftDeleteModel):
+    """A place where the church meets (sede). A church always has one main site;
+    cultos and events happen at a site, and attendance can be reported per site."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="sites")
+    name = models.CharField(max_length=100)
+    address = models.TextField(blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    is_main = models.BooleanField(default=False)
+    # Inactive sites disappear from pickers but stay in past reports.
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "sites"
+        verbose_name = "Site"
+        verbose_name_plural = "Sites"
+        ordering = ["-is_main", "sort_order", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant", "name"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_live_site_name_per_tenant",
+            ),
+            models.UniqueConstraint(
+                fields=["tenant"],
+                condition=models.Q(is_main=True, deleted_at__isnull=True),
+                name="one_live_main_site_per_tenant",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    def blockers(self):
+        """Why this site can't be deleted (empty list = it can)."""
+        from django.utils import timezone
+
+        reasons = []
+        if self.is_main:
+            reasons.append("es la sede principal")
+        upcoming = self.events.filter(start_at__gte=timezone.now()).count()
+        if upcoming:
+            reasons.append(f"tiene {upcoming} evento(s) próximos")
+        members = self.members.count()
+        if members:
+            reasons.append(f"es la sede de origen de {members} miembro(s)")
+        return reasons

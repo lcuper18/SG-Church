@@ -33,6 +33,12 @@
                             <td class="text-muted">Fin</td>
                             <td>{{ event.end_at|date:"d/m/Y H:i"|default:"-" }}</td>
                         </tr>
+                        {% if user.tenant.uses_sites %}
+                        <tr>
+                            <td class="text-muted">Sede</td>
+                            <td>{{ event.site.name|default:"-" }}</td>
+                        </tr>
+                        {% endif %}
                         <tr>
                             <td class="text-muted">Lugar</td>
                             <td>{{ event.location|default:"-" }}</td>

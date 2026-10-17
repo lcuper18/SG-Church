@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 
 from members.models import Member, User
-from tenants.models import Tenant
+from tenants.models import Site, Tenant
 from tenants.timezones import TIMEZONE_CHOICES
 
 
@@ -273,3 +273,37 @@ class UserEditForm(_MemberLinkMixin, _PasswordPairMixin, BootstrapFormMixin, for
         if commit:
             user.save()
         return user
+
+
+class SiteForm(BootstrapFormMixin, forms.ModelForm):
+    """Create/edit one of the church's sites (sedes)."""
+
+    class Meta:
+        model = Site
+        fields = ["name", "address", "phone", "is_active", "sort_order"]
+        labels = {
+            "name": "Nombre de la sede",
+            "address": "Dirección",
+            "phone": "Teléfono",
+            "is_active": "Activa",
+            "sort_order": "Orden en las listas",
+        }
+        help_texts = {
+            "is_active": "Una sede inactiva no aparece al crear eventos o miembros, pero sigue en los reportes.",
+            "sort_order": "Las sedes se ordenan primero la principal y luego por este número.",
+        }
+        widgets = {"address": forms.Textarea(attrs={"rows": 2})}
+
+    def __init__(self, *args, tenant=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tenant = tenant
+        if self.instance.pk and self.instance.is_main:
+            self.fields["is_active"].disabled = True
+            self.fields["is_active"].help_text = "La sede principal siempre está activa."
+
+    def clean_name(self):
+        name = self.cleaned_data["name"].strip()
+        clash = Site.objects.filter(tenant=self.tenant, name__iexact=name).exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise ValidationError("Ya tienes una sede con ese nombre.")
+        return name

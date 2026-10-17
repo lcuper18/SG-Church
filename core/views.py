@@ -20,6 +20,7 @@ from core.forms import (
     ROLE_HELP,
     ChurchSettingsForm,
     ProfileForm,
+    SiteForm,
     StyledPasswordChangeForm,
     UserCreateForm,
     UserEditForm,
@@ -383,3 +384,92 @@ class TrashActionView(LoginRequiredMixin, ChurchAdminRequiredMixin, View):
             item.hard_delete(user=request.user)
             messages.success(request, f"«{name}» se eliminó definitivamente.")
         return redirect("trash")
+
+
+# ============================================================
+# SITES (sedes) — church administrators
+# ============================================================
+
+
+class SitesMixin(LoginRequiredMixin, ChurchAdminRequiredMixin):
+    def get_tenant(self):
+        tenant = getattr(self.request.user, "tenant", None)
+        if tenant is None:
+            raise Http404("Este usuario no pertenece a ninguna iglesia.")
+        return tenant
+
+    def get_queryset(self):
+        from tenants.models import Site
+
+        return Site.objects.filter(tenant=self.get_tenant())
+
+
+class SiteListView(SitesMixin, ListView):
+    template_name = "core/site_list.html"
+    context_object_name = "sites"
+
+    def get_queryset(self):
+        from django.db.models import Count, Q
+
+        # Reverse counts skip the manager, so trashed people/events are excluded by hand.
+        return (
+            super()
+            .get_queryset()
+            .annotate(
+                member_total=Count("members", filter=Q(members__deleted_at__isnull=True), distinct=True),
+                event_total=Count("events", filter=Q(events__deleted_at__isnull=True), distinct=True),
+            )
+        )
+
+
+class SiteCreateView(SitesMixin, CreateView):
+    form_class = SiteForm
+    template_name = "core/site_form.html"
+    success_url = reverse_lazy("site_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["tenant"] = self.get_tenant()
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.tenant = self.get_tenant()
+        response = super().form_valid(form)
+        messages.success(self.request, f"Sede «{self.object.name}» creada.")
+        return response
+
+
+class SiteUpdateView(SitesMixin, UpdateView):
+    form_class = SiteForm
+    template_name = "core/site_form.html"
+    success_url = reverse_lazy("site_list")
+    context_object_name = "site"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["tenant"] = self.get_tenant()
+        return kwargs
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Sede actualizada.")
+        return response
+
+
+class SiteDeleteView(SitesMixin, View):
+    """POST-only. A site in use (main, upcoming events, members) is refused with
+    the reasons and the admin is pointed at "desactivar" instead."""
+
+    def post(self, request, pk):
+        site = get_object_or_404(self.get_queryset(), pk=pk)
+        reasons = site.blockers()
+        if reasons:
+            messages.error(
+                request,
+                f"No se puede eliminar «{site.name}»: {', '.join(reasons)}. "
+                "Puedes desactivarla en su lugar.",
+            )
+        else:
+            site.delete()
+            messages.success(request, f"Sede «{site.name}» enviada a la papelera.")
+        return redirect("site_list")

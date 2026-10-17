@@ -75,7 +75,7 @@
                     <ul class="list-group list-group-flush">
                         {% for registration in registrations %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <a href="{% url 'event_detail' registration.event.pk %}">{{ registration.event.title }}</a>
+                            <a href="{% url 'event_detail' registration.event.pk %}">{{ registration.event.title }}</a>{% if request.user.tenant.uses_sites and registration.event.site %} <small class="text-muted">· {{ registration.event.site.name }}</small>{% endif %}
                             <span class="text-muted">{{ registration.event.start_at|date:"d/m/Y H:i" }}</span>
                         </li>
                         {% empty %}

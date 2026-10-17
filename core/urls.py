@@ -22,6 +22,11 @@ urlpatterns = [
         views.UserToggleActiveView.as_view(),
         name="user_toggle_active",
     ),
+    # Sites (sedes)
+    path("sites/", views.SiteListView.as_view(), name="site_list"),
+    path("sites/create/", views.SiteCreateView.as_view(), name="site_create"),
+    path("sites/<uuid:pk>/edit/", views.SiteUpdateView.as_view(), name="site_update"),
+    path("sites/<uuid:pk>/delete/", views.SiteDeleteView.as_view(), name="site_delete"),
     # Audit trail and trash (church administrators)
     path("audit/", views.AuditLogView.as_view(), name="audit_log"),
     path("trash/", views.TrashView.as_view(), name="trash"),

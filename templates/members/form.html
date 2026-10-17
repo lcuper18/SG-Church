@@ -198,6 +198,20 @@
                             </div>
                         </div>
 
+                        {% if form.home_site %}
+                        <div class="mb-3">
+                            <label for="home_site" class="form-label">Sede de origen</label>
+                            <select class="form-select {{ form.home_site|invalid }}" id="home_site" name="home_site">
+                                <option value="">Sin sede</option>
+                                {% for site in form.fields.home_site.queryset %}
+                                <option value="{{ site.pk }}" {% if form.home_site.value|stringformat:"s" == site.pk|stringformat:"s" %}selected{% endif %}>{{ site.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">La sede a la que normalmente asiste. Los eventos y la asistencia llevan su propia sede.</div>
+                            {% include "partials/field_errors.html" with field=form.home_site %}
+                        </div>
+                        {% endif %}
+
                         {% if form.notes %}
                         <hr class="my-4">
 

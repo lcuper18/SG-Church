@@ -23,6 +23,12 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Sites (sedes): a church can have several; each event belongs to one and members may have a
+  home site. Configuración → Sedes (admins) to create, edit, deactivate or delete (blocked while
+  in use). Single-site churches see no site fields at all. Event list/form/detail, member
+  form/list filter/CSV export and import ("Sede" column), API (`/api/v1/sites/`, `?site=`),
+  trash and audit are covered; existing events move to a "Sede principal"; the demo seed
+  creates Central/Norte/Sur
 - National ID on members ("Cédula" / DNI / RUT...): unique per church (formats like
   `1-1234-5678` and `112345678` are the same number), searchable, shown in list/detail/portal,
   in the CSV export and import (duplicates are detected by ID first), printed on PDF

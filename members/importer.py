@@ -26,6 +26,7 @@ from django.db import transaction
 from core import audit
 from core.text import fold
 from members.models import Family, Member, Tag
+from tenants.models import Site
 
 MAX_ROWS = 5000
 MAX_BYTES = 2 * 1024 * 1024
@@ -51,6 +52,7 @@ COLUMN_ALIASES = {
     "member_status": ["estado", "estatus", "condicion", "status", "member_status"],
     "membership_date": ["fecha de membresia", "membresia", "membership date", "membership_date"],
     "family": ["familia", "family"],
+    "home_site": ["sede", "sede de origen", "home site", "site", "campus", "congregacion"],
     "address": ["direccion", "address", "domicilio"],
     "city": ["ciudad", "city", "canton", "localidad"],
     "state": ["estado/provincia", "provincia", "departamento", "state", "region"],
@@ -63,12 +65,12 @@ ALIAS_TO_FIELD = {fold(a): f for f, aliases in COLUMN_ALIASES.items() for a in a
 TEMPLATE_HEADER = [
     "Nombre", "Apellido", "Email", "Teléfono", "Identificación", "Fecha de nacimiento", "Género",
     "Estado civil", "Bautizado", "Fecha de bautismo", "Estado", "Fecha de membresía", "Familia", "Dirección",
-    "Ciudad", "Estado/Provincia", "Código postal", "Etiquetas",
+    "Ciudad", "Estado/Provincia", "Código postal", "Etiquetas", "Sede",
 ]
 TEMPLATE_EXAMPLE = [
     "María", "Rodríguez Mora", "maria@ejemplo.com", "+506 8888 1234", "1-1234-5678", "1990-05-17",
     "Femenino", "Casado/a", "Sí", "2010-08-01", "Miembro", "2012-03-04", "Familia Rodríguez",
-    "100 m norte de la iglesia", "San José", "San José", "10101", "Jóvenes, Alabanza",
+    "100 m norte de la iglesia", "San José", "San José", "10101", "Jóvenes, Alabanza", "Sede principal",
 ]
 
 CHOICE_WORDS = {
@@ -119,6 +121,8 @@ class RowResult:
     existing_id: str = ""
     tags: list = field(default_factory=list)
     family: str = ""
+    site: str = ""
+    warnings: list = field(default_factory=list)  # reported, but don't block the row
 
     @property
     def label(self):
@@ -201,8 +205,8 @@ def _parse_date(value):
 
 
 def _clean_row(raw, columns, can_see_notes):
-    """Return (data, tags, family, messages) for one row."""
-    data, messages, tags, family = {}, [], [], ""
+    """Return (data, tags, family, site, messages) for one row."""
+    data, messages, tags, family, site = {}, [], [], "", ""
     for index, name in columns:
         value = _unprotect((raw[index] if index < len(raw) else "").strip())
         if name == "notes" and not can_see_notes:
@@ -212,6 +216,8 @@ def _clean_row(raw, columns, can_see_notes):
             too_long = [t for t in tags if len(t) > 50]
             if too_long:
                 messages.append(f"Etiqueta demasiado larga (máximo 50 caracteres): {too_long[0][:30]}…")
+        elif name == "home_site":
+            site = value
         elif name == "family":
             family = value
             limit = Family._meta.get_field("name").max_length
@@ -257,7 +263,7 @@ def _clean_row(raw, columns, can_see_notes):
     for required, label in (("first_name", "Nombre"), ("last_name", "Apellido")):
         if not data.get(required):
             messages.append(f"Falta el {label}.")
-    return data, tags, family, messages
+    return data, tags, family, site, messages
 
 
 def name_label(field_name):
@@ -265,7 +271,7 @@ def name_label(field_name):
         "first_name": "Nombre", "last_name": "Apellido", "email": "Email", "phone": "Teléfono", "national_id": "Identificación",
         "date_of_birth": "Fecha de nacimiento", "gender": "Género", "marital_status": "Estado civil",
         "is_baptized": "Bautizado", "baptism_date": "Fecha de bautismo", "member_status": "Estado",
-        "membership_date": "Fecha de membresía", "family": "Familia", "address": "Dirección",
+        "membership_date": "Fecha de membresía", "family": "Familia", "home_site": "Sede", "address": "Dirección",
         "city": "Ciudad", "state": "Estado/Provincia", "postal_code": "Código postal",
         "tags": "Etiquetas", "notes": "Notas",
     }.get(field_name, field_name)
@@ -355,12 +361,15 @@ def build_plan(raw, tenant, policy="skip", can_see_notes=False):
         raise ImportFileError(f"Demasiadas filas ({len(body)}); el máximo por archivo es {MAX_ROWS}.")
 
     by_email, by_identity, by_id = _find_existing(tenant)
+    site_names = {fold(s.name) for s in Site.objects.filter(tenant=tenant)}
     seen_in_file = set()
     results = []
     for number, raw_row in body:
-        data, tags, family, messages = _clean_row(raw_row, columns, can_see_notes)
+        data, tags, family, site, messages = _clean_row(raw_row, columns, can_see_notes)
         result = RowResult(number=number, data=data, action="error", messages=messages,
-                           tags=tags, family=family)
+                           tags=tags, family=family, site=site)
+        if site and fold(site) not in site_names:
+            result.warnings.append(f"La sede «{site}» no existe: se importará sin sede de origen.")
         if not messages:
             id_key = Member.normalize_national_id(data.get("national_id"))
             key = ("id:" + id_key) if id_key else (data.get("email") or fold(
@@ -421,6 +430,7 @@ def apply_plan(plan, tenant, user):
     counters = {"created": 0, "updated": 0, "skipped": 0, "errors": 0,
                 "families_created": 0, "tags_created": 0}
     family_cache, tag_cache = {}, {}
+    sites = {fold(s.name): s for s in Site.objects.filter(tenant=tenant)}
     with audit.suppressed():
         for row in plan.rows:
             if row.action == "error":
@@ -431,10 +441,13 @@ def apply_plan(plan, tenant, user):
                 continue
             family = _get_family(tenant, row.family, family_cache, counters)
             tags = _get_tags(tenant, row.tags, tag_cache, counters)
+            home_site = sites.get(fold(row.site)) if row.site else None
             if row.action == "create":
                 member = Member(tenant=tenant, **row.data)
                 if family:
                     member.family = family
+                if home_site:
+                    member.home_site = home_site
                 member.save()
                 counters["created"] += 1
             else:
@@ -443,6 +456,8 @@ def apply_plan(plan, tenant, user):
                     setattr(member, name, value)  # only what the file provides
                 if family:
                     member.family = family
+                if home_site:
+                    member.home_site = home_site
                 member.save()
                 counters["updated"] += 1
             if tags:

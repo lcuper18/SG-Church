@@ -41,7 +41,7 @@
 
     {% if problem_rows %}
     <div class="card mb-4">
-        <div class="card-header">Filas que no se importarán{% if plan.rows|length > 100 %} (primeras 100){% endif %}</div>
+        <div class="card-header">Filas omitidas, con errores o con avisos{% if plan.rows|length > 100 %} (primeras 100){% endif %}</div>
         <div class="table-responsive">
             <table class="table table-sm align-middle mb-0">
                 <thead><tr><th scope="col">Fila</th><th scope="col">Persona</th><th scope="col">Motivo</th></tr></thead>
@@ -51,8 +51,9 @@
                         <td>{{ row.number }}</td>
                         <td>{{ row.label|default:"—" }}</td>
                         <td>
-                            <span class="badge bg-{% if row.action == 'error' %}danger{% else %}secondary{% endif %} me-1">{% if row.action == 'error' %}Error{% else %}Omitido{% endif %}</span>
-                            {{ row.messages|join:" " }}
+                            {% if row.action == 'error' or row.action == 'skip' %}<span class="badge bg-{% if row.action == 'error' %}danger{% else %}secondary{% endif %} me-1">{% if row.action == 'error' %}Error{% else %}Omitido{% endif %}</span>
+                            {{ row.messages|join:" " }}{% endif %}
+                            {% if row.warnings %}<span class="badge bg-warning text-dark me-1">Aviso</span>{{ row.warnings|join:" " }}{% endif %}
                         </td>
                     </tr>
                     {% endfor %}

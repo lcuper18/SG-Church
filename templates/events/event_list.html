@@ -21,6 +21,16 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
+                {% if site_choices %}
+                <div class="col-12 col-md-3">
+                    <select name="site" aria-label="Filtrar por sede" class="form-select">
+                        <option value="">Todas las sedes</option>
+                        {% for choice in site_choices %}
+                        <option value="{{ choice.pk }}" {% if request.GET.site == choice.pk|stringformat:"s" %}selected{% endif %}>{{ choice.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
                 <div class="col-12 col-md-4">
                     <select name="type" aria-label="Filtrar por tipo" class="form-select">
                         <option value="">Todos los tipos</option>
@@ -50,6 +60,7 @@
                             <th>Evento</th>
                             <th>Tipo</th>
                             <th>Fecha</th>
+                            {% if site_choices %}<th>Sede</th>{% endif %}
                             <th class="d-none d-lg-table-cell">Lugar</th>
                             <th class="d-none d-lg-table-cell">Requisitos</th>
                             <th>Inscritos</th>
@@ -62,6 +73,7 @@
                             <td><a href="{% url 'event_detail' event.pk %}">{{ event.title }}</a></td>
                             <td>{{ event.get_event_type_display }}</td>
                             <td>{{ event.start_at|date:"d/m/Y H:i" }}</td>
+                            {% if site_choices %}<td>{{ event.site.name|default:"-" }}</td>{% endif %}
                             <td class="d-none d-lg-table-cell">{{ event.location|default:"-" }}</td>
                             <td class="d-none d-lg-table-cell">
                                 {% if event.requires_baptized %}<span class="badge bg-info">Bautizado/a</span>{% endif %}
@@ -84,7 +96,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7">
+                            <td colspan="{% if site_choices %}8{% else %}7{% endif %}">
                                 {% if request.GET.type %}
                                 {% include "partials/empty_state.html" with icon="bi-search" message="Ningún evento coincide con el filtro." %}
                                 {% else %}

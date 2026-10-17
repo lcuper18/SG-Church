@@ -107,6 +107,12 @@
                                     <td class="text-muted">Fecha de Nacimiento</td>
                                     <td>{{ member.date_of_birth|default:"-" }}</td>
                                 </tr>
+                                {% if member.home_site %}
+                                <tr>
+                                    <td class="text-muted">Sede de origen</td>
+                                    <td>{{ member.home_site.name }}</td>
+                                </tr>
+                                {% endif %}
                                 <tr>
                                     <td class="text-muted">Género</td>
                                     <td>{{ member.get_gender_display|default:"-" }}</td>

@@ -199,7 +199,7 @@ class AuditContextMiddleware:
 FIELD_LABELS = {
     "first_name": "Nombre", "last_name": "Apellido", "email": "Correo", "phone": "Teléfono",
     "date_of_birth": "Fecha de nacimiento", "gender": "Género", "marital_status": "Estado civil",
-    "national_id": "Identificación", "is_baptized": "Bautizado", "baptism_date": "Fecha de bautismo", "member_status": "Estado",
+    "site": "Sede", "home_site": "Sede de origen", "is_main": "Sede principal", "sort_order": "Orden", "national_id": "Identificación", "is_baptized": "Bautizado", "baptism_date": "Fecha de bautismo", "member_status": "Estado",
     "membership_date": "Fecha de membresía", "family": "Familia", "address": "Dirección",
     "city": "Ciudad", "state": "Estado/provincia", "postal_code": "Código postal",
     "notes": "Notas", "photo": "Foto", "user": "Usuario", "name": "Nombre", "color": "Color",

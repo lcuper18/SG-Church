@@ -24,7 +24,7 @@ from education.models import Course, CourseBlock, Enrollment
 from events.models import Event, EventAttendance, EventRegistration
 from finance.models import Donation, Expense
 from members.models import Family, Member, Tag, User
-from tenants.models import Tenant
+from tenants.models import Site, Tenant
 
 DEMO_DOMAIN = "demo.sgchurch.test"
 
@@ -113,6 +113,7 @@ class Command(BaseCommand):
         ).exists()
         if already and not opts["force"]:
             ids = self._fill_national_ids(tenant)
+            sites = self._sites(tenant)
             updated, removed = self._event_requirements(tenant)
             added = self._attendance(tenant)
             self.stdout.write(
@@ -121,6 +122,7 @@ class Command(BaseCommand):
                 f"registrations/attendances removed). "
                 f"Attendance backfilled for {added} past events."
                 f" National IDs filled in for {ids} adults."
+                f" Sites: {sites} records assigned."
             )
             return
 
@@ -133,6 +135,7 @@ class Command(BaseCommand):
             events = self._events(tenant, members)
             self._attendance(tenant)
             self._fill_national_ids(tenant)
+            self._sites(tenant)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -168,6 +171,42 @@ class Command(BaseCommand):
             todo.append(member)
         Member.objects.bulk_update(todo, ["national_id", "national_id_key", "search_text"], batch_size=500)
         return len(todo)
+
+    SITES = [
+        ("Sede Norte", "Avenida Norte, a 200 m de la plaza"),
+        ("Sede Sur", "Calle Sur, frente al parque"),
+    ]
+
+    def _sites(self, tenant):
+        """Three sites for the demo (Central + Norte + Sur): events are spread over
+        them and members get a home site. Runs once per church (flag in settings)."""
+        if tenant.settings.get("demo_sites"):
+            return 0
+        main = tenant.main_site()
+        if main.name == "Sede principal":
+            main.name = "Sede Central"
+            main.save(update_fields=["name"])
+        sites = [main]
+        for name, address in self.SITES:
+            site, _ = Site.objects.get_or_create(tenant=tenant, name=name, defaults={"address": address})
+            sites.append(site)
+        assigned = 0
+        events = list(Event.objects.filter(tenant=tenant, site=main).order_by("start_at"))
+        for index, event in enumerate(events):
+            event.site = sites[index % 3]
+        Event.objects.bulk_update(events, ["site"], batch_size=200)
+        assigned += len(events)
+        rng = random.Random(7)
+        members = list(
+            Member.objects.filter(tenant=tenant, email__endswith=f"@{DEMO_DOMAIN}", home_site__isnull=True)
+        )
+        for member in members:
+            member.home_site = rng.choices(sites, weights=[60, 25, 15])[0]
+        Member.objects.bulk_update(members, ["home_site"], batch_size=500)
+        assigned += len(members)
+        tenant.settings = {**tenant.settings, "demo_sites": True}
+        tenant.save(update_fields=["settings"])
+        return assigned
 
     def _get_tenant(self, subdomain):
         if subdomain:

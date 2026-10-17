@@ -41,6 +41,18 @@
                             {% include "partials/field_errors.html" with field=form.description %}
                         </div>
 
+                        {% if form.site %}
+                        <div class="mb-3">
+                            <label for="site" class="form-label">Sede</label>
+                            <select class="form-select {{ form.site|invalid }}" id="site" name="site">
+                                {% for site in form.fields.site.queryset %}
+                                <option value="{{ site.pk }}" {% if form.site.value|stringformat:"s" == site.pk|stringformat:"s" %}selected{% endif %}>{{ site.name }}{% if site.is_main %} (principal){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            {% include "partials/field_errors.html" with field=form.site %}
+                        </div>
+                        {% endif %}
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="event_type" class="form-label">Tipo</label>

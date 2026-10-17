@@ -128,6 +128,7 @@
                                 {% if user.is_church_admin %}
                                 <li><a class="dropdown-item" href="{% url 'church_settings' %}"><i class="bi bi-gear me-2"></i>Configuración</a></li>
                                 <li><a class="dropdown-item" href="{% url 'user_list' %}"><i class="bi bi-person-gear me-2"></i>Usuarios</a></li>
+                                <li><a class="dropdown-item" href="{% url 'site_list' %}"><i class="bi bi-buildings me-2"></i>Sedes</a></li>
                                 <li><a class="dropdown-item" href="{% url 'audit_log' %}"><i class="bi bi-journal-text me-2"></i>Bitácora</a></li>
                                 <li><a class="dropdown-item" href="{% url 'trash' %}"><i class="bi bi-trash3 me-2"></i>Papelera</a></li>
                                 {% endif %}

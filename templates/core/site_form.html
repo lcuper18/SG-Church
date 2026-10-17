@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{% if site %}Editar sede{% else %}Nueva sede{% endif %} - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'site_list' %}">Sedes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% if site %}Editar{% else %}Nueva{% endif %}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header"><h4 class="mb-0">{% if site %}Editar sede{% else %}Nueva sede{% endif %}</h4></div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% include "partials/form_errors.html" %}
+                        {% include "partials/form_field.html" with field=form.name %}
+                        {% include "partials/form_field.html" with field=form.address %}
+                        <div class="row">
+                            <div class="col-md-6">{% include "partials/form_field.html" with field=form.phone %}</div>
+                            <div class="col-md-6">{% include "partials/form_field.html" with field=form.sort_order %}</div>
+                        </div>
+                        {% include "partials/form_field.html" with field=form.is_active %}
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'site_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

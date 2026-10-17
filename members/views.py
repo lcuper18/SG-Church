@@ -34,6 +34,7 @@ from datetime import timedelta
 from . import importer
 from .forms import FamilyForm, MyContactForm
 from .search import search_members
+from tenants.models import Site
 from .models import Member, Family, Tag
 from tenants.models import Tenant
 from tenants.timezones import (
@@ -281,6 +282,19 @@ class OnboardingCompleteView(View):
 # ============================================================
 
 
+def _limit_site_field(form, tenant):
+    """The "home site" picker: this church's active sites, or gone entirely when
+    the church has only one."""
+    if not tenant.uses_sites:
+        del form.fields["home_site"]
+        return
+    current = form.instance.home_site_id
+    form.fields["home_site"].queryset = Site.objects.filter(tenant=tenant).filter(
+        models.Q(is_active=True) | models.Q(pk=current)
+    )
+    form.fields["home_site"].required = False
+
+
 def filtered_members(request):
     """The tenant's members narrowed by the list page's query-string filters
     (shared by the list and its CSV export)."""
@@ -298,6 +312,13 @@ def filtered_members(request):
     if family_id:
         queryset = queryset.filter(family_id=family_id)
 
+    site_id = request.GET.get("site")
+    if site_id:
+        try:
+            queryset = queryset.filter(home_site_id=uuid.UUID(site_id))
+        except ValueError:
+            queryset = queryset.none()
+
     tag_id = request.GET.get("tag")
     if tag_id:
         queryset = queryset.filter(tags__id=tag_id)
@@ -307,7 +328,7 @@ def filtered_members(request):
         queryset = search_members(queryset, search)
 
     return (
-        queryset.select_related("family")
+        queryset.select_related("family", "home_site")
         .prefetch_related("tags")
         .order_by("last_name", "first_name")
     )
@@ -330,6 +351,8 @@ class MemberListView(ManageMembersRequiredMixin, ListView):
 
         if tenant:
             context["families"] = Family.objects.filter(tenant=tenant)
+            if tenant.uses_sites:
+                context["site_choices"] = Site.objects.filter(tenant=tenant)
             context["tags"] = Tag.objects.filter(tenant=tenant)
 
         return context
@@ -347,7 +370,7 @@ class MemberExportView(ManageMembersRequiredMixin, View):
         header = [
             "Nombre", "Apellido", "Email", "Teléfono", "Identificación", "Fecha de nacimiento", "Género",
             "Estado civil", "Bautizado", "Fecha de bautismo", "Estado", "Fecha de membresía",
-            "Familia", "Dirección", "Ciudad", "Estado/Provincia", "Código postal", "Etiquetas",
+            "Familia", "Dirección", "Ciudad", "Estado/Provincia", "Código postal", "Etiquetas", "Sede",
         ]
         rows = (
             [
@@ -355,7 +378,7 @@ class MemberExportView(ManageMembersRequiredMixin, View):
                 m.get_gender_display(), m.get_marital_status_display(), m.is_baptized,
                 m.baptism_date, m.get_member_status_display(), m.membership_date,
                 m.family.name if m.family else "", m.address, m.city, m.state,
-                m.postal_code, ", ".join(t.name for t in m.tags.all()),
+                m.postal_code, ", ".join(t.name for t in m.tags.all()), m.home_site.name if m.home_site else "",
             ]
             for m in filtered_members(request)
         )
@@ -427,6 +450,7 @@ class MemberCreateView(
         "member_status",
         "membership_date",
         "family",
+        "home_site",
         "address",
         "city",
         "state",
@@ -443,6 +467,7 @@ class MemberCreateView(
             form.instance.tenant = tenant  # lets Member.clean() check the ID is unique here
             form.fields["family"].queryset = Family.objects.filter(tenant=tenant)
             form.fields["tags"].queryset = Tag.objects.filter(tenant=tenant)
+            _limit_site_field(form, tenant)
         if not self.request.user.can_view_pastoral_notes:
             # Whoever can't read the notes can't overwrite them either.
             form.fields.pop("notes")
@@ -482,6 +507,7 @@ class MemberUpdateView(
         "member_status",
         "membership_date",
         "family",
+        "home_site",
         "address",
         "city",
         "state",
@@ -503,6 +529,7 @@ class MemberUpdateView(
         if tenant:
             form.fields["family"].queryset = Family.objects.filter(tenant=tenant)
             form.fields["tags"].queryset = Tag.objects.filter(tenant=tenant)
+            _limit_site_field(form, tenant)
         if not self.request.user.can_view_pastoral_notes:
             # Whoever can't read the notes can't overwrite them either.
             form.fields.pop("notes")
@@ -784,7 +811,7 @@ class MyRecordView(MyRecordMixin, TemplateView):
             member.event_registrations.filter(
                 status="registered", event__start_at__gte=timezone.now()
             )
-            .select_related("event")
+            .select_related("event", "event__site")
             .order_by("event__start_at")
         )
         context["donations"] = member.donations.filter(status="completed").order_by(
@@ -952,7 +979,7 @@ class MemberImportView(ManageMembersRequiredMixin, View):
                 "plan": plan,
                 "token": token,
                 "filename": upload.name,
-                "problem_rows": [r for r in plan.rows if r.action in ("error", "skip")][:100],
+                "problem_rows": [r for r in plan.rows if r.action in ("error", "skip") or r.warnings][:100],
                 "sample_rows": [r for r in plan.rows if r.action in ("create", "update")][:15],
                 "field_labels": [importer.name_label(n) for n in plan.columns],
             },

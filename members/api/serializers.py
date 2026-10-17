@@ -28,6 +28,14 @@ class PastoralNotesMixin:
         return validated
 
 
+class HomeSiteMixin:
+    def validate_home_site(self, site):
+        tenant = getattr(getattr(self.context.get("request"), "user", None), "tenant", None)
+        if site is not None and tenant is not None and site.tenant_id != tenant.pk:
+            raise serializers.ValidationError("Sede no válida.")
+        return site
+
+
 class NationalIdMixin:
     """An ID may belong to only one live member of the church."""
 
@@ -49,7 +57,7 @@ class NationalIdMixin:
         return value
 
 
-class MemberSerializer(NationalIdMixin, PastoralNotesMixin, serializers.ModelSerializer):
+class MemberSerializer(HomeSiteMixin, NationalIdMixin, PastoralNotesMixin, serializers.ModelSerializer):
     """
     Serializer for Member model.
     """
@@ -76,6 +84,7 @@ class MemberSerializer(NationalIdMixin, PastoralNotesMixin, serializers.ModelSer
             "membership_date",
             "family",
             "family_name",
+            "home_site",
             "address",
             "city",
             "state",
@@ -92,7 +101,7 @@ class MemberSerializer(NationalIdMixin, PastoralNotesMixin, serializers.ModelSer
         return obj.family.name if obj.family else None
 
 
-class MemberCreateSerializer(NationalIdMixin, PastoralNotesMixin, serializers.ModelSerializer):
+class MemberCreateSerializer(HomeSiteMixin, NationalIdMixin, PastoralNotesMixin, serializers.ModelSerializer):
     """
     Serializer for creating a new Member.
     """
@@ -113,6 +122,7 @@ class MemberCreateSerializer(NationalIdMixin, PastoralNotesMixin, serializers.Mo
             "member_status",
             "membership_date",
             "family",
+            "home_site",
             "address",
             "city",
             "state",

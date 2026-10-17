@@ -2,6 +2,7 @@
 Event and registration views.
 """
 
+import uuid
 from datetime import date, timedelta
 
 from django.contrib import messages
@@ -26,6 +27,7 @@ from members.search import search_members
 from emails import notify
 from education.models import Course
 from members.models import Member
+from tenants.models import Site
 
 from .models import Event, EventAttendance, EventRegistration
 
@@ -41,7 +43,38 @@ EVENT_FIELDS = [
     "requires_married",
     "required_courses",
     "is_active",
+    "site",
 ]
+
+
+class EventFormMixin:
+    """Shared by create/update: the course and site pickers, limited to this church."""
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        tenant = getattr(self.request.user, "tenant", None)
+        if tenant:
+            form.fields["required_courses"].queryset = Course.objects.filter(tenant=tenant)
+            sites = Site.objects.filter(tenant=tenant, is_active=True)
+            if self.object and self.object.site_id:
+                sites = Site.objects.filter(tenant=tenant).filter(
+                    Q(is_active=True) | Q(pk=self.object.site_id)
+                )
+            form.fields["site"].queryset = sites
+            form.fields["site"].required = False  # blank = the main site
+            form.fields["site"].empty_label = None
+            if self.object is None:
+                form.initial.setdefault("site", tenant.main_site().pk)
+            if not tenant.uses_sites:
+                del form.fields["site"]  # one site: nothing to choose
+        return form
+
+
+def _uuid_or_none(value):
+    try:
+        return uuid.UUID(str(value)) if value else None
+    except ValueError:
+        return None
 
 
 class EventListView(LoginRequiredMixin, ListView):
@@ -81,11 +114,17 @@ class EventListView(LoginRequiredMixin, ListView):
         event_type = self.request.GET.get("type")
         if event_type:
             queryset = queryset.filter(event_type=event_type)
-        return queryset
+        site_id = _uuid_or_none(self.request.GET.get("site"))
+        if site_id:
+            queryset = queryset.filter(site_id=site_id)
+        return queryset.select_related("site")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["type_choices"] = Event.TYPE_CHOICES
+        tenant = getattr(self.request.user, "tenant", None)
+        if tenant and tenant.uses_sites:
+            context["site_choices"] = Site.objects.filter(tenant=tenant)
         return context
 
 
@@ -124,21 +163,12 @@ class EventDetailView(LoginRequiredMixin, DetailView):
 event_detail = EventDetailView.as_view()
 
 
-class EventCreateView(ManageMembersRequiredMixin, CreateView):
+class EventCreateView(EventFormMixin, ManageMembersRequiredMixin, CreateView):
     """Create a new event."""
 
     model = Event
     template_name = "events/event_form.html"
     fields = EVENT_FIELDS
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        tenant = getattr(self.request.user, "tenant", None)
-        if tenant:
-            form.fields["required_courses"].queryset = Course.objects.filter(
-                tenant=tenant
-            )
-        return form
 
     def form_valid(self, form):
         tenant = getattr(self.request.user, "tenant", None)
@@ -153,7 +183,7 @@ class EventCreateView(ManageMembersRequiredMixin, CreateView):
 event_create = EventCreateView.as_view()
 
 
-class EventUpdateView(ManageMembersRequiredMixin, UpdateView):
+class EventUpdateView(EventFormMixin, ManageMembersRequiredMixin, UpdateView):
     """Update an existing event."""
 
     model = Event
@@ -165,15 +195,6 @@ class EventUpdateView(ManageMembersRequiredMixin, UpdateView):
         if not tenant:
             return Event.objects.none()
         return Event.objects.filter(tenant=tenant)
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        tenant = getattr(self.request.user, "tenant", None)
-        if tenant:
-            form.fields["required_courses"].queryset = Course.objects.filter(
-                tenant=tenant
-            )
-        return form
 
     def get_success_url(self):
         return reverse("event_detail", kwargs={"pk": self.object.pk})

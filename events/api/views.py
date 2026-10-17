@@ -2,17 +2,21 @@
 Views for Events API.
 """
 
+import uuid
+
 from rest_framework import filters, viewsets
 from rest_framework.exceptions import ValidationError
 
 from core.permissions import CanManageEvents, CanManageMembers
 from emails import notify
 from events.models import Event, EventAttendance, EventRegistration
+from tenants.models import Site
 
 from .serializers import (
     EventAttendanceSerializer,
     EventRegistrationSerializer,
     EventSerializer,
+    SiteSerializer,
 )
 
 
@@ -31,7 +35,14 @@ class EventViewSet(viewsets.ModelViewSet):
         if user.is_superuser:
             return Event.objects.all()
         if hasattr(user, "tenant") and user.tenant:
-            return Event.objects.filter(tenant=user.tenant)
+            queryset = Event.objects.filter(tenant=user.tenant).select_related("site")
+            site_id = self.request.query_params.get("site")
+            if site_id:
+                try:
+                    queryset = queryset.filter(site_id=uuid.UUID(site_id))
+                except ValueError:
+                    queryset = queryset.none()
+            return queryset
         return Event.objects.none()
 
     def perform_create(self, serializer):
@@ -39,6 +50,19 @@ class EventViewSet(viewsets.ModelViewSet):
             serializer.save(tenant=self.request.user.tenant)
         else:
             serializer.save()
+
+
+class SiteViewSet(viewsets.ReadOnlyModelViewSet):
+    """The church's sites (sedes), read-only: managed in Configuración → Sedes."""
+
+    serializer_class = SiteSerializer
+    ordering = ["-is_main", "sort_order", "name"]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, "tenant") and user.tenant:
+            return Site.objects.filter(tenant=user.tenant)
+        return Site.objects.none()
 
 
 class EventRegistrationViewSet(viewsets.ModelViewSet):

@@ -24,6 +24,16 @@
                         <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactivo</option>
                     </select>
                 </div>
+                {% if site_choices %}
+                <div class="col-6 col-md-2">
+                    <select name="site" aria-label="Filtrar por sede de origen" class="form-select">
+                        <option value="">Todas las sedes</option>
+                        {% for choice in site_choices %}
+                        <option value="{{ choice.pk }}" {% if request.GET.site == choice.pk|stringformat:"s" %}selected{% endif %}>{{ choice.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
                 <div class="col-6 col-md-3">
                     <select name="family" aria-label="Filtrar por familia" class="form-select">
                         <option value="">Todas las familias</option>

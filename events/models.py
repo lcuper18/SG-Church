@@ -28,6 +28,10 @@ class Event(SoftDeleteModel):
         "tenants.Tenant", on_delete=models.CASCADE, related_name="events"
     )
 
+    # Where it happens. Always set: save() falls back to the church's main site.
+    site = models.ForeignKey(
+        "tenants.Site", on_delete=models.PROTECT, related_name="events", null=True, blank=True
+    )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     event_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="other")
@@ -57,10 +61,18 @@ class Event(SoftDeleteModel):
         indexes = [
             models.Index(fields=["tenant", "start_at"]),
             models.Index(fields=["tenant", "is_active"]),
+            models.Index(fields=["tenant", "site", "start_at"]),
         ]
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if self.site_id is None and self.tenant_id:
+            self.site = self.tenant.main_site()
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = {*kwargs["update_fields"], "site"}
+        super().save(*args, **kwargs)
 
     @property
     def is_past(self):

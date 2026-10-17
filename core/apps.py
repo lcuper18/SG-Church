@@ -12,7 +12,7 @@ class CoreConfig(AppConfig):
         from events.models import Event
         from finance.models import Donation, Expense
         from members.models import Family, Member, Tag, User
-        from tenants.models import Tenant
+        from tenants.models import Site, Tenant
 
         for model, label in (
             (Member, "Miembro"),
@@ -26,5 +26,6 @@ class CoreConfig(AppConfig):
             (Enrollment, "Inscripción a curso"),
             (Event, "Evento"),
             (Tenant, "Configuración de la iglesia"),
+            (Site, "Sede"),
         ):
             audit.register(model, label)
