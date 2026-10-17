@@ -23,10 +23,9 @@ def people(admin_user):
     return {n: _member(t, n) for n in ("Ana", "Beto", "Carla", "Dani")}
 
 
-def _checkbox(html, member):
-    match = re.search(rf'<input[^>]*id="member_{member.pk}"[^>]*>', html)
-    assert match, f"checkbox for {member.first_name} missing"
-    return match.group(0)
+def _chip_ids(html):
+    """Ids of the people shown as chosen chips (each also a hidden input)."""
+    return set(re.findall(r'member-chip" data-id="([0-9a-f-]+)"', html))
 
 
 def _post(client, url, data=None, **extra):
@@ -151,12 +150,10 @@ class TestEditMembers:
             people[name].save()
         return family
 
-    def test_form_shows_current_members_checked(self, authenticated_client, family, people):
+    def test_form_shows_current_members_as_chips(self, authenticated_client, family, people):
         html = authenticated_client.get(reverse("family_update", args=[family.pk])).content.decode()
 
-        assert "checked" in _checkbox(html, people["Ana"])
-        assert "checked" in _checkbox(html, people["Beto"])
-        assert "checked" not in _checkbox(html, people["Carla"])
+        assert _chip_ids(html) == {str(people["Ana"].pk), str(people["Beto"].pk)}
 
     def test_add_and_remove_members(self, authenticated_client, family, people):
         response = _post(
@@ -184,8 +181,10 @@ class TestEditMembers:
         people["Dani"].family = other
         people["Dani"].save()
 
-        html = authenticated_client.get(reverse("family_update", args=[family.pk])).content.decode()
-        assert "ahora en Otra" in html  # warned before moving
+        # The picker warns before moving someone: the lookup says where they are now.
+        found = authenticated_client.get(reverse("member_lookup"), {"q": "dani"}).json()
+        assert found["results"][0]["family"] == "Otra"
+        assert found["results"][0]["family_id"] == str(other.pk)
 
         _post(
             authenticated_client, reverse("family_update", args=[family.pk]),
@@ -198,7 +197,7 @@ class TestEditMembers:
         assert people["Dani"].family == family
         assert other.head_of_family is None
 
-    def test_failed_validation_keeps_the_ticks(self, authenticated_client, family, people):
+    def test_failed_validation_keeps_the_chosen_people(self, authenticated_client, family, people):
         response = _post(
             authenticated_client, reverse("family_update", args=[family.pk]),
             name="", members=[str(people["Dani"].pk)],
@@ -206,8 +205,7 @@ class TestEditMembers:
 
         html = response.content.decode()
         assert response.status_code == 200
-        assert "checked" in _checkbox(html, people["Dani"])
-        assert "checked" not in _checkbox(html, people["Ana"])
+        assert _chip_ids(html) == {str(people["Dani"].pk)}
         assert family.members.count() == 2  # nothing was saved
 
     def test_renaming_keeps_its_own_name_valid(self, authenticated_client, family, people):

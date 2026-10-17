@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Q
+from django.db.models import Case, Count, DateTimeField, F, IntegerField, Max, Q, Value, When
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -22,6 +22,7 @@ from django.views.generic import (
 
 from core.exports import csv_response, export_filename
 from core.mixins import ManageMembersRequiredMixin
+from members.search import search_members
 from emails import notify
 from education.models import Course
 from members.models import Member
@@ -49,12 +50,34 @@ class EventListView(LoginRequiredMixin, ListView):
     model = Event
     template_name = "events/event_list.html"
     context_object_name = "events"
+    paginate_by = 25
 
     def get_queryset(self):
         tenant = getattr(self.request.user, "tenant", None)
         if not tenant:
             return Event.objects.none()
-        queryset = Event.objects.filter(tenant=tenant)
+        queryset = (
+            Event.objects.filter(tenant=tenant)
+            .annotate(
+                registered_total=Count(
+                    "registrations", filter=Q(registrations__status="registered")
+                ),
+                # Upcoming events first (soonest first), then past ones (latest
+                # first), so page 1 is what people look for. Meta.ordering is
+                # ignored once the query groups, hence explicit.
+                is_past_bucket=Case(
+                    When(start_at__gte=timezone.now(), then=Value(0)),
+                    default=Value(1),
+                    output_field=IntegerField(),
+                ),
+                upcoming_at=Case(
+                    When(start_at__gte=timezone.now(), then=F("start_at")),
+                    output_field=DateTimeField(),
+                ),
+            )
+            .prefetch_related("required_courses")
+            .order_by("is_past_bucket", F("upcoming_at").asc(nulls_last=True), "-start_at")
+        )
         event_type = self.request.GET.get("type")
         if event_type:
             queryset = queryset.filter(event_type=event_type)
@@ -84,7 +107,6 @@ class EventDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        tenant = getattr(self.request.user, "tenant", None)
         event = self.object
 
         registrations = event.registrations.filter(status="registered").select_related(
@@ -96,10 +118,6 @@ class EventDetailView(LoginRequiredMixin, DetailView):
         context["attended_count"] = len(attended_ids)
         context["no_show_count"] = len(registered_ids - attended_ids)
         context["attended_ids"] = attended_ids
-        if tenant and self.request.user.can_manage_members:
-            context["registrable_members"] = Member.objects.filter(
-                tenant=tenant
-            ).exclude(id__in=registrations.values_list("member_id", flat=True))
         return context
 
 
@@ -252,11 +270,7 @@ class AttendanceView(ManageMembersRequiredMixin, View):
         )
         members = Member.objects.filter(tenant=tenant)
         if query:
-            members = members.filter(
-                Q(first_name__icontains=query)
-                | Q(last_name__icontains=query)
-                | Q(email__icontains=query)
-            )
+            members = search_members(members, query)
         if only_registered:
             members = members.filter(id__in=registered_ids)
 

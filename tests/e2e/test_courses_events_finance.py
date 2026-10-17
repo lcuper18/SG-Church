@@ -28,6 +28,13 @@ def _login(page, live_server_url, user):
     page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
 
+def _pick_member(page, text):
+    """Type in the people search, wait until exactly one match is listed, click it."""
+    page.fill("#member-search", text)
+    page.wait_for_function("document.querySelectorAll('.member-option').length === 1")
+    page.click(".member-option")
+
+
 def _member(tenant, first, last, **kwargs):
     return Member.objects.create(
         tenant=tenant,
@@ -138,8 +145,7 @@ class TestCoursesE2E:
         _login(page, live_server_url, admin_user)
 
         page.goto(f"{live_server_url}/education/{course.pk}/")
-        page.select_option("select[name='member']", label=ana.full_name)
-        page.click("button:has-text('Inscribir')")
+        _pick_member(page, ana.full_name)
         assert "fue inscrito/a en el curso" in page.content()
 
         page.click("button[title='Marcar completado']")
@@ -156,8 +162,7 @@ class TestCoursesE2E:
         _login(page, live_server_url, admin_user)
 
         page.goto(f"{live_server_url}/education/{baptized_only_course.pk}/")
-        page.select_option("select[name='member']", label=carlos.full_name)
-        page.click("button:has-text('Inscribir')")
+        _pick_member(page, carlos.full_name)
 
         assert "fue inscrito/a en el curso" not in page.content()
         assert "bautiz" in page.content().lower()
@@ -186,10 +191,7 @@ class TestEventsE2E:
         _login(page, live_server_url, admin_user)
 
         page.goto(f"{live_server_url}/events/{upcoming_event.pk}/")
-        page.fill("#member-search", "carlos")
-        # Only the matching member stays visible.
-        assert page.locator(".member-option:visible").count() == 1
-        page.click(".member-option:visible")
+        _pick_member(page, "carlos")
 
         assert "fue inscrito/a en el evento" in page.content()
 
@@ -199,8 +201,7 @@ class TestEventsE2E:
         _login(page, live_server_url, admin_user)
 
         page.goto(f"{live_server_url}/events/{baptized_only_event.pk}/")
-        page.fill("#member-search", "solís")
-        page.click(".member-option:visible")
+        _pick_member(page, "solís")
 
         assert "fue inscrito/a en el evento" not in page.content()
         assert "bautiz" in page.content().lower()

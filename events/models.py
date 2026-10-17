@@ -69,12 +69,18 @@ class Event(models.Model):
         """Attendance can be taken from the day of the event onwards, not before."""
         return timezone.localdate() >= timezone.localtime(self.start_at).date()
 
+    # Lists annotate `registered_total` (and the attendance report `attended_total`)
+    # so each row doesn't cost an extra query.
     @property
     def attended_count(self):
-        return self.attendances.count()
+        cached = self.__dict__.get("attended_total")
+        return cached if cached is not None else self.attendances.count()
 
     @property
     def registered_count(self):
+        cached = self.__dict__.get("registered_total")
+        if cached is not None:
+            return cached
         return self.registrations.filter(status="registered").count()
 
     def meets_requirements(self, member):

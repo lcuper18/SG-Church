@@ -61,7 +61,6 @@ class CourseDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        tenant = getattr(self.request.user, "tenant", None)
         course = self.object
 
         if not self.request.user.can_view_roster:
@@ -70,13 +69,6 @@ class CourseDetailView(LoginRequiredMixin, DetailView):
         context["enrollments"] = course.enrollments.select_related("member").exclude(
             status="dropped"
         )
-        if tenant and self.request.user.can_manage_members:
-            enrolled_member_ids = course.enrollments.exclude(
-                status="dropped"
-            ).values_list("member_id", flat=True)
-            context["enrollable_members"] = Member.objects.filter(tenant=tenant).exclude(
-                id__in=enrolled_member_ids
-            )
         return context
 
 
@@ -258,27 +250,31 @@ class CourseBlockDetailView(LoginRequiredMixin, DetailView):
         if not self.request.user.can_view_roster:
             return context
 
-        member_ids = (
+        # Everyone enrolled in any of the block's courses, with how many they
+        # finished: two queries in total, however many people there are.
+        enrollments = (
             Enrollment.objects.filter(course_id__in=course_ids)
             .exclude(status="dropped")
-            .values_list("member_id", flat=True)
-            .distinct()
+            .values_list("member_id", "status")
         )
+        completed_by_member = {}
+        for member_id, status in enrollments:
+            completed_by_member.setdefault(member_id, 0)
+            if status == "completed":
+                completed_by_member[member_id] += 1
 
-        progress = []
-        for member in Member.objects.filter(id__in=member_ids):
-            completed = Enrollment.objects.filter(
-                member=member, course_id__in=course_ids, status="completed"
-            ).count()
-            certificate = block.certificates.filter(member=member).first()
-            progress.append(
-                {
-                    "member": member,
-                    "completed": completed,
-                    "total": total,
-                    "certificate": certificate,
-                }
-            )
+        certificates = {c.member_id: c for c in block.certificates.all()}
+        members = Member.objects.filter(id__in=list(completed_by_member))
+
+        progress = [
+            {
+                "member": member,
+                "completed": completed_by_member[member.id],
+                "total": total,
+                "certificate": certificates.get(member.id),
+            }
+            for member in members
+        ]
 
         context["courses"] = courses
         context["progress"] = progress

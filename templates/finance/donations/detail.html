@@ -68,9 +68,7 @@
                         <tr>
                             <td class="text-muted" width="40%">Miembro</td>
                             <td>
-                                <a href="{% url 'member_detail' donation.member.pk %}">
-                                    {{ donation.member.full_name }}
-                                </a>
+                                {% if user.can_manage_members %}<a href="{% url 'member_detail' donation.member.pk %}">{{ donation.member.full_name }}</a>{% else %}{{ donation.member.full_name }}{% endif %}
                             </td>
                         </tr>
                         <tr>

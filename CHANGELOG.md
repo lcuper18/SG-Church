@@ -23,6 +23,11 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- People pickers (register for an event, enrol in a course, choose a family's members)
+  now search on demand through `/members/lookup/` instead of embedding every
+  member in the page; the family form shows the chosen people as chips
+- Member search ignores accents and matches every word, across name, e-mail and
+  phone ("maria garcia" finds "María García"); backed by `Member.search_text`
 - Nightly backups (database + uploaded files) run by a new Celery `beat` service:
   `pg_dump`/SQLite online backup, retention (`BACKUP_KEEP`), optional copy to an
   S3-compatible bucket, `manage.py backup_data` for manual runs; restore tested
@@ -49,6 +54,11 @@ section reflects real history (from `git log`), not a plan.
   members or financial data regardless of role
 
 #### Fixed
+- Removed N+1 queries: course-block progress (144 → 10 queries with 520 members),
+  event list (37 → 6), family list (31 → 6), finance dashboard (32 → 8)
+- Event list is paginated and shows upcoming events first; the donor report is
+  paginated and its date range now includes the whole last day
+- Treasurers no longer get links to the member page (403) from donation screens
 - Replaced the multi-tenancy implementation: `TenantMiddleware` called
   `connection.set_schema()`, which doesn't exist on Django's standard
   Postgres backend (no schema-per-tenant library was ever installed) — it

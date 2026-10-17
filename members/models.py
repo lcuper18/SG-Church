@@ -8,6 +8,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.urls import reverse
 import uuid
 
+from core.text import fold
 from core.validators import FileSizeValidator
 
 
@@ -200,6 +201,10 @@ class Member(models.Model):
     # Tags
     tags = models.ManyToManyField("Tag", blank=True, related_name="members")
 
+    # Accent-free, lower-case copy of name, e-mail and phone that searches run
+    # against (kept in save()); see core.text.fold.
+    search_text = models.TextField(blank=True, default="", editable=False)
+
     # User account (optional - for member portal access)
     user = models.OneToOneField(
         User,
@@ -224,6 +229,18 @@ class Member(models.Model):
             models.Index(fields=["member_status"]),
             models.Index(fields=["tenant", "member_status"]),
         ]
+
+    SEARCH_SOURCE_FIELDS = ("first_name", "last_name", "email", "phone")
+
+    def build_search_text(self):
+        return fold(" ".join(str(getattr(self, name) or "") for name in self.SEARCH_SOURCE_FIELDS))
+
+    def save(self, *args, **kwargs):
+        self.search_text = self.build_search_text()
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and set(update_fields) & set(self.SEARCH_SOURCE_FIELDS):
+            kwargs["update_fields"] = {*update_fields, "search_text"}
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

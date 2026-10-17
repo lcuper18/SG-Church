@@ -1,0 +1,77 @@
+{% comment %}
+Type-ahead "pick one person" box that submits the enclosing <form> with
+name="member". Include it inside the form:
+  {% include "partials/member_picker.html" with exclude_param="exclude_event" exclude_id=event.pk %}
+`exclude_param`/`exclude_id` hide people already registered/enrolled.
+Results come from the lookup endpoint, so the page never carries the whole
+directory.
+{% endcomment %}
+{% include "partials/member_lookup_js.html" %}
+<label for="member-search" class="visually-hidden">Buscar miembro</label>
+<div class="input-group mb-2">
+    <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+    <input type="search" id="member-search" class="form-control" autocomplete="off"
+           placeholder="Buscar por nombre o correo…"
+           data-url="{% url 'member_lookup' %}" data-exclude-param="{{ exclude_param }}" data-exclude-id="{{ exclude_id }}">
+</div>
+<div class="list-group overflow-auto" id="member-options" style="max-height: 280px;" aria-live="polite">
+    <div class="list-group-item text-muted d-none" id="member-none">Nadie coincide con la búsqueda.</div>
+</div>
+<div class="form-text" id="member-hint">Haga clic en un miembro para elegirlo. Con un solo resultado, Enter lo elige.</div>
+<script>
+(function () {
+    var input = document.getElementById('member-search');
+    var list = document.getElementById('member-options');
+    var none = document.getElementById('member-none');
+    var hint = document.getElementById('member-hint');
+    var baseHint = hint.textContent;
+    var latest = 0, enterPending = false;
+
+    function render(data) {
+        list.querySelectorAll('.member-option').forEach(function (o) { o.remove(); });
+        data.results.forEach(function (person) {
+            var button = document.createElement('button');
+            button.type = 'submit';
+            button.name = 'member';
+            button.value = person.id;
+            button.className = 'list-group-item list-group-item-action member-option';
+            button.textContent = person.name;
+            if (person.email) {
+                var small = document.createElement('small');
+                small.className = 'text-muted d-block';
+                small.textContent = person.email;
+                button.appendChild(small);
+            }
+            list.insertBefore(button, none);
+        });
+        none.classList.toggle('d-none', data.results.length !== 0);
+        hint.textContent = data.total > data.results.length
+            ? 'Mostrando ' + data.results.length + ' de ' + data.total + '. Escriba más para acotar.'
+            : baseHint;
+        if (enterPending && data.results.length === 1) {
+            enterPending = false;
+            list.querySelector('.member-option').click();
+        }
+        enterPending = false;
+    }
+
+    function run() {
+        var ticket = ++latest;
+        var params = {q: input.value.trim()};
+        params[input.dataset.excludeParam] = input.dataset.excludeId;
+        MemberLookup.search(input.dataset.url, params).then(function (data) {
+            if (ticket === latest) render(data);  // ignore out-of-order answers
+        });
+    }
+
+    var delayed = MemberLookup.debounce(run, 200);
+    input.addEventListener('input', delayed);
+    input.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        enterPending = true;  // act on the freshest answer, not a stale list
+        run();
+    });
+    run();
+})();
+</script>

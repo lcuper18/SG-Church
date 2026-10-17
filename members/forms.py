@@ -1,7 +1,10 @@
 """Forms for the members app."""
 
+import uuid
+
 from django import forms
 from django.db import transaction
+from django.utils.functional import cached_property
 
 from .models import Family, Member
 
@@ -46,10 +49,35 @@ class FamilyForm(forms.ModelForm):
                 self.instance.members.values_list("pk", flat=True)
             )
 
-    @property
-    def selected_member_ids(self):
-        """Ids (as strings) of the ticked members, also after a failed POST."""
-        return [str(pk) for pk in (self["members"].value() or [])]
+    @cached_property
+    def head_outside_members(self):
+        """The current head when they are not among the chosen people (old data
+        where the head was not listed as a member), so saving doesn't silently
+        drop them from the select."""
+        value = self["head_of_family"].value()
+        try:
+            head_id = uuid.UUID(str(value))
+        except ValueError:
+            return None
+        if head_id in {m.pk for m in self.selected_members}:
+            return None
+        return self.fields["head_of_family"].queryset.filter(pk=head_id).first()
+
+    @cached_property
+    def selected_members(self):
+        """The chosen people, also after a failed POST (they are shown as chips
+        and re-submitted as hidden inputs, so the page never lists everyone)."""
+        ids = []
+        for value in self["members"].value() or []:
+            try:
+                ids.append(uuid.UUID(str(value)))
+            except ValueError:
+                continue
+        return list(
+            self.fields["members"].queryset.filter(pk__in=ids).order_by(
+                "last_name", "first_name"
+            )
+        )
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip()

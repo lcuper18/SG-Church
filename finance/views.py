@@ -14,7 +14,9 @@ from django.views.generic import (
 from core.exports import csv_response, export_filename
 from core.mixins import ManageFinanceRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
+from django.db.models.functions import TruncMonth
 from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -64,21 +66,48 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
         now = timezone.localtime()
         month_start, _ = self._month_bounds(now, 0)
 
-        # Calculate stats for current month
-        donations_this_month = (
-            Donation.objects.filter(
-                tenant=tenant, status="completed", donation_date__gte=month_start
-            ).aggregate(total=Sum("amount"))["total"]
-            or 0
-        )
+        # Last 12 calendar months, oldest first: one grouped query per table
+        # instead of two per month.
+        windows = [self._month_bounds(now, back) for back in range(11, -1, -1)]
+        first_start, last_end = windows[0][0], windows[-1][1]
+        donated = {
+            (row["month"].year, row["month"].month): row["total"]
+            for row in Donation.objects.filter(
+                tenant=tenant,
+                status="completed",
+                donation_date__gte=first_start,
+                donation_date__lt=last_end,
+            )
+            .annotate(month=TruncMonth("donation_date", tzinfo=now.tzinfo))
+            .values("month")
+            .annotate(total=Sum("amount"))
+        }
+        spent = {
+            (row["month"].year, row["month"].month): row["total"]
+            for row in Expense.objects.filter(
+                tenant=tenant,
+                expense_date__gte=first_start.date(),
+                expense_date__lt=last_end.date(),
+            )
+            .annotate(month=TruncMonth("expense_date"))
+            .values("month")
+            .annotate(total=Sum("amount"))
+        }
 
-        expenses_this_month = (
-            Expense.objects.filter(
-                tenant=tenant, expense_date__gte=month_start.date()
-            ).aggregate(total=Sum("amount"))["total"]
-            or 0
-        )
+        chart_data = []
+        for start, _end in windows:
+            key = (start.year, start.month)
+            chart_data.append(
+                {
+                    "month": date_format(start, "M"),
+                    "donations": float(donated.get(key) or 0),
+                    "expenses": float(spent.get(key) or 0),
+                }
+            )
 
+        # The current month is the last window.
+        donations_this_month = donated.get((month_start.year, month_start.month)) or 0
+        expenses_this_month = spent.get((month_start.year, month_start.month)) or 0
         balance_this_month = donations_this_month - expenses_this_month
 
         # Active donors this month
@@ -90,38 +119,6 @@ class FinanceDashboardView(ManageFinanceRequiredMixin, TemplateView):
             .distinct()
             .count()
         )
-
-        # Chart data - last 12 calendar months, oldest first
-        chart_data = []
-        for months_back in range(11, -1, -1):
-            start, end = self._month_bounds(now, months_back)
-
-            month_donations = (
-                Donation.objects.filter(
-                    tenant=tenant,
-                    status="completed",
-                    donation_date__gte=start,
-                    donation_date__lt=end,
-                ).aggregate(total=Sum("amount"))["total"]
-                or 0
-            )
-
-            month_expenses = (
-                Expense.objects.filter(
-                    tenant=tenant,
-                    expense_date__gte=start.date(),
-                    expense_date__lt=end.date(),
-                ).aggregate(total=Sum("amount"))["total"]
-                or 0
-            )
-
-            chart_data.append(
-                {
-                    "month": date_format(start, "M"),
-                    "donations": float(month_donations),
-                    "expenses": float(month_expenses),
-                }
-            )
 
         # Recent transactions
         recent_donations = Donation.objects.filter(tenant=tenant).order_by(
@@ -751,17 +748,15 @@ class DonationsByMemberView(ManageFinanceRequiredMixin, TemplateView):
         if not tenant:
             return context
 
-        # Get date range
+        # Date range (inclusive of the whole last day, like the donation list)
         date_from = self.request.GET.get("date_from")
         date_to = self.request.GET.get("date_to")
 
-        # Base queryset
         donations = Donation.objects.filter(tenant=tenant, status="completed")
-
-        if date_from:
-            donations = donations.filter(donation_date__gte=date_from)
-        if date_to:
-            donations = donations.filter(donation_date__lte=date_to)
+        if _parse_date(date_from):
+            donations = donations.filter(donation_date__date__gte=_parse_date(date_from))
+        if _parse_date(date_to):
+            donations = donations.filter(donation_date__date__lte=_parse_date(date_to))
 
         # Group by member
         donations_by_member = (
@@ -782,7 +777,9 @@ class DonationsByMemberView(ManageFinanceRequiredMixin, TemplateView):
         ).aggregate(total=Sum("amount"), count=Count("id"))
 
         context["tenant"] = tenant
-        context["donations_by_member"] = list(donations_by_member)
+        page = Paginator(donations_by_member, 50).get_page(self.request.GET.get("page"))
+        context["donations_by_member"] = page
+        context["page_obj"] = page
         context["anonymous_total"] = anonymous_donations["total"] or 0
         context["anonymous_count"] = anonymous_donations["count"] or 0
         context["date_from"] = date_from

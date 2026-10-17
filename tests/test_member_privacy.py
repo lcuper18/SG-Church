@@ -449,3 +449,22 @@ class TestLinkingUsersToMembers:
         authenticated_client.post(url, {**base, "member_profile": ""})
         target.refresh_from_db()
         assert target.member_profile is None
+
+
+@pytest.mark.django_db
+class TestFinanceScreensForTreasurers:
+    """A treasurer sees donors' names but cannot open the member directory, so
+    those names must not be links to a page that answers 403."""
+
+    def test_donation_pages_show_names_without_member_links(self, tenant, person):
+        donation = Donation.objects.get(member=person)
+        treasurer, _ = login_as("treasurer", tenant)
+        admin, _ = login_as("admin", tenant)
+        member_url = reverse("member_detail", args=[person.pk])
+
+        for name, args in (("donation_list", []), ("donation_detail", [donation.pk]),
+                           ("donations_by_member", [])):
+            treasurer_page = treasurer.get(reverse(name, args=args)).content.decode()
+            admin_page = admin.get(reverse(name, args=args)).content.decode()
+            assert "Marta Vargas" in treasurer_page and member_url not in treasurer_page, name
+            assert member_url in admin_page, name

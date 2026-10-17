@@ -27,6 +27,15 @@ class TestFamilyMembersE2E:
         page.click("button[type='submit']")
         page.wait_for_url(lambda url: "/accounts/login/" not in url)
 
+    def _pick(self, page, text):
+        """Search, wait for the one match and click it."""
+        page.fill("#member-filter", text)
+        page.wait_for_function(
+            "document.querySelectorAll('.member-pick').length === 1"
+            " && !document.querySelector('.member-pick.disabled')"
+        )
+        page.click(".member-pick")
+
     def test_pick_members_with_the_search_and_see_them_on_the_family_page(
         self, page, live_server_url, admin_user, family_and_people
     ):
@@ -34,13 +43,10 @@ class TestFamilyMembersE2E:
         self._login(page, live_server_url, admin_user)
 
         page.goto(f"{live_server_url}/members/families/{family.pk}/edit/")
-        page.fill("#member-filter", "carla")
-        assert page.locator(".member-pick:visible").count() == 1
-        page.check(".member-pick:visible input.member-box")
+        self._pick(page, "carla")
         assert page.inner_text("#selected-count") == "1"
 
-        page.fill("#member-filter", "ana")
-        page.check(".member-pick:visible input.member-box")
+        self._pick(page, "ana")
         page.click("button:has-text('Guardar Cambios')")
 
         assert page.url.rstrip("/").endswith(str(family.pk))
@@ -55,8 +61,11 @@ class TestFamilyMembersE2E:
 
         page.goto(f"{live_server_url}/members/families/{family.pk}/edit/")
         page.fill("#member-filter", "beto")
+        page.wait_for_function("document.querySelectorAll('.member-pick').length === 1")
         page.press("#member-filter", "Enter")
 
+        # Enter picks the single match instead of submitting the form.
+        page.wait_for_selector(".member-chip")
         assert "/edit/" in page.url
 
     def test_create_a_family_with_members(
@@ -66,8 +75,8 @@ class TestFamilyMembersE2E:
 
         page.goto(f"{live_server_url}/members/families/create/")
         page.fill("#name", "Familia Nueva")
-        page.check("input.member-box >> nth=1")
+        self._pick(page, "beto")
         page.click("button:has-text('Crear Familia')")
 
         assert "Familia Nueva" in page.inner_text("body")
-        assert "Mora" in page.inner_text("table.table-hover")
+        assert "Beto Mora" in page.inner_text("table.table-hover")

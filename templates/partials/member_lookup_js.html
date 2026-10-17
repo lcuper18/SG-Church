@@ -1,0 +1,32 @@
+{% comment %}
+Defines window.MemberLookup once per page: debounce() and search(url, params),
+a thin client for the members lookup endpoint (see MemberLookupView). Inline on
+purpose: the pickers that use it must work without a static-file round trip.
+{% endcomment %}
+<script>
+if (!window.MemberLookup) {
+    window.MemberLookup = {
+        debounce: function (fn, ms) {
+            var timer;
+            return function () {
+                var args = arguments, self = this;
+                clearTimeout(timer);
+                timer = setTimeout(function () { fn.apply(self, args); }, ms);
+            };
+        },
+        // Resolves to {results: [...], total: n}; never rejects (a failed
+        // request just looks like "no results").
+        search: function (url, params) {
+            var query = new URLSearchParams();
+            Object.keys(params).forEach(function (key) {
+                if (params[key]) query.set(key, params[key]);
+            });
+            return fetch(url + '?' + query.toString(), {
+                credentials: 'same-origin',
+                headers: {'Accept': 'application/json'}
+            }).then(function (r) { return r.ok ? r.json() : {results: [], total: 0}; })
+              .catch(function () { return {results: [], total: 0}; });
+        }
+    };
+}
+</script>

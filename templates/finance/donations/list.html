@@ -70,9 +70,7 @@
                             <td>{{ donation.donation_date|date:"d/m/Y" }}</td>
                             <td>
                                 {% if donation.member %}
-                                <a href="{% url 'member_detail' donation.member.pk %}">
-                                    {{ donation.member.full_name }}
-                                </a>
+                                {% if user.can_manage_members %}<a href="{% url 'member_detail' donation.member.pk %}">{{ donation.member.full_name }}</a>{% else %}{{ donation.member.full_name }}{% endif %}
                                 {% elif donation.anonymous %}
                                 <span class="text-muted">Anónimo</span>
                                 {% else %}

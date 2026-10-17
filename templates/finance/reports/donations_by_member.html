@@ -50,9 +50,7 @@
                         <tr>
                             <td>
                                 {% if item.member__id %}
-                                <a href="{% url 'member_detail' item.member__id %}">
-                                    {{ item.member__first_name }} {{ item.member__last_name }}
-                                </a>
+                                {% if user.can_manage_members %}<a href="{% url 'member_detail' item.member__id %}">{{ item.member__first_name }} {{ item.member__last_name }}</a>{% else %}{{ item.member__first_name }} {{ item.member__last_name }}{% endif %}
                                 {% else %}
                                 <span class="text-muted">Sin miembro</span>
                                 {% endif %}
@@ -74,6 +72,8 @@
             </div>
         </div>
     </div>
+
+    {% include "partials/pagination.html" %}
 
     <!-- Anonymous Summary -->
     {% if anonymous_count > 0 %}

@@ -230,6 +230,8 @@ class Command(BaseCommand):
                 counter += 1
                 members.append(self._new_member(tenant, first, last, gender, birth, family, marital, counter))
         members = members[:target]
+        for member in members:
+            member.search_text = member.build_search_text()  # bulk_create skips save()
         Member.objects.bulk_create(members)
         # first adult in each family becomes head of family
         heads = {}

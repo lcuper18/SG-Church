@@ -88,15 +88,7 @@
                 <div class="card-body">
                     <form method="post" action="{% url 'enrollment_create' course.pk %}">
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <select class="form-select" name="member" required>
-                                <option value="">Seleccionar miembro...</option>
-                                {% for enrollable_member in enrollable_members %}
-                                <option value="{{ enrollable_member.id }}">{{ enrollable_member.full_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Inscribir</button>
+                        {% include "partials/member_picker.html" with exclude_param="exclude_course" exclude_id=course.pk %}
                     </form>
                 </div>
             </div>
