@@ -12,8 +12,9 @@
                     <i class="bi bi-download" aria-hidden="true"></i> Exportar CSV
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{% url 'attendance_export' %}?start={{ start|date:'Y-m-d' }}&amp;end={{ end|date:'Y-m-d' }}&amp;type={{ event_type }}&amp;kind=events">Por evento</a></li>
-                    <li><a class="dropdown-item" href="{% url 'attendance_export' %}?start={{ start|date:'Y-m-d' }}&amp;end={{ end|date:'Y-m-d' }}&amp;type={{ event_type }}&amp;kind=members">Por miembro</a></li>
+                    <li><a class="dropdown-item" href="{% url 'attendance_export' %}?{{ querystring }}&amp;kind=events">Por evento</a></li>
+                    <li><a class="dropdown-item" href="{% url 'attendance_export' %}?{{ querystring }}&amp;kind=members">Por miembro</a></li>
+                    {% if show_sites %}<li><a class="dropdown-item" href="{% url 'attendance_export' %}?{{ querystring }}&amp;group=site">Por sede</a></li>{% endif %}
                 </ul>
             </div>
             <a href="{% url 'event_list' %}" class="btn btn-outline-secondary">Eventos</a>
@@ -31,6 +32,17 @@
                     <label for="end" class="form-label">Hasta</label>
                     <input type="date" class="form-control" id="end" name="end" value="{{ end|date:'Y-m-d' }}">
                 </div>
+                {% if site_choices %}
+                <div class="col-md-3">
+                    <label for="site" class="form-label">Sede</label>
+                    <select class="form-select" id="site" name="site">
+                        <option value="">Todas</option>
+                        {% for choice in site_choices %}
+                        <option value="{{ choice.pk }}" {% if site_id == choice.pk|stringformat:"s" %}selected{% endif %}>{{ choice.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
                 <div class="col-md-3">
                     <label for="type" class="form-label">Tipo</label>
                     <select class="form-select" id="type" name="type">
@@ -47,18 +59,57 @@
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-6">
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm"><div class="card-body text-center">
-                <div class="h2 mb-0">{{ total_events }}</div><div class="text-muted">Eventos en el período</div>
+                <div class="h2 mb-0" id="kpi-events">{{ total_events }}</div><div class="text-muted">Eventos en el período</div>
             </div></div>
         </div>
-        <div class="col-md-6">
+        <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm"><div class="card-body text-center">
-                <div class="h2 mb-0">{{ total_attendances }}</div><div class="text-muted">Asistencias registradas</div>
+                <div class="h2 mb-0" id="kpi-members">{{ total_attendances }}</div><div class="text-muted">Asistencias de miembros</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm"><div class="card-body text-center">
+                <div class="h2 mb-0" id="kpi-guests">{{ total_guests }}</div><div class="text-muted">Visitas</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm"><div class="card-body text-center">
+                <div class="h2 mb-0" id="kpi-total">{{ total_people }}</div><div class="text-muted">Total de personas</div>
             </div></div>
         </div>
     </div>
+
+    {% if show_sites and site_summary %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white"><h5 class="mb-0">Resumen por sede</h5></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="site-summary">
+                    <thead class="table-light">
+                        <tr><th>Sede</th><th>Eventos</th><th>Inscritos</th><th>Miembros</th><th>Visitas</th><th>Total</th><th>Promedio por evento</th><th title="Miembros presentes cuya sede de origen es otra">De otra sede</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in site_summary %}
+                        <tr>
+                            <td>{{ row.site.name|default:"-" }}</td>
+                            <td>{{ row.events }}</td>
+                            <td>{{ row.registered }}</td>
+                            <td>{{ row.members }}</td>
+                            <td>{{ row.guests }}</td>
+                            <td><strong>{{ row.total }}</strong></td>
+                            <td>{{ row.average }}</td>
+                            <td>{{ row.away }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white"><h5 class="mb-0">Por evento</h5></div>
@@ -66,18 +117,20 @@
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
-                        <tr><th>Evento</th><th>Fecha</th><th>Inscritos</th><th>Asistieron</th></tr>
+                        <tr><th>Evento</th><th>Fecha</th>{% if show_sites %}<th>Sede</th>{% endif %}<th>Inscritos</th><th>Asistieron</th><th>Visitas</th></tr>
                     </thead>
                     <tbody>
                         {% for row in event_rows %}
                         <tr>
                             <td><a href="{% url 'event_detail' row.pk %}">{{ row.title }}</a></td>
                             <td>{{ row.start_at|date:"d/m/Y" }}</td>
+                            {% if show_sites %}<td>{{ row.site.name|default:"-" }}</td>{% endif %}
                             <td>{{ row.registered }}</td>
                             <td>{{ row.attended }}</td>
+                            <td>{{ row.guest_count }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="4" class="text-center text-muted py-4">No hay eventos en este período.</td></tr>
+                        <tr><td colspan="{% if show_sites %}6{% else %}5{% endif %}" class="text-center text-muted py-4">No hay eventos en este período.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -118,11 +171,11 @@
     <nav class="mt-4">
         <ul class="pagination justify-content-center">
             {% if page.has_previous %}
-            <li class="page-item"><a class="page-link" href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&type={{ event_type }}&page={{ page.previous_page_number }}">Anterior</a></li>
+            <li class="page-item"><a class="page-link" href="?{{ querystring }}&amp;page={{ page.previous_page_number }}">Anterior</a></li>
             {% endif %}
             <li class="page-item active"><span class="page-link">Página {{ page.number }} de {{ page.paginator.num_pages }}</span></li>
             {% if page.has_next %}
-            <li class="page-item"><a class="page-link" href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&type={{ event_type }}&page={{ page.next_page_number }}">Siguiente</a></li>
+            <li class="page-item"><a class="page-link" href="?{{ querystring }}&amp;page={{ page.next_page_number }}">Siguiente</a></li>
             {% endif %}
         </ul>
     </nav>

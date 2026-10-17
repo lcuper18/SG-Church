@@ -56,6 +56,12 @@
                             <td class="text-muted">Inscritos</td>
                             <td>{{ event.registered_count }}{% if event.capacity %} / {{ event.capacity }}{% endif %}</td>
                         </tr>
+                        {% if event.guest_count %}
+                        <tr>
+                            <td class="text-muted">Visitas</td>
+                            <td>{{ event.guest_count }}</td>
+                        </tr>
+                        {% endif %}
                         <tr>
                             <td class="text-muted">Asistieron</td>
                             <td>{{ attended_count }}{% if no_show_count %} <span class="text-muted">({{ no_show_count }} inscrito{{ no_show_count|pluralize }} no asistieron)</span>{% endif %}</td>

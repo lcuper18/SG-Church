@@ -16,6 +16,10 @@
         </div>
     </div>
 
+    {% if uses_sites and event.site %}
+    <p class="text-muted"><i class="bi bi-buildings" aria-hidden="true"></i> {{ event.site.name }}</p>
+    {% endif %}
+
     {% if not event.attendance_open %}
     <div class="alert alert-warning">
         La asistencia se puede tomar a partir del día del evento ({{ event.start_at|date:"d/m/Y" }}).
@@ -61,6 +65,16 @@
                     {% if event.attendance_open %}
                     <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check2-square"></i> Guardar asistencia</button>
                     {% endif %}
+                </div>
+            </div>
+            <div class="card-body border-bottom">
+                <div class="row g-2 align-items-center">
+                    <div class="col-auto"><label for="guest_count" class="col-form-label">Visitas (no son miembros)</label></div>
+                    <div class="col-auto">
+                        <input type="number" min="0" max="100000" class="form-control" id="guest_count" name="guest_count"
+                               value="{{ event.guest_count }}" style="width: 110px;" {% if not event.attendance_open %}disabled{% endif %}>
+                    </div>
+                    <div class="col-auto form-text mb-0">Cuántas personas visitaron que no están registradas.</div>
                 </div>
             </div>
             <div class="card-body p-0">

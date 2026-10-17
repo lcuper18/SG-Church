@@ -23,6 +23,10 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Attendance per site: a visitors head-count per event (non-members, saved from the attendance
+  sheet and the API), a site filter and "Resumen por sede" in the attendance report (events, registered,
+  members, visitors, total, average per event, members from another site), and CSV exports with
+  visitors and site (new columns at the end) plus a per-site summary export
 - Sites (sedes): a church can have several; each event belongs to one and members may have a
   home site. Configuración → Sedes (admins) to create, edit, deactivate or delete (blocked while
   in use). Single-site churches see no site fields at all. Event list/form/detail, member

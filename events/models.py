@@ -42,6 +42,8 @@ class Event(SoftDeleteModel):
 
     is_active = models.BooleanField(default=True)
     capacity = models.PositiveIntegerField(null=True, blank=True)
+    # Visitors who are not members, counted when taking attendance (a head-count).
+    guest_count = models.PositiveIntegerField(default=0)
 
     # Eligibility requirements (same idea as education.Course)
     requires_baptized = models.BooleanField(default=False)
@@ -89,6 +91,11 @@ class Event(SoftDeleteModel):
     def attended_count(self):
         cached = self.__dict__.get("attended_total")
         return cached if cached is not None else self.attendances.count()
+
+    @property
+    def total_attendance(self):
+        """Members marked present plus visitors."""
+        return self.attended_count + self.guest_count
 
     @property
     def registered_count(self):

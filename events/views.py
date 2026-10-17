@@ -305,6 +305,7 @@ class AttendanceView(ManageMembersRequiredMixin, View):
                 "present_ids": set(event.attendances.values_list("member_id", flat=True)),
                 "query": query,
                 "only_registered": only_registered,
+                "uses_sites": tenant.uses_sites,
             },
         )
 
@@ -333,6 +334,12 @@ class AttendanceView(ManageMembersRequiredMixin, View):
         )
         event.attendances.filter(member_id__in=(shown - present)).delete()
 
+        # Visitors who are not members: a head-count (blank = leave as it was).
+        guests = request.POST.get("guest_count", "").strip()
+        if guests.isdigit():
+            event.guest_count = min(int(guests), 100000)
+            event.save(update_fields=["guest_count"])
+
         messages.success(request, f"Asistencia guardada: {event.attended_count} presentes.")
         return redirect("event_detail", pk=event.pk)
 
@@ -348,26 +355,34 @@ def _parse_date(value, default):
 
 
 def attendance_report_data(request):
-    """Events in the requested range with registered/attended counts, and the
-    members who attended them (shared by the report page and its CSV export)."""
+    """Events in the requested range with registered/attended counts, the members
+    who attended them and a per-site summary (shared by the report page and its
+    CSV export). Filters: `start`, `end`, `type`, `site`."""
     tenant = getattr(request.user, "tenant", None)
     today = timezone.localdate()
     start = _parse_date(request.GET.get("start"), today - timedelta(days=90))
     end = _parse_date(request.GET.get("end"), today)
     event_type = request.GET.get("type", "")
+    site_id = _uuid_or_none(request.GET.get("site"))
 
     events = Event.objects.filter(
         tenant=tenant, start_at__date__gte=start, start_at__date__lte=end
     )
     if event_type:
         events = events.filter(event_type=event_type)
+    if site_id:
+        events = events.filter(site_id=site_id)
 
-    event_rows = events.annotate(
-        registered=Count(
-            "registrations", filter=Q(registrations__status="registered"), distinct=True
-        ),
-        attended=Count("attendances", distinct=True),
-    ).order_by("-start_at")
+    event_rows = list(
+        events.select_related("site")
+        .annotate(
+            registered=Count(
+                "registrations", filter=Q(registrations__status="registered"), distinct=True
+            ),
+            attended=Count("attendances", distinct=True),
+        )
+        .order_by("-start_at")
+    )
 
     member_rows = (
         Member.objects.filter(tenant=tenant, event_attendances__event__in=events)
@@ -381,23 +396,66 @@ def attendance_report_data(request):
         "start": start,
         "end": end,
         "event_type": event_type,
+        "site_id": str(site_id) if site_id else "",
         "event_rows": event_rows,
-        "total_events": events.count(),
+        "total_events": len(event_rows),
         "member_rows": member_rows,
+        "site_summary": site_summary(events, event_rows),
     }
 
 
+def site_summary(events, event_rows):
+    """One row per site that held events in the range: events, registered, members
+    present, visitors, total people, average per event, and members present whose
+    home site is a different one."""
+    away = {
+        row["event__site_id"]: row["n"]
+        for row in EventAttendance.objects.filter(event__in=events, member__home_site__isnull=False)
+        .exclude(member__home_site=F("event__site"))
+        .values("event__site_id")
+        .annotate(n=Count("id"))
+    }
+    summary = {}
+    for event in event_rows:
+        row = summary.setdefault(
+            event.site_id,
+            {
+                "site": event.site,
+                "events": 0, "registered": 0, "members": 0, "guests": 0, "away": away.get(event.site_id, 0),
+            },
+        )
+        row["events"] += 1
+        row["registered"] += event.registered
+        row["members"] += event.attended
+        row["guests"] += event.guest_count
+    rows = []
+    for row in summary.values():
+        row["total"] = row["members"] + row["guests"]
+        row["average"] = round(row["total"] / row["events"], 1) if row["events"] else 0
+        rows.append(row)
+    rows.sort(key=lambda r: (not (r["site"] and r["site"].is_main), r["site"].name if r["site"] else ""))
+    return rows
+
+
 class AttendanceReportView(ManageMembersRequiredMixin, View):
-    """Attendance totals per event and per member over a date range."""
+    """Attendance totals per event, per site and per member over a date range."""
 
     template_name = "events/attendance_report.html"
 
     def get(self, request):
         data = attendance_report_data(request)
+        tenant = request.user.tenant
         total_events = data["total_events"]
         page = Paginator(data["member_rows"], 50).get_page(request.GET.get("page"))
         for row in page:
             row.percent = round(row.attended * 100 / total_events) if total_events else 0
+
+        # The filters as a query string (without the page), so every link --
+        # export, pagination -- carries all of them, `site` included.
+        query = request.GET.copy()
+        query.pop("page", None)
+        members_present = sum(r.attended for r in data["event_rows"])
+        guests = sum(r.guest_count for r in data["event_rows"])
 
         return render(
             request,
@@ -406,10 +464,17 @@ class AttendanceReportView(ManageMembersRequiredMixin, View):
                 "start": data["start"],
                 "end": data["end"],
                 "event_type": data["event_type"],
+                "site_id": data["site_id"],
                 "type_choices": Event.TYPE_CHOICES,
+                "site_choices": Site.objects.filter(tenant=tenant) if tenant.uses_sites else None,
+                "show_sites": tenant.uses_sites,
                 "event_rows": data["event_rows"],
+                "site_summary": data["site_summary"],
                 "total_events": total_events,
-                "total_attendances": sum(r.attended for r in data["event_rows"]),
+                "total_attendances": members_present,
+                "total_guests": guests,
+                "total_people": members_present + guests,
+                "querystring": query.urlencode(),
                 "page": page,
             },
         )
@@ -419,13 +484,27 @@ attendance_report = AttendanceReportView.as_view()
 
 
 class AttendanceExportView(ManageMembersRequiredMixin, View):
-    """CSV of the attendance report: `?kind=events` (default, one row per
-    event) or `?kind=members` (one row per member who attended)."""
+    """CSV of the attendance report: `?kind=events` (default, one row per event),
+    `?kind=members` (one row per member who attended) or `?group=site` (one row
+    per site)."""
 
     def get(self, request):
         data = attendance_report_data(request)
         total_events = data["total_events"]
-        if request.GET.get("kind") == "members":
+        if request.GET.get("group") == "site":
+            header = [
+                "Sede", "Eventos", "Inscritos", "Asistieron (miembros)", "Visitas", "Total de personas",
+                "Promedio por evento", "Miembros de otra sede",
+            ]
+            rows = (
+                [
+                    r["site"].name if r["site"] else "", r["events"], r["registered"], r["members"],
+                    r["guests"], r["total"], r["average"], r["away"],
+                ]
+                for r in data["site_summary"]
+            )
+            name = "asistencia-por-sede"
+        elif request.GET.get("kind") == "members":
             header = ["Nombre", "Apellido", "Email", "Asistencias", "% de eventos", "Última asistencia"]
             rows = (
                 [
@@ -437,9 +516,12 @@ class AttendanceExportView(ManageMembersRequiredMixin, View):
             )
             name = "asistencia-por-miembro"
         else:
-            header = ["Fecha", "Evento", "Tipo", "Inscritos", "Asistieron"]
+            header = ["Fecha", "Evento", "Tipo", "Inscritos", "Asistieron", "Visitas", "Sede"]
             rows = (
-                [e.start_at, e.title, e.get_event_type_display(), e.registered, e.attended]
+                [
+                    e.start_at, e.title, e.get_event_type_display(), e.registered, e.attended,
+                    e.guest_count, e.site.name if e.site else "",
+                ]
                 for e in data["event_rows"]
             )
             name = "asistencia-por-evento"

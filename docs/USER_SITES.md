@@ -25,4 +25,12 @@ Mientras tengas **una sola sede activa** no verás nada de esto. Con dos o más:
   sede y la revisión te lo avisa.
 - **API**: `/api/v1/sites/` (solo lectura), y los eventos y miembros incluyen su sede.
 
-La asistencia **por sede** (resúmenes, visitas) llega en la siguiente entrega.
+## Asistencia por sede
+
+- **Visitas:** al tomar asistencia, el recuadro **«Visitas (no son miembros)»** guarda cuántas personas
+  que no están registradas asistieron. Se suma al total del culto.
+- **Reporte** (Eventos → Reporte de asistencia): filtro por **sede**, además de fechas y tipo, y un
+  **«Resumen por sede»** con eventos, inscritos, miembros, visitas, total de personas, promedio por
+  evento y cuántos de los miembros presentes tienen otra sede de origen.
+- **Exportar CSV**: «Por evento» (ahora con visitas y sede al final), «Por miembro» y «Por sede».
+  Todos respetan los filtros que tengas aplicados.
