@@ -79,6 +79,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.context_processors.support_donations",
             ],
         },
     },
@@ -160,6 +161,16 @@ STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 STRIPE_API_VERSION = "2023-10-16"
+
+# "Support the development" PayPal button shown in the footer. These are the
+# developer's own PayPal hosted-button values (public, not secrets). Self-hosted
+# installs can point them at their own account, or set the button id to an
+# empty string to hide the button.
+PAYPAL_SUPPORT_CLIENT_ID = os.environ.get(
+    "PAYPAL_SUPPORT_CLIENT_ID",
+    "BAAeHwermjfdashQEhPRNze-sQXJtS6Rehek3o2Dj-Cl0yHiLgev8X-PGYsmtnsqUbwPc6ulZnVYsYLfVI",
+)
+PAYPAL_SUPPORT_BUTTON_ID = os.environ.get("PAYPAL_SUPPORT_BUTTON_ID", "W32XZFDS3DCVL")
 
 # REST Framework
 REST_FRAMEWORK = {

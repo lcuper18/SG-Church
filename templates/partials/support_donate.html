@@ -1,0 +1,18 @@
+{% if support_paypal %}
+<section class="support-donate mt-3" aria-labelledby="support-donate-title">
+    <h2 class="h6 mb-1" id="support-donate-title"><i class="bi bi-heart"></i> Apoya el desarrollo</h2>
+    <p class="small text-muted mb-2">
+        SG Church es gratuito para las iglesias. Tu aporte voluntario cubre servidores y horas de desarrollo.
+        No es una ofrenda para tu iglesia.
+    </p>
+    <div id="paypal-container-{{ support_paypal.button_id }}" class="mx-auto" style="max-width: 320px;"></div>
+</section>
+<script src="https://www.paypal.com/sdk/js?client-id={{ support_paypal.client_id }}&amp;components=hosted-buttons&amp;disable-funding=venmo&amp;currency=USD" async></script>
+<script>
+    window.addEventListener("load", function () {
+        if (!window.paypal || !paypal.HostedButtons) { return; }
+        paypal.HostedButtons({ hostedButtonId: "{{ support_paypal.button_id }}" })
+            .render("#paypal-container-{{ support_paypal.button_id }}");
+    });
+</script>
+{% endif %}
