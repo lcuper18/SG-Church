@@ -68,6 +68,8 @@ class ChurchSettingsForm(BootstrapFormMixin, forms.ModelForm):
             "timezone",
             "enable_families",
             "enable_tags",
+            "certificate_signer_name",
+            "certificate_signer_title",
         ]
         labels = {
             "name": "Nombre de la iglesia",
@@ -79,6 +81,8 @@ class ChurchSettingsForm(BootstrapFormMixin, forms.ModelForm):
             "phone": "Teléfono",
             "email": "Email de contacto",
             "currency": "Moneda",
+            "certificate_signer_name": "Nombre de quien firma",
+            "certificate_signer_title": "Cargo de quien firma",
             "enable_families": "Usar familias",
             "enable_tags": "Usar etiquetas",
         }

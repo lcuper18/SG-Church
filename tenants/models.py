@@ -173,6 +173,9 @@ class Tenant(models.Model):
     date_format = models.CharField(
         max_length=20, choices=DATE_FORMAT_CHOICES, default="DD/MM/YYYY"
     )
+    # Printed under the signature line of block certificates.
+    certificate_signer_name = models.CharField(max_length=120, blank=True)
+    certificate_signer_title = models.CharField(max_length=80, blank=True, default="Pastor")
     enable_families = models.BooleanField(default=True)
     enable_tags = models.BooleanField(default=True)
     settings = models.JSONField(default=dict, blank=True)

@@ -49,6 +49,17 @@
         </div>
 
         <div class="card mb-4">
+            <div class="card-header">Certificados</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">{% include "partials/form_field.html" with field=form.certificate_signer_name %}</div>
+                    <div class="col-md-6">{% include "partials/form_field.html" with field=form.certificate_signer_title %}</div>
+                </div>
+                <div class="form-text">Aparecen bajo la línea de firma de los certificados en PDF. El logo de la iglesia también se incluye si lo has subido.</div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
             <div class="card-header">Módulos</div>
             <div class="card-body">
                 {% include "partials/form_field.html" with field=form.enable_families %}

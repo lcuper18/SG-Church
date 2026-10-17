@@ -23,6 +23,10 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Block certificates as PDF (landscape Letter, ReportLab): church logo, the member's name,
+  the block and its courses, issue date in Spanish, signer name/title (set in Configuración →
+  Certificados), number and a QR to a public check page (`/education/certificates/verify/<number>/`)
+  that confirms a printed copy is genuine without exposing anything not printed on it
 - CSV import of members (Miembros → Importar CSV): loose header matching, `,` `;` and
   tab delimiters, UTF-8/Excel encodings, preview with per-row errors before saving,
   duplicate detection (skip or update), families and tags created on the fly, one

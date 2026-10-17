@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Verificar certificado - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            {% if certificate %}
+            <div class="card border-success">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-patch-check-fill text-success display-4" aria-hidden="true"></i>
+                    <h1 class="h3 mt-2">Certificado auténtico</h1>
+                    <p class="text-muted">Este certificado fue emitido por <strong>{{ certificate.tenant.name }}</strong>.</p>
+                    <dl class="row text-start mb-0">
+                        <dt class="col-sm-5">A nombre de</dt>
+                        <dd class="col-sm-7">{{ certificate.member.full_name }}</dd>
+                        <dt class="col-sm-5">Por completar el bloque</dt>
+                        <dd class="col-sm-7">{{ certificate.course_block.name }}</dd>
+                        <dt class="col-sm-5">Fecha de emisión</dt>
+                        <dd class="col-sm-7">{{ certificate.issued_at|date:"d/m/Y" }}</dd>
+                        <dt class="col-sm-5">N.º de certificado</dt>
+                        <dd class="col-sm-7">{{ certificate.certificate_number }}</dd>
+                    </dl>
+                </div>
+            </div>
+            {% else %}
+            <div class="card border-danger">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-x-octagon-fill text-danger display-4" aria-hidden="true"></i>
+                    <h1 class="h3 mt-2">Certificado no encontrado</h1>
+                    <p class="text-muted mb-0">No hay ningún certificado con el número <strong>{{ number }}</strong>. Revisa que esté escrito igual que en el documento; si sigue sin aparecer, contacta a la iglesia que lo emitió.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

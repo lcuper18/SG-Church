@@ -13,3 +13,4 @@ flake8>=6.0
 black>=23.0
 isort>=5.12
 factory-boy>=3.3
+pypdf>=4.0

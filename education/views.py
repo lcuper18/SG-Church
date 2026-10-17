@@ -502,3 +502,56 @@ class BlockCertificateDetailView(LoginRequiredMixin, DetailView):
 
 
 block_certificate_detail = BlockCertificateDetailView.as_view()
+
+
+def _certificate_filename(certificate):
+    from django.utils.text import slugify
+
+    return "certificado-{}-{}.pdf".format(
+        slugify(certificate.course_block.name) or "bloque",
+        slugify(certificate.member.full_name) or "miembro",
+    )
+
+
+class BlockCertificatePdfView(BlockCertificateDetailView):
+    """The same certificate as a downloadable PDF (same access rules as the
+    printable page: staff, or its owner)."""
+
+    def get(self, request, *args, **kwargs):
+        from django.http import HttpResponse
+        from django.urls import reverse
+
+        from education.certificates import render_certificate_pdf
+
+        certificate = self.get_object()
+        verify_url = request.build_absolute_uri(
+            reverse("certificate_verify", args=[certificate.certificate_number])
+        )
+        response = HttpResponse(
+            render_certificate_pdf(certificate, verify_url), content_type="application/pdf"
+        )
+        disposition = "inline" if request.GET.get("inline") else "attachment"
+        response["Content-Disposition"] = f'{disposition}; filename="{_certificate_filename(certificate)}"'
+        return response
+
+
+block_certificate_pdf = BlockCertificatePdfView.as_view()
+
+
+def certificate_verify(request, number):
+    """Public page: is this certificate number genuine? Shows only what is
+    printed on the certificate itself. No login, so anyone holding a printed
+    copy can check it."""
+    from django.shortcuts import render
+
+    certificate = (
+        BlockCertificate.objects.filter(certificate_number__iexact=number.strip())
+        .select_related("tenant", "member", "course_block")
+        .first()
+    )
+    return render(
+        request,
+        "education/certificate_verify.html",
+        {"certificate": certificate, "number": number},
+        status=200 if certificate else 404,
+    )

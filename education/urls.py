@@ -49,4 +49,15 @@ urlpatterns = [
         views.block_certificate_detail,
         name="block_certificate_detail",
     ),
+    path(
+        "certificates/<uuid:pk>/pdf/",
+        views.block_certificate_pdf,
+        name="block_certificate_pdf",
+    ),
+    # Public: check a printed certificate by its number.
+    path(
+        "certificates/verify/<str:number>/",
+        views.certificate_verify,
+        name="certificate_verify",
+    ),
 ]

@@ -3,5 +3,5 @@
 Completaste todos los cursos del bloque "{{ block.name }}" y se emitió tu certificado.
 Número de certificado: {{ certificate.certificate_number }}
 {% if certificate_url %}
-Verlo e imprimirlo: {{ certificate_url }}
+Verlo, descargarlo en PDF o imprimirlo: {{ certificate_url }}
 {% endif %}

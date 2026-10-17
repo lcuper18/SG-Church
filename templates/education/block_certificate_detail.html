@@ -30,8 +30,11 @@
 <div class="container py-5">
     <div class="row justify-content-center mb-3 no-print">
         <div class="col-md-8 text-end">
-            <button type="button" class="btn btn-primary" onclick="window.print()">
-                <i class="bi bi-printer"></i> Imprimir / Guardar PDF
+            <a href="{% url 'block_certificate_pdf' certificate.pk %}" class="btn btn-primary">
+                <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+            </a>
+            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir
             </button>
         </div>
     </div>

@@ -212,6 +212,7 @@ FIELD_LABELS = {
     "approved_by": "Aprobado por", "created_by": "Creado por", "receipt": "Recibo",
     "timezone": "Zona horaria", "country": "País", "denomination": "Denominación",
     "enable_families": "Usar familias", "enable_tags": "Usar etiquetas",
+    "certificate_signer_name": "Firma de certificados", "certificate_signer_title": "Cargo de la firma",
     "completed_at": "Completado", "course": "Curso", "member": "Miembro",
 }
 
