@@ -734,6 +734,16 @@ Agregar endpoint de health a uptime monitoring:
 
 ## Backups
 
+### Procesos y límites de recursos
+
+`docker-compose.yml` arranca gunicorn con 3 procesos de 2 hilos (1 proceso de 4 hilos en el modo
+autoinstalable con SQLite), reinicia cada proceso tras ~1000 peticiones y deja a Celery con 2 procesos.
+Cada servicio tiene tope de memoria y CPU (web 640 MB / 1,5 CPU, celery 512 MB, db 512 MB, redis 128 MB,
+beat 192 MB), para que un servicio desbocado no afecte a otras aplicaciones del mismo servidor. Se ajusta
+con `WEB_CONCURRENCY`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT`, `GUNICORN_MAX_REQUESTS` y
+`CELERY_CONCURRENCY` (ver `.env.example`). Regla práctica: procesos web ≈ CPUs + 1; sube los topes de
+memoria en proporción si subes los procesos.
+
 ### Recordatorios de eventos (incluidos)
 
 La misma pareja `beat` + worker envía, cada 5 minutos, los recordatorios de

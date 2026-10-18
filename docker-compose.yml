@@ -1,5 +1,6 @@
 # Hosted, multi-church SaaS deployment: Postgres + Redis + gunicorn + a
-# Celery worker.
+# Celery worker and scheduler. Every service has a memory/CPU ceiling so a runaway
+# process cannot starve the other applications on a shared server.
 #
 # Usage:
 #   docker compose up -d
@@ -23,6 +24,11 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   redis:
     image: redis:7-alpine
@@ -32,6 +38,11 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
 
   web:
     build: .
@@ -56,10 +67,17 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 640M
+          cpus: "1.5"
 
   celery:
     build: .
-    command: celery -A sg_church worker -l info
+    # Two task processes are plenty (e-mails, reminders, backups); each one restarts after
+    # 200 tasks. Raise CELERY_CONCURRENCY if the e-mail queue ever backs up.
+    command: celery -A sg_church worker -l info --concurrency=${CELERY_CONCURRENCY:-2} --max-tasks-per-child=200
     env_file:
       - .env
     environment:
@@ -79,6 +97,11 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   # Runs the schedule (nightly backup). One instance only; the worker does the work.
   beat:
@@ -98,6 +121,11 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.25"
 
 volumes:
   postgres_data:

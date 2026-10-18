@@ -23,6 +23,11 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Changed
+- Process tuning for shared servers: gunicorn now starts several workers with threads (3 x 2 hosted, 1 x 4
+  standalone/SQLite, tunable with `WEB_CONCURRENCY`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT`,
+  `GUNICORN_MAX_REQUESTS`) and recycles them periodically; the Celery worker is fixed at 2 processes
+  (`CELERY_CONCURRENCY`) and recycled every 200 tasks; every service in `docker-compose.yml` has a memory
+  and CPU ceiling so a runaway process cannot starve the other applications on the same server
 - The "Apoya el desarrollo" block no longer takes up the footer of every page: it is now a small
   "Apoyar el proyecto" link on the copyright line that opens a small dialog with the explanation and the
   PayPal button. The PayPal script is loaded only when someone opens the dialog (nothing third-party on

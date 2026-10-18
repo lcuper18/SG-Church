@@ -32,4 +32,23 @@ fi
 
 python manage.py collectstatic --noinput
 
-exec gunicorn sg_church.wsgi:application --bind 0.0.0.0:8000
+# Process model. The hosted (Postgres) setup runs several workers with a couple of
+# threads each; a standalone install uses SQLite, which allows one writer at a time,
+# so it gets a single worker with threads. Override with WEB_CONCURRENCY / GUNICORN_THREADS.
+# Workers restart after ~1000 requests so a slow memory leak can never grow unbounded.
+if [ "$DJANGO_SETTINGS_MODULE" = "sg_church.settings.standalone" ]; then
+    WORKERS="${WEB_CONCURRENCY:-1}"
+    THREADS="${GUNICORN_THREADS:-4}"
+else
+    WORKERS="${WEB_CONCURRENCY:-3}"
+    THREADS="${GUNICORN_THREADS:-2}"
+fi
+
+exec gunicorn sg_church.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers "$WORKERS" \
+    --threads "$THREADS" \
+    --worker-tmp-dir /dev/shm \
+    --timeout "${GUNICORN_TIMEOUT:-60}" \
+    --max-requests "${GUNICORN_MAX_REQUESTS:-1000}" \
+    --max-requests-jitter 100
