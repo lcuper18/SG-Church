@@ -271,6 +271,7 @@ class EventNotification(models.Model):
     KIND_CHOICES = [
         ("day_before", "Un día antes"),
         ("hour_before", "Una hora antes"),
+        ("announcement", "Anuncio"),
     ]
     AUTOMATIC = ("day_before", "hour_before")
     STATUS_CHOICES = [("queued", "En cola"), ("skipped", "Omitido")]
@@ -284,14 +285,70 @@ class EventNotification(models.Model):
         "members.Member", on_delete=models.CASCADE, related_name="event_notifications"
     )
     kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    announcement = models.ForeignKey(
+        "EventAnnouncement", null=True, blank=True, on_delete=models.CASCADE, related_name="notifications"
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="queued")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "event_notifications"
         constraints = [
-            models.UniqueConstraint(fields=["event", "member", "kind"], name="unique_event_member_kind")
+            models.UniqueConstraint(
+                fields=["event", "member", "kind"],
+                condition=models.Q(announcement__isnull=True),
+                name="unique_event_member_kind",
+            ),
+            models.UniqueConstraint(
+                fields=["announcement", "member"],
+                condition=models.Q(announcement__isnull=False),
+                name="unique_announcement_member",
+            ),
         ]
 
     def __str__(self):
         return f"{self.kind} → {self.member_id} ({self.event_id})"
+
+
+class EventAnnouncement(models.Model):
+    """A message the event's manager sends by hand, now or at a chosen time, to
+    the people registered or to the members with a tag."""
+
+    AUDIENCE_CHOICES = [("registered", "Inscritos al evento"), ("tag", "Miembros con una etiqueta")]
+    STATUS_CHOICES = [
+        ("scheduled", "Programado"),
+        ("sending", "Enviando"),
+        ("sent", "Enviado"),
+        ("cancelled", "Cancelado"),
+        ("skipped", "Omitido"),  # the event was cancelled/deleted/finished before it went out
+    ]
+    MAX_RECIPIENTS = 1000
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant = models.ForeignKey(
+        "tenants.Tenant", on_delete=models.CASCADE, related_name="event_announcements"
+    )
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="announcements")
+    subject = models.CharField(max_length=150)
+    body = models.TextField()
+    audience = models.CharField(max_length=12, choices=AUDIENCE_CHOICES, default="registered")
+    tag = models.ForeignKey(
+        "members.Tag", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    send_at = models.DateTimeField(null=True, blank=True)  # empty = as soon as possible
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="scheduled")
+    recipient_count = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        "members.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "event_announcements"
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "send_at"])]
+
+    def __str__(self):
+        return self.subject

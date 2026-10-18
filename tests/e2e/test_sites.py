@@ -37,12 +37,15 @@ class TestSitesE2E:
         page.select_option("#site", label="Sede Norte")
         page.fill("#start_at", "2030-05-08T19:00")
         page.click("button[type='submit']")
+        page.wait_for_url(lambda url: "/create/" not in url)
         assert "Sede Norte" in page.content()
 
         page.goto(f"{live_server_url}/events/create/")
         page.fill("#title", "Culto central")
         page.fill("#start_at", "2030-05-09T19:00")
         page.click("button[type='submit']")
+        # Wait for the redirect: going elsewhere now would cancel the save in flight.
+        page.wait_for_url(lambda url: "/create/" not in url)
 
         page.goto(f"{live_server_url}/events/")
         page.select_option("select[name='site']", label="Sede Norte")

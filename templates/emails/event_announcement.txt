@@ -1,0 +1,8 @@
+Hola {{ member.first_name }},
+
+{{ announcement.body }}
+
+--
+Sobre el evento "{{ event.title }}": {{ event.start_at|date:"l d \d\e F \d\e Y, H:i" }}{% if sede %} · {{ sede.name }}{% endif %}{% if event.location %} · {{ event.location }}{% endif %}
+{% if event_url %}Más detalles: {{ event_url }}
+{% endif %}

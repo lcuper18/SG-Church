@@ -30,8 +30,10 @@ from members.models import Member
 from tenants.models import Site
 
 from . import recurrence
-from .forms import EVENT_FIELDS, WEEKDAY_CHOICES, EventForm
-from .models import Event, EventAttendance, EventRegistration
+from . import announcements as announcement_service
+from .forms import EVENT_FIELDS, WEEKDAY_CHOICES, AnnouncementForm, EventForm
+from .models import Event, EventAnnouncement, EventAttendance, EventRegistration
+from members.models import Tag
 
 class EventFormMixin:
     """Shared by create/update: the course and site pickers, limited to this church."""
@@ -155,6 +157,10 @@ class EventDetailView(LoginRequiredMixin, DetailView):
         context["attended_count"] = len(attended_ids)
         context["no_show_count"] = len(registered_ids - attended_ids)
         context["attended_ids"] = attended_ids
+        if self.request.user.can_manage_members:
+            context["announcements"] = event.announcements.select_related("tag")[:20]
+            context["tags"] = Tag.objects.filter(tenant=event.tenant)
+            context["can_announce"] = event.is_active and not event.is_past
         return context
 
 
@@ -264,6 +270,56 @@ class EventCancelView(ManageMembersRequiredMixin, View):
 
 
 event_cancel = EventCancelView.as_view()
+
+
+class AnnouncementCreateView(ManageMembersRequiredMixin, View):
+    """Create (and, if it is for now, send) a custom announcement (POST only)."""
+
+    def post(self, request, pk):
+        event = get_object_or_404(Event, pk=pk, tenant=request.user.tenant)
+        form = AnnouncementForm(request.POST, event=event)
+        if not form.is_valid():
+            for errors in form.errors.values():
+                for error in errors:
+                    messages.error(request, error)
+            return redirect("event_detail", pk=event.pk)
+        data = form.cleaned_data
+        later = data["when"] == "later"
+        announcement = EventAnnouncement.objects.create(
+            tenant=event.tenant, event=event, subject=data["subject"], body=data["body"],
+            audience=data["audience"], tag=data["tag"] if data["audience"] == "tag" else None,
+            send_at=data["send_at"] if later else None, created_by=request.user,
+        )
+        if later:
+            when = timezone.localtime(announcement.send_at).strftime("%d/%m/%Y %H:%M")
+            messages.success(request, f"Anuncio programado para el {when} ({form.recipients} destinatario(s)).")
+        else:
+            try:
+                from .tasks import send_event_announcements
+
+                send_event_announcements.delay()
+            except Exception:  # broker down: the beat task will pick it up within minutes
+                pass
+            messages.success(request, f"Anuncio en camino a {form.recipients} destinatario(s).")
+        return redirect("event_detail", pk=event.pk)
+
+
+announcement_create = AnnouncementCreateView.as_view()
+
+
+class AnnouncementCancelView(ManageMembersRequiredMixin, View):
+    """Cancel an announcement that has not gone out yet (POST only)."""
+
+    def post(self, request, pk):
+        announcement = get_object_or_404(EventAnnouncement, pk=pk, tenant=request.user.tenant)
+        if announcement_service.cancel(announcement):
+            messages.success(request, "Anuncio cancelado.")
+        else:
+            messages.error(request, "Ese anuncio ya no se puede cancelar.")
+        return redirect("event_detail", pk=announcement.event_id)
+
+
+announcement_cancel = AnnouncementCancelView.as_view()
 
 
 class EventDeleteView(ManageMembersRequiredMixin, DeleteView):

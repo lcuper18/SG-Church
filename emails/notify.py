@@ -150,6 +150,25 @@ def event_reminder(event, member, kind):
     )
 
 
+def event_announcement(announcement, member):
+    """A custom announcement from the event's manager, to one person."""
+    event = announcement.event
+    site = _site_url()
+    return queue_email(
+        member.email,
+        announcement.subject,
+        "event_announcement",
+        {
+            "member": member,
+            "event": event,
+            "announcement": announcement,
+            "sede": event.site if event.tenant.uses_sites else None,
+            "event_url": f"{site}{reverse('event_detail', args=[event.pk])}" if site else "",
+        },
+        event.tenant,
+    )
+
+
 def course_enrollment(enrollment, request=None):
     member, course = enrollment.member, enrollment.course
     site = _site_url(request)

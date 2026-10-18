@@ -30,7 +30,25 @@ activados. Un evento cancelado (inactivo) tampoco envía recordatorios.
   para la nueva hora.
 - Requiere que el servicio `beat` y el correo (SMTP) estén configurados; ver `docs/DEPLOYMENT.md`.
 
+## Anuncios personalizados
+
+Además de los automáticos, quien gestiona el evento puede enviar su propio mensaje desde la tarjeta
+**Anuncios** del detalle del evento:
+
+1. Escribe el **asunto** y el **mensaje**.
+2. Elige los **destinatarios**: las personas **inscritas** al evento o los miembros con una **etiqueta**
+   (no hace falta que estén inscritos).
+3. Elige **enviar ahora** o **programar** una fecha y hora (siempre antes de que termine el evento).
+
+Reglas:
+
+- Un anuncio programado se puede **cancelar** hasta que salga. Después ya no.
+- Máximo **1000 destinatarios** por anuncio; solo cuenta gente con correo válido. Si no hay nadie, no se crea.
+- Solo para eventos activos que no han terminado. Si el evento se cancela antes de la hora programada,
+  el anuncio se omite.
+- Cada persona recibe un anuncio una sola vez, aunque el servidor se interrumpa a mitad del envío.
+- Los programados salen en el siguiente ciclo de 5 minutos tras su hora.
+
 ## Qué no hace (todavía)
 
-- No hay anuncios personalizados ni envíos a una etiqueta (llegan en la siguiente fase).
 - Todavía no existe un enlace para darse de baja de los correos.

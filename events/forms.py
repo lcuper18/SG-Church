@@ -3,8 +3,10 @@
 from django import forms
 from django.utils import timezone
 
-from . import recurrence
-from .models import Event
+from members.models import Tag
+
+from . import announcements, recurrence
+from .models import Event, EventAnnouncement
 
 EVENT_FIELDS = [
     "title",
@@ -78,4 +80,49 @@ class EventForm(forms.ModelForm):
                 self.add_error(None, str(error))
                 return cleaned
             self.rule = {"weekdays": weekdays, "until_date": until, "weeks": weeks, "count": len(dates)}
+        return cleaned
+
+
+class AnnouncementForm(forms.Form):
+    """A custom announcement for an event: what to say, to whom, and when."""
+
+    subject = forms.CharField(max_length=150, label="Asunto")
+    body = forms.CharField(widget=forms.Textarea, max_length=5000, label="Mensaje")
+    audience = forms.ChoiceField(choices=EventAnnouncement.AUDIENCE_CHOICES, label="Destinatarios")
+    tag = forms.ModelChoiceField(queryset=Tag.objects.none(), required=False, label="Etiqueta")
+    when = forms.ChoiceField(choices=[("now", "Enviar ahora"), ("later", "Programar")], initial="now")
+    send_at = forms.DateTimeField(required=False, label="Enviar el")
+
+    def __init__(self, *args, event, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.event = event
+        self.fields["tag"].queryset = Tag.objects.filter(tenant=event.tenant)
+        self.recipients = 0
+
+    def clean(self):
+        cleaned = super().clean()
+        event = self.event
+        if not event.is_active or event.is_past:
+            raise forms.ValidationError("Solo se pueden enviar anuncios de eventos activos que aún no terminan.")
+        audience, tag = cleaned.get("audience"), cleaned.get("tag")
+        if audience == "tag" and not tag:
+            self.add_error("tag", "Elige la etiqueta.")
+        if cleaned.get("when") == "later":
+            send_at = cleaned.get("send_at")
+            if not send_at:
+                self.add_error("send_at", "Indica cuándo enviarlo.")
+            elif send_at <= timezone.now():
+                self.add_error("send_at", "La fecha de envío debe ser en el futuro.")
+            elif send_at >= (event.end_at or event.start_at):
+                self.add_error("send_at", "Debe ser antes de que termine el evento.")
+        if audience and not self.errors:
+            self.recipients = announcements.audience_members(
+                event.tenant, event, audience, tag if audience == "tag" else None
+            ).count()
+            if self.recipients == 0:
+                raise forms.ValidationError("No hay a quién enviarlo: nadie con correo en ese grupo.")
+            if self.recipients > EventAnnouncement.MAX_RECIPIENTS:
+                raise forms.ValidationError(
+                    f"Son {self.recipients} destinatarios; el máximo por anuncio es {EventAnnouncement.MAX_RECIPIENTS}."
+                )
         return cleaned

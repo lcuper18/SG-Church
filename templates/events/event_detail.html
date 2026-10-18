@@ -155,6 +155,92 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card border-0 shadow-sm mt-4" id="announcements">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Anuncios</h5>
+                </div>
+                <div class="card-body">
+                    {% if can_announce %}
+                    <form method="post" action="{% url 'announcement_create' event.pk %}" id="announce-form">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            <label for="ann_subject" class="form-label">Asunto</label>
+                            <input type="text" class="form-control" id="ann_subject" name="subject" maxlength="150" required>
+                        </div>
+                        <div class="mb-2">
+                            <label for="ann_body" class="form-label">Mensaje</label>
+                            <textarea class="form-control" id="ann_body" name="body" rows="4" maxlength="5000" required></textarea>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label for="ann_audience" class="form-label">Destinatarios</label>
+                                <select class="form-select" id="ann_audience" name="audience">
+                                    <option value="registered">Inscritos al evento</option>
+                                    <option value="tag">Miembros con una etiqueta</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="ann_tag_wrap" hidden>
+                                <label for="ann_tag" class="form-label">Etiqueta</label>
+                                <select class="form-select" id="ann_tag" name="tag">
+                                    {% for tag in tags %}<option value="{{ tag.pk }}">{{ tag.name }}</option>{% empty %}<option value="">No hay etiquetas</option>{% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label for="ann_when" class="form-label">Cuándo</label>
+                                <select class="form-select" id="ann_when" name="when">
+                                    <option value="now">Enviar ahora</option>
+                                    <option value="later">Programar</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="ann_send_wrap" hidden>
+                                <label for="ann_send_at" class="form-label">Enviar el</label>
+                                <input type="datetime-local" class="form-control" id="ann_send_at" name="send_at">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-megaphone"></i> Enviar anuncio</button>
+                    </form>
+                    <script>
+                        (function () {
+                            var audience = document.getElementById('ann_audience'), when = document.getElementById('ann_when');
+                            function sync() {
+                                document.getElementById('ann_tag_wrap').hidden = audience.value !== 'tag';
+                                document.getElementById('ann_send_wrap').hidden = when.value !== 'later';
+                            }
+                            audience.addEventListener('change', sync); when.addEventListener('change', sync); sync();
+                        })();
+                    </script>
+                    <hr>
+                    {% else %}
+                    <p class="text-muted">Solo se pueden enviar anuncios de eventos activos que aún no terminan.</p>
+                    {% endif %}
+                    <ul class="list-group list-group-flush">
+                        {% for item in announcements %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ item.subject }}</strong>
+                                <div class="small text-muted">
+                                    {{ item.get_audience_display }}{% if item.tag %}: {{ item.tag.name }}{% endif %} ·
+                                    {% if item.status == 'sent' %}Enviado {{ item.sent_at|date:"d/m/Y H:i" }} a {{ item.recipient_count }}
+                                    {% elif item.status == 'scheduled' %}Programado{% if item.send_at %} para {{ item.send_at|date:"d/m/Y H:i" }}{% else %} (enviándose){% endif %}
+                                    {% else %}{{ item.get_status_display }}{% endif %}
+                                </div>
+                            </div>
+                            {% if item.status == 'scheduled' and item.send_at %}
+                            <form method="post" action="{% url 'announcement_cancel' item.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar envío</button>
+                            </form>
+                            {% endif %}
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item px-0 text-muted">Todavía no hay anuncios para este evento.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
         </div>
         {% endif %}
     </div>

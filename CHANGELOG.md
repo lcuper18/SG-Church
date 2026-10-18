@@ -23,6 +23,11 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Custom event announcements: from an event's page the manager writes a subject and message and sends it
+  to the people registered or to the members with a tag, now or scheduled for a date/hour (before the event
+  ends), and can cancel it while it is still waiting. Max 1000 recipients, delivered in batches of 200 by the
+  same 5-minute task; a ledger per announcement and person makes retries safe, interrupted sends resume, and
+  an announcement whose event was cancelled meanwhile is skipped
 - Automatic event reminders: an e-mail to the people registered 1 day and 1 hour before each event's own
   start time (beat task every 5 minutes, church time zone, site and address included). Each (event, person,
   reminder) is recorded before sending so nothing goes out twice; a late worker catches up within a grace

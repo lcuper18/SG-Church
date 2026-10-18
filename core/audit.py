@@ -204,7 +204,7 @@ FIELD_LABELS = {
     "city": "Ciudad", "state": "Estado/provincia", "postal_code": "Código postal",
     "notes": "Notas", "photo": "Foto", "user": "Usuario", "name": "Nombre", "color": "Color",
     "head_of_family": "Cabeza de familia", "home_phone": "Teléfono de casa",
-    "role": "Rol", "is_active": "Activo", "reminders_enabled": "Recordatorios automáticos", "member_profile": "Ficha de miembro",
+    "subject": "Asunto", "body": "Mensaje", "audience": "Destinatarios", "send_at": "Envío programado", "tag": "Etiqueta", "role": "Rol", "is_active": "Activo", "reminders_enabled": "Recordatorios automáticos", "member_profile": "Ficha de miembro",
     "password": "Contraseña", "title": "Título", "description": "Descripción",
     "event_type": "Tipo", "location": "Lugar", "start_at": "Inicio", "end_at": "Fin",
     "capacity": "Cupo", "requires_baptized": "Requiere bautizo", "requires_married": "Requiere casado/a",

@@ -9,7 +9,7 @@ class CoreConfig(AppConfig):
     def ready(self):
         from core import audit
         from education.models import Course, CourseBlock, Enrollment
-        from events.models import Event, EventSeries
+        from events.models import Event, EventAnnouncement, EventSeries
         from finance.models import Donation, Expense
         from members.models import Family, Member, Tag, User
         from tenants.models import Site, Tenant
@@ -26,6 +26,7 @@ class CoreConfig(AppConfig):
             (Enrollment, "Inscripción a curso"),
             (Event, "Evento"),
             (EventSeries, "Serie de eventos"),
+            (EventAnnouncement, "Anuncio de evento"),
             (Tenant, "Configuración de la iglesia"),
             (Site, "Sede"),
         ):

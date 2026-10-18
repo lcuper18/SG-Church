@@ -12,6 +12,8 @@ urlpatterns = [
     path("<uuid:pk>/edit/", views.event_update, name="event_update"),
     path("<uuid:pk>/delete/", views.event_delete, name="event_delete"),
     path("<uuid:pk>/cancel/", views.event_cancel, name="event_cancel"),
+    path("<uuid:pk>/announce/", views.announcement_create, name="announcement_create"),
+    path("announcements/<uuid:pk>/cancel/", views.announcement_cancel, name="announcement_cancel"),
     path("<uuid:event_pk>/register/", views.registration_create, name="registration_create"),
     path("registrations/<uuid:pk>/cancel/", views.registration_cancel, name="registration_cancel"),
 ]

@@ -1,0 +1,20 @@
+{% extends "emails/base.html" %}
+
+{% block title %}{{ announcement.subject }}{% endblock %}
+
+{% block content %}
+<h2 style="color: #1f2937; margin-bottom: 16px;">{{ announcement.subject }}</h2>
+
+<p style="color: #4b5563; margin-bottom: 20px;">Hola {{ member.first_name }},</p>
+
+<div style="color: #1f2937; margin-bottom: 24px;">{{ announcement.body|linebreaks }}</div>
+
+<div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+    <p style="margin: 0 0 6px 0; color: #6b7280;">Sobre el evento <strong style="color:#1f2937;">{{ event.title }}</strong></p>
+    <p style="margin: 0; color: #1f2937;">{{ event.start_at|date:"l d \d\e F \d\e Y, H:i" }}{% if sede %} · {{ sede.name }}{% endif %}{% if event.location %} · {{ event.location }}{% endif %}</p>
+</div>
+
+{% if event_url %}
+<p style="text-align: center;"><a href="{{ event_url }}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;">Ver el evento</a></p>
+{% endif %}
+{% endblock %}
