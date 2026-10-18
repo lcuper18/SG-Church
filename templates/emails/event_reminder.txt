@@ -1,0 +1,10 @@
+Hola {{ member.first_name }},
+
+{% if soon %}Tu evento empieza pronto.{% else %}Te esperamos mañana.{% endif %} Estás inscrito/a en "{{ event.title }}".
+
+Cuándo: {{ event.start_at|date:"l d \d\e F \d\e Y, H:i" }}{% if event.end_at %} a {{ event.end_at|date:"H:i" }}{% endif %}
+{% if sede %}Sede: {{ sede.name }}{% if sede.address %} · {{ sede.address }}{% endif %}
+{% endif %}{% if event.location %}Dónde: {{ event.location }}
+{% endif %}{% if event_url %}
+Más detalles: {{ event_url }}
+{% endif %}

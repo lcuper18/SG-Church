@@ -58,6 +58,10 @@
                             <td class="text-muted">Inscritos</td>
                             <td>{{ event.registered_count }}{% if event.capacity %} / {{ event.capacity }}{% endif %}</td>
                         </tr>
+                        <tr>
+                            <td class="text-muted">Recordatorios</td>
+                            <td>{% if event.reminders_enabled %}Automáticos: 1 día y 1 hora antes{% else %}<span class="text-muted">Desactivados</span>{% endif %}</td>
+                        </tr>
                         {% if event.guest_count %}
                         <tr>
                             <td class="text-muted">Visitas</td>

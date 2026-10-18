@@ -95,6 +95,11 @@
                                     {% include "partials/field_errors.html" with field=form.is_active %}
                                     <label class="form-check-label" for="is_active">Activo</label>
                                 </div>
+                                <div class="form-check mt-2">
+                                    <input type="checkbox" class="form-check-input" id="reminders_enabled" name="reminders_enabled" {% if form.reminders_enabled.value %}checked{% endif %}>
+                                    <label class="form-check-label" for="reminders_enabled">Recordatorios automáticos</label>
+                                    <div class="form-text">Un correo a los inscritos 1 día y otro 1 hora antes del inicio.</div>
+                                </div>
                             </div>
                         </div>
 

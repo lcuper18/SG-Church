@@ -41,6 +41,7 @@ class EventSerializer(serializers.ModelSerializer):
             "is_active",
             "capacity",
             "guest_count",
+            "reminders_enabled",
             "requires_baptized",
             "requires_married",
             "required_courses",

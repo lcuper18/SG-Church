@@ -129,6 +129,27 @@ def event_cancelled(event, request=None):
     return queued
 
 
+def event_reminder(event, member, kind):
+    """The automatic reminder ("day_before" or "hour_before") for one person.
+    Returns True if it was queued."""
+    site = _site_url()
+    sede = event.site if event.tenant.uses_sites else None
+    soon = kind == "hour_before"
+    return queue_email(
+        member.email,
+        f"Recordatorio: {event.title} empieza pronto" if soon else f"Recordatorio: {event.title} es mañana",
+        "event_reminder",
+        {
+            "member": member,
+            "event": event,
+            "soon": soon,
+            "sede": sede,
+            "event_url": f"{site}{reverse('event_detail', args=[event.pk])}" if site else "",
+        },
+        event.tenant,
+    )
+
+
 def course_enrollment(enrollment, request=None):
     member, course = enrollment.member, enrollment.course
     site = _site_url(request)

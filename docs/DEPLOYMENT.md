@@ -734,6 +734,13 @@ Agregar endpoint de health a uptime monitoring:
 
 ## Backups
 
+### Recordatorios de eventos (incluidos)
+
+La misma pareja `beat` + worker envía, cada 5 minutos, los recordatorios de
+eventos (1 día y 1 hora antes, solo a los inscritos). Necesita un SMTP real en
+`EMAIL_*` y `SITE_URL` para los enlaces; sin eso los correos solo se imprimen
+en el log. Ver `docs/USER_EVENT_REMINDERS.md`.
+
 ### Respaldos automáticos (incluidos)
 
 El sistema respalda solo cada noche, sin scripts externos. El servicio `beat`

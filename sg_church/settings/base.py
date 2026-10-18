@@ -240,6 +240,11 @@ IMPORT_TMP_DIR = os.environ.get(
 )
 
 TRASH_RETENTION_DAYS = int(os.environ.get("TRASH_RETENTION_DAYS", "90"))
+# Reminders 1 day and 1 hour before each event (events/reminders.py).
+CELERY_BEAT_SCHEDULE["event-reminders"] = {
+    "task": "events.tasks.send_event_reminders",
+    "schedule": crontab(minute="*/5"),
+}
 CELERY_BEAT_SCHEDULE["purge-trash"] = {
     "task": "core.tasks.purge_trash",
     "schedule": crontab(hour=3, minute=30),

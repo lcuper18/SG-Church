@@ -18,6 +18,7 @@ EVENT_FIELDS = [
     "requires_married",
     "required_courses",
     "is_active",
+    "reminders_enabled",
     "site",
 ]
 

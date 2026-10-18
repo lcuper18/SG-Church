@@ -23,6 +23,12 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Automatic event reminders: an e-mail to the people registered 1 day and 1 hour before each event's own
+  start time (beat task every 5 minutes, church time zone, site and address included). Each (event, person,
+  reminder) is recorded before sending so nothing goes out twice; a late worker catches up within a grace
+  period (6 h / 30 min) but never sends stale reminders. Events created, or people registered, inside the
+  window get no reminder for it; moving an event by more than an hour starts its reminders over. Per-event
+  switch "Recordatorios automáticos" (form, detail, API `reminders_enabled`)
 - Repeating events ("Repetir cada semana"): weekdays + N weeks or an end date (max 52 occurrences),
   one ordinary event per date linked as a series, wall-clock hour kept across daylight-saving changes,
   ends past midnight supported. Edit "solo este" or "este y los siguientes" (only the fields actually

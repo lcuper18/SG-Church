@@ -24,7 +24,7 @@ UTC = dt_timezone.utc
 # Fields copied to every occurrence (and propagated by "this and the following").
 CONTENT_FIELDS = (
     "title", "description", "event_type", "location", "capacity", "requires_baptized",
-    "requires_married", "is_active", "site",
+    "requires_married", "is_active", "reminders_enabled", "site",
 )
 
 
