@@ -133,6 +133,7 @@
                 {% block footer %}
                 <p>&copy; {% now 'Y' %} {% if church_name %}{{ church_name }}{% else %}SG Church{% endif %}. Todos los derechos reservados.</p>
                 <p>Este es un email automático, por favor no respondas directamente a este mensaje.</p>
+                {% if unsubscribe_url %}<p><a href="{{ unsubscribe_url }}">Dejar de recibir recordatorios y anuncios</a></p>{% endif %}
                 {% endblock %}
             </div>
         </div>

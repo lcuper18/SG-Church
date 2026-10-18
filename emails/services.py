@@ -51,7 +51,7 @@ def render_email(template_name, context, tenant=None):
     return html, text.strip()
 
 
-def send_message(to_email, subject, html, text, from_name=None, reply_to=None):
+def send_message(to_email, subject, html, text, from_name=None, reply_to=None, headers=None):
     """Send one message. Returns {"success": bool, "error": str}; never raises."""
     from_address = settings.DEFAULT_FROM_EMAIL
     sender = f"{from_name} <{from_address}>" if from_name else from_address
@@ -62,6 +62,7 @@ def send_message(to_email, subject, html, text, from_name=None, reply_to=None):
             from_email=sender,
             to=[to_email],
             reply_to=[reply_to] if reply_to else None,
+            headers=headers or None,
         )
         message.attach_alternative(html, "text/html")
         message.send(fail_silently=False)

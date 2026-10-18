@@ -54,6 +54,7 @@
                     <p class="mb-2">
                         <i class="bi bi-envelope me-2"></i>
                         {{ member.email|default:"-" }}
+                        {% if member.email_opt_out %}<span class="badge bg-secondary ms-1" title="No recibe recordatorios ni anuncios">Sin avisos por correo</span>{% endif %}
                     </p>
                     <p class="mb-2">
                         <i class="bi bi-telephone me-2"></i>

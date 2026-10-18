@@ -92,6 +92,7 @@ class MemberSerializer(HomeSiteMixin, NationalIdMixin, PastoralNotesMixin, seria
             "photo",
             "notes",
             "tags",
+            "email_opt_out",
             "created_at",
             "updated_at",
         ]
@@ -129,6 +130,7 @@ class MemberCreateSerializer(HomeSiteMixin, NationalIdMixin, PastoralNotesMixin,
             "postal_code",
             "notes",
             "tags",
+            "email_opt_out",
         ]
 
 

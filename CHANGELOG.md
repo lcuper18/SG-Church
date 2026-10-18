@@ -23,6 +23,12 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Unsubscribe from e-mail: reminders and announcements carry a footer link (and the List-Unsubscribe /
+  one-click headers mail apps show as a button) to a public, signed, no-login page that asks for
+  confirmation before changing anything (a GET never unsubscribes) and lets the person come back. The choice
+  is stored as `Member.email_opt_out`, can also be set by the member in "Mi ficha" or by staff in the member
+  form/API, and is honoured by reminders and announcements (opted-out people are not counted as recipients).
+  Registration, cancellation, certificate, receipt and account e-mails are still sent. Needs `SITE_URL`
 - Custom event announcements: from an event's page the manager writes a subject and message and sends it
   to the people registered or to the members with a tag, now or scheduled for a date/hour (before the event
   ends), and can cancel it while it is still waiting. Max 1000 recipients, delivered in batches of 200 by the

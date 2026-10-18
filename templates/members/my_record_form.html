@@ -49,6 +49,12 @@
                             </div>
                         </div>
 
+                        <div class="form-check mb-4">
+                            <input type="checkbox" class="form-check-input" id="email_opt_out" name="email_opt_out" {% if form.email_opt_out.value %}checked{% endif %}>
+                            <label class="form-check-label" for="email_opt_out">No quiero recibir recordatorios ni anuncios por correo</label>
+                            <div class="form-text">Seguirás recibiendo los correos sobre tus inscripciones, certificados y tu cuenta.</div>
+                        </div>
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'my_record' %}" class="btn btn-secondary">Cancelar</a>
                             <button type="submit" class="btn btn-primary">Guardar</button>

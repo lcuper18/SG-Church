@@ -21,14 +21,14 @@ BATCH = 200
 
 
 def audience_members(tenant, event, audience, tag=None):
-    """Members (with an e-mail address) an announcement would reach."""
+    """Members (with an e-mail address, and who have not opted out) an announcement would reach."""
     if audience == "tag":
         members = Member.objects.filter(tenant=tenant, tags=tag) if tag else Member.objects.none()
     else:
         members = Member.objects.filter(
             tenant=tenant, event_registrations__event=event, event_registrations__status="registered"
         )
-    return members.exclude(email="").distinct()
+    return members.exclude(email="").exclude(email_opt_out=True).distinct()
 
 
 def send_due(now=None):

@@ -8,3 +8,7 @@ Cuándo: {{ event.start_at|date:"l d \d\e F \d\e Y, H:i" }}{% if event.end_at %}
 {% endif %}{% if event_url %}
 Más detalles: {{ event_url }}
 {% endif %}
+{% if unsubscribe_url %}
+--
+Para dejar de recibir recordatorios y anuncios: {{ unsubscribe_url }}
+{% endif %}

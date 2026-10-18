@@ -162,6 +162,9 @@ class Member(SoftDeleteModel):
     national_id = models.CharField(max_length=30, blank=True)
     national_id_key = models.CharField(max_length=30, blank=True, editable=False)
 
+    # Asked not to get reminders and announcements by e-mail (messages about their
+    # own registrations, receipts and account are still sent).
+    email_opt_out = models.BooleanField(default=False)
     # Where this person mainly attends (optional); events carry their own site.
     home_site = models.ForeignKey(
         "tenants.Site", on_delete=models.SET_NULL, related_name="members", null=True, blank=True

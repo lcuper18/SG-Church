@@ -6,3 +6,7 @@ Hola {{ member.first_name }},
 Sobre el evento "{{ event.title }}": {{ event.start_at|date:"l d \d\e F \d\e Y, H:i" }}{% if sede %} · {{ sede.name }}{% endif %}{% if event.location %} · {{ event.location }}{% endif %}
 {% if event_url %}Más detalles: {{ event_url }}
 {% endif %}
+{% if unsubscribe_url %}
+--
+Para dejar de recibir recordatorios y anuncios: {{ unsubscribe_url }}
+{% endif %}

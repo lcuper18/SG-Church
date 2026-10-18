@@ -101,6 +101,7 @@ urlpatterns = [
     path("accounts/", include(allauth_url_patterns)),
     path("accounts/social/", include("allauth.socialaccount.urls")),
     # Local apps
+    path("email/", include("emails.urls")),
     path("api/v1/", include("members.api.urls")),
     path("api/v1/", include("finance.api.urls")),
     path("api/v1/", include("notifications.urls")),

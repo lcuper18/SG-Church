@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_logged_email_task(self, log_id, html, text, from_name=None, reply_to=None):
+def send_logged_email_task(self, log_id, html, text, from_name=None, reply_to=None, headers=None):
     """Send the message recorded in EmailLog `log_id` (already rendered).
 
     Failed attempts are retried; the log shows the last outcome."""
@@ -24,7 +24,7 @@ def send_logged_email_task(self, log_id, html, text, from_name=None, reply_to=No
         logger.error("EmailLog %s not found", log_id)
         return {"success": False, "error": "log not found"}
 
-    result = send_message(log.to_email, log.subject, html, text, from_name, reply_to)
+    result = send_message(log.to_email, log.subject, html, text, from_name, reply_to, headers)
     log.status = "sent" if result["success"] else "failed"
     log.error_message = result["error"]
     if result["success"]:

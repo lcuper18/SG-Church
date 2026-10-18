@@ -49,6 +49,15 @@ Reglas:
 - Cada persona recibe un anuncio una sola vez, aunque el servidor se interrumpa a mitad del envío.
 - Los programados salen en el siguiente ciclo de 5 minutos tras su hora.
 
-## Qué no hace (todavía)
+## Darse de baja
 
-- Todavía no existe un enlace para darse de baja de los correos.
+Los recordatorios y anuncios llevan al pie un enlace **«Dejar de recibir recordatorios y anuncios»** (y
+los programas de correo muestran su botón «Cancelar suscripción»). La persona entra sin iniciar sesión,
+confirma, y puede arrepentirse desde la misma página.
+
+- Deja de recibir **solo** recordatorios y anuncios. Los correos sobre sus inscripciones, cancelaciones,
+  certificados, recibos y su cuenta se siguen enviando.
+- También se puede marcar desde **Mi ficha → Actualizar mis datos de contacto**, o por el personal en la
+  ficha del miembro (útil si lo pidió por teléfono). En la ficha aparece «Sin avisos por correo».
+- Quien se dio de baja no cuenta como destinatario de un anuncio.
+- El enlace solo aparece si el servidor tiene configurada `SITE_URL`.

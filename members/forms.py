@@ -126,4 +126,4 @@ class MyContactForm(forms.ModelForm):
 
     class Meta:
         model = Member
-        fields = ["phone", "address", "city", "state", "postal_code"]
+        fields = ["phone", "address", "city", "state", "postal_code", "email_opt_out"]

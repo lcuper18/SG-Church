@@ -458,6 +458,7 @@ class MemberCreateView(
         "photo",
         "notes",
         "tags",
+        "email_opt_out",
     ]
 
     def get_form(self, form_class=None):
@@ -515,6 +516,7 @@ class MemberUpdateView(
         "photo",
         "notes",
         "tags",
+        "email_opt_out",
     ]
 
     def get_queryset(self):

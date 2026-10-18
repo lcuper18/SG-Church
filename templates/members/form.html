@@ -139,6 +139,12 @@
                             </div>
                         </div>
 
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="email_opt_out" name="email_opt_out" {% if form.email_opt_out.value %}checked{% endif %}>
+                            <label class="form-check-label" for="email_opt_out">No enviarle recordatorios ni anuncios por correo</label>
+                            <div class="form-text">Márcalo si la persona lo pidió. Ella misma puede hacerlo desde el enlace al pie de cada correo.</div>
+                        </div>
+
                         <hr class="my-4">
 
                         <h5 class="mb-3 text-muted">Familia</h5>

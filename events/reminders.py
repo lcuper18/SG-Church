@@ -59,6 +59,7 @@ def _remind(event, kind, lead, room):
             event=event, status="registered", registered_at__lte=event.start_at - lead
         )
         .exclude(member_id__in=already)
+        .exclude(member__email_opt_out=True)
         .select_related("member")
     )
     queued = 0

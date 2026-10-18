@@ -22,13 +22,37 @@ def _site_url(request=None):
     return getattr(settings, "SITE_URL", "").rstrip("/")
 
 
-def queue_email(to_email, subject, template, context, tenant=None):
-    """Render and queue one e-mail. Returns True if it was queued/sent."""
+def unsubscribe_url(member):
+    """Absolute link for `member` to stop getting reminders and announcements, or
+    "" when the site address is not configured (no SITE_URL: nothing to link to)."""
+    base = _site_url()
+    if not base:
+        return ""
+    from .unsubscribe import make_token
+
+    return f"{base}{reverse('email_unsubscribe', args=[make_token(member)])}"
+
+
+def queue_email(to_email, subject, template, context, tenant=None, unsubscribe_member=None):
+    """Render and queue one e-mail. Returns True if it was queued/sent.
+
+    Optional mail (reminders, announcements) passes `unsubscribe_member`: the e-mail
+    gets a link in its footer and the List-Unsubscribe headers that mail apps
+    show as an "Unsubscribe" button."""
     try:
         if not is_deliverable(to_email):
             logger.info("Skipping email to undeliverable address %r", to_email)
             return False
 
+        headers = None
+        if unsubscribe_member is not None:
+            link = unsubscribe_url(unsubscribe_member)
+            if link:
+                context = {**context, "unsubscribe_url": link}
+                headers = {
+                    "List-Unsubscribe": f"<{link}>",
+                    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+                }
         html, text = render_email(template, context, tenant)
         from_name = tenant.name if tenant else "SG Church"
         reply_to = getattr(tenant, "email", "") or None
@@ -44,10 +68,10 @@ def queue_email(to_email, subject, template, context, tenant=None):
         from .tasks import send_logged_email_task
 
         try:
-            send_logged_email_task.delay(log.pk, html, text, from_name, reply_to)
+            send_logged_email_task.delay(log.pk, html, text, from_name, reply_to, headers)
         except Exception as error:  # broker down: send right away instead
             logger.warning("Celery unavailable (%s); sending %s inline", error, to_email)
-            result = send_message(to_email, subject, html, text, from_name, reply_to)
+            result = send_message(to_email, subject, html, text, from_name, reply_to, headers)
             log.status = "sent" if result["success"] else "failed"
             log.error_message = result["error"]
             log.sent_at = timezone.now() if result["success"] else None
@@ -147,6 +171,7 @@ def event_reminder(event, member, kind):
             "event_url": f"{site}{reverse('event_detail', args=[event.pk])}" if site else "",
         },
         event.tenant,
+        unsubscribe_member=member,
     )
 
 
@@ -166,6 +191,7 @@ def event_announcement(announcement, member):
             "event_url": f"{site}{reverse('event_detail', args=[event.pk])}" if site else "",
         },
         event.tenant,
+        unsubscribe_member=member,
     )
 
 

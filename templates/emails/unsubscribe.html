@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Avisos por correo - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-body text-center p-4">
+                    {% if invalid %}
+                    <i class="bi bi-exclamation-circle text-warning display-4" aria-hidden="true"></i>
+                    <h1 class="h4 mt-2">Enlace no válido</h1>
+                    <p class="text-muted mb-0">Este enlace no es válido o la ficha ya no existe. Si quieres dejar de recibir correos, pídeselo a la iglesia.</p>
+                    {% elif done == "unsubscribed" %}
+                    <i class="bi bi-check-circle text-success display-4" aria-hidden="true"></i>
+                    <h1 class="h4 mt-2">Listo, {{ member.first_name }}</h1>
+                    <p class="text-muted">Ya no recibirás recordatorios ni anuncios de {{ member.tenant.name }} en este correo. Seguirás recibiendo los mensajes sobre tus inscripciones, certificados y tu cuenta.</p>
+                    <form method="post">
+                        <input type="hidden" name="action" value="resubscribe">
+                        <button type="submit" class="btn btn-link">Me equivoqué, quiero seguir recibiéndolos</button>
+                    </form>
+                    {% elif done == "resubscribed" %}
+                    <i class="bi bi-check-circle text-success display-4" aria-hidden="true"></i>
+                    <h1 class="h4 mt-2">Volverás a recibirlos</h1>
+                    <p class="text-muted mb-0">Gracias, {{ member.first_name }}. Te enviaremos de nuevo los recordatorios y anuncios de {{ member.tenant.name }}.</p>
+                    {% elif member.email_opt_out %}
+                    <i class="bi bi-envelope-slash text-secondary display-4" aria-hidden="true"></i>
+                    <h1 class="h4 mt-2">Ya no recibes estos avisos</h1>
+                    <p class="text-muted">{{ member.first_name }}, no recibes recordatorios ni anuncios de {{ member.tenant.name }}.</p>
+                    <form method="post">
+                        <input type="hidden" name="action" value="resubscribe">
+                        <button type="submit" class="btn btn-outline-primary">Volver a recibirlos</button>
+                    </form>
+                    {% else %}
+                    <i class="bi bi-envelope text-primary display-4" aria-hidden="true"></i>
+                    <h1 class="h4 mt-2">¿Dejar de recibir avisos?</h1>
+                    <p class="text-muted">{{ member.first_name }}, ya no te enviaremos recordatorios ni anuncios de {{ member.tenant.name }}. Los mensajes sobre tus inscripciones, certificados y tu cuenta se seguirán enviando.</p>
+                    <form method="post">
+                        <input type="hidden" name="action" value="unsubscribe">
+                        <button type="submit" class="btn btn-primary">Dejar de recibir recordatorios y anuncios</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
