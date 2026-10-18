@@ -106,6 +106,7 @@ class TestAuthentication:
         page.fill("#id_password", "wrongpassword")
 
         page.click("button[type='submit']")
+        page.wait_for_selector(".alert-danger")
 
         assert "credenciales" in page.content().lower()
 

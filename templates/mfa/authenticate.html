@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Verificación en dos pasos - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <div class="card shadow"><div class="card-body p-4">
+                <h1 class="h4 text-center mb-2"><i class="bi bi-shield-lock text-primary"></i> Verificación en dos pasos</h1>
+                <p class="text-muted text-center">Abre tu aplicación de autenticación e ingresa el código de 6 dígitos. Si perdiste el teléfono, usa uno de tus códigos de recuperación.</p>
+                {% url 'mfa_authenticate' as action %}{% trans "Entrar" as button %}
+                    <form method="post" action="{{ action }}">
+                        {% csrf_token %}
+                        {% if form.errors %}<div class="alert alert-danger" role="alert">{% for error in form.code.errors %}{{ error }}{% endfor %}{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>{% endif %}
+                        <div class="mb-3">
+                            <label for="id_code" class="form-label">Código</label>
+                            <input type="text" name="code" id="id_code" class="form-control form-control-lg text-center" autocomplete="one-time-code" inputmode="text" autofocus required>
+                        </div>
+                        {% if redirect_field %}{{ redirect_field }}{% endif %}
+                        <button type="submit" class="btn btn-primary w-100">{{ button }}</button>
+                    </form>
+                <div class="text-center mt-3"><a href="{% url 'login' %}">Cancelar</a></div>
+            </div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

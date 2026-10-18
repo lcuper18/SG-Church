@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "crispy_bootstrap4",
     "allauth",
     "allauth.account",
+    "allauth.mfa",
     "allauth.socialaccount",
     # Local apps
     "core",
@@ -147,6 +148,27 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+ACCOUNT_ADAPTER = "core.adapters.AccountAdapter"
+
+# Brute-force protection (allauth keeps the counters in the cache; production uses a
+# cache shared by every worker, see production.py). `ip` limits one address, `key`
+# limits one e-mail address however many addresses the attempts come from.
+ACCOUNT_RATE_LIMITS = {
+    "login_failed": "10/m/ip,5/5m/key",  # wrong passwords
+    "reset_password": "10/m/ip,3/m/key",  # asking for a reset e-mail
+    "reset_password_from_key": "20/m/ip",
+    "signup": "20/m/ip",
+}
+# How many reverse proxies sit in front of the app (they append the client's address to
+# X-Forwarded-For). 0 = trust nothing and use the connecting address.
+TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "0"))
+
+# Two-step verification (authenticator app + recovery codes). Changing it, or
+# viewing the recovery codes, asks for the password again if the login is older than 5 min.
+MFA_SUPPORTED_TYPES = ["totp", "recovery_codes"]
+MFA_TOTP_ISSUER = "SG Church"
+ACCOUNT_REAUTHENTICATION_REQUIRED = True
+ACCOUNT_REAUTHENTICATION_TIMEOUT = 300
 
 # Email authentication
 AUTHENTICATION_BACKENDS = [

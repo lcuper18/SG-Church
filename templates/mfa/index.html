@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Seguridad de la cuenta - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'profile' %}">Mi perfil</a></li><li class="breadcrumb-item active" aria-current="page">Verificación en dos pasos</li></ol></nav>
+            <div class="card mb-3"><div class="card-body">
+                <h1 class="h5"><i class="bi bi-shield-lock"></i> Verificación en dos pasos</h1>
+                <p class="text-muted">Además de tu contraseña, se pide un código que genera una aplicación en tu teléfono (Google Authenticator, Microsoft Authenticator, Aegis, 1Password…). Así, aunque alguien sepa tu contraseña, no puede entrar.</p>
+                {% if authenticators.totp %}
+                <p><span class="badge bg-success">Activada</span></p>
+                <a href="{% url 'mfa_deactivate_totp' %}" class="btn btn-outline-danger btn-sm" id="mfa-deactivate">Desactivar</a>
+                {% else %}
+                <p><span class="badge bg-secondary">No activada</span></p>
+                <a href="{% url 'mfa_activate_totp' %}" class="btn btn-primary" id="mfa-activate">Activar la verificación en dos pasos</a>
+                {% endif %}
+            </div></div>
+            {% if is_mfa_enabled %}
+            <div class="card"><div class="card-body">
+                <h2 class="h6">Códigos de recuperación</h2>
+                {% if authenticators.recovery_codes %}
+                {% with unused=authenticators.recovery_codes.get_unused_codes|length %}
+                <p class="text-muted">Te quedan {{ unused }} códigos sin usar. Cada uno sirve una sola vez si pierdes tu teléfono.</p>
+                {% endwith %}
+                <a href="{% url 'mfa_view_recovery_codes' %}" class="btn btn-outline-primary btn-sm">Ver códigos</a>
+                <a href="{% url 'mfa_download_recovery_codes' %}" class="btn btn-outline-secondary btn-sm">Descargar</a>
+                {% endif %}
+                <a href="{% url 'mfa_generate_recovery_codes' %}" class="btn btn-outline-secondary btn-sm">Generar nuevos</a>
+            </div></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

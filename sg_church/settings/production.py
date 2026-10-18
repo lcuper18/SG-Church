@@ -34,6 +34,19 @@ CORS_ALLOWED_ORIGINS = [
 # Static files
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+# Several workers serve the site, so the login-attempt counters must live in a cache they
+# all share (the default is per-process memory, which would multiply every limit by the
+# number of workers). Redis database 1; the Celery broker uses 0. If your proxy is not
+# Traefik/nginx in front of a single hop, set TRUSTED_PROXY_COUNT.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get("CACHE_URL")
+        or os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0").rsplit("/", 1)[0] + "/1",
+    }
+}
+TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "1"))
+
 # Database connection pooling
 DATABASES["default"]["CONN_MAX_AGE"] = 60
 

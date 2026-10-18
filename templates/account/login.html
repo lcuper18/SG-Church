@@ -18,8 +18,9 @@
                     <h4 class="text-center mb-4">{% trans "Iniciar Sesión" %}</h4>
                     
                     {% if form.errors %}
-                    <div class="alert alert-danger">
+                    <div class="alert alert-danger" role="alert">
                         {% trans "Por favor verifica tus credenciales." %}
+                        {% for error in form.non_field_errors %}<div class="small">{{ error }}</div>{% endfor %}
                     </div>
                     {% endif %}
                     

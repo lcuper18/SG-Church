@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Activar verificación en dos pasos - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <div class="card shadow"><div class="card-body p-4">
+                <h1 class="h5 text-center mb-3">Activar la verificación en dos pasos</h1>
+                <ol class="text-muted small ps-3">
+                    <li>Instala una aplicación de autenticación en tu teléfono.</li>
+                    <li>Escanea este código QR (o escribe la clave a mano).</li>
+                    <li>Ingresa el código de 6 dígitos que muestra la aplicación.</li>
+                </ol>
+                <div class="text-center mb-3"><img src="{{ totp_svg_data_uri }}" alt="Código QR para tu aplicación de autenticación" width="200" height="200"></div>
+                <p class="text-center small text-muted mb-3">Clave: <code id="authenticator_secret">{{ form.secret }}</code></p>
+                <form method="post" action="{% url 'mfa_activate_totp' %}">
+                    {% csrf_token %}
+                    {% if form.errors %}<div class="alert alert-danger" role="alert">{% for error in form.code.errors %}{{ error }}{% endfor %}{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>{% endif %}
+                    <div class="mb-3">
+                        <label for="id_code" class="form-label">Código de la aplicación</label>
+                        <input type="text" name="code" id="id_code" class="form-control form-control-lg text-center" autocomplete="one-time-code" inputmode="numeric" autofocus required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Activar</button>
+                </form>
+                <div class="text-center mt-3"><a href="{% url 'mfa_index' %}">Cancelar</a></div>
+            </div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

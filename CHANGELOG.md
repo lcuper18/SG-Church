@@ -22,6 +22,18 @@ section reflects real history (from `git log`), not a plan.
 - The dashboard computes and shows member and giving figures only to the roles
   allowed to see them, and the menus hide sections a role cannot open
 
+#### Security
+- Two-step verification (authenticator app + recovery codes) through allauth's MFA: optional per user,
+  set up from "Seguridad (2 pasos)" in the user menu; admins, pastors and treasurers without it see a
+  reminder on the dashboard. Disabling it or viewing recovery codes asks for the password again when the
+  login is older than 5 minutes. The login shows a code step after the password only for users who enabled it
+- Brute-force limits made explicit and effective: 5 wrong passwords per e-mail per 5 minutes, 10 per
+  address per minute, 3 reset e-mails per address per minute (and wrong two-step codes are limited too).
+  Production counts them in a cache shared by every worker (Redis db 1) instead of per-process memory, which
+  also protects against reusing a one-time code; the client address is the one our proxy appended to
+  X-Forwarded-For (`TRUSTED_PROXY_COUNT`), not a value the client can forge. Hitting a limit on password
+  reset used to fail with a server error (missing `429.html`); it now shows a clear page
+
 #### Changed
 - Process tuning for shared servers: gunicorn now starts several workers with threads (3 x 2 hosted, 1 x 4
   standalone/SQLite, tunable with `WEB_CONCURRENCY`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT`,

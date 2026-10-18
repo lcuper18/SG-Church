@@ -16,6 +16,7 @@ from allauth.account.views import (
     PasswordResetFromKeyDoneView,
     PasswordResetFromKeyView,
     PasswordResetView,
+    ReauthenticateView,
     SignupView,
 )
 
@@ -52,6 +53,11 @@ allauth_url_patterns = [
         "signup/",
         SignupView.as_view(template_name="account/signup.html"),
         name="account_signup",  # Alias for allauth
+    ),
+    path(
+        "reauthenticate/",
+        ReauthenticateView.as_view(template_name="account/reauthenticate.html"),
+        name="account_reauthenticate",
     ),
     path(
         "inactive/",
@@ -100,6 +106,8 @@ urlpatterns = [
     # Allauth (authentication) - custom templates
     path("accounts/", include(allauth_url_patterns)),
     path("accounts/social/", include("allauth.socialaccount.urls")),
+    # Two-step verification: set-up page, login challenge, recovery codes
+    path("accounts/2fa/", include("allauth.mfa.urls")),
     # Local apps
     path("email/", include("emails.urls")),
     path("api/v1/", include("members.api.urls")),

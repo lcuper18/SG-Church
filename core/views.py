@@ -64,6 +64,12 @@ def dashboard(request):
 
     context = {"tenant": tenant}
 
+    # Roles that hold people's private data or money are asked to turn on two-step login.
+    if user.can_view_pastoral_notes or user.can_manage_finance:
+        from allauth.mfa.utils import is_mfa_enabled
+
+        context["suggest_two_step"] = not is_mfa_enabled(user)
+
     # Each block is computed only for the roles that may see it; the template
     # checks the same permissions, so nothing else leaks through the numbers.
     if user.can_manage_members:
