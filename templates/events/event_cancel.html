@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Cancelar evento - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-calendar-x" aria-hidden="true"></i> Cancelar evento</div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <p>¿Cancelar <strong>{{ event.title }}</strong> ({{ event.start_at|date:"d/m/Y H:i" }})?</p>
+                        <p class="text-muted">El evento solo se desactiva: puedes volver a activarlo editándolo.</p>
+
+                        {% if event.series_id %}
+                        <fieldset class="mb-3">
+                            <legend class="fs-6">Es parte de una serie</legend>
+                            <div class="form-check"><input class="form-check-input" type="radio" name="scope" id="scope_this" value="this" checked><label class="form-check-label" for="scope_this">Solo este evento</label></div>
+                            <div class="form-check"><input class="form-check-input" type="radio" name="scope" id="scope_following" value="following"><label class="form-check-label" for="scope_following">Este y los siguientes (sin asistencia tomada)</label></div>
+                        </fieldset>
+                        {% endif %}
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="notify" id="notify" checked>
+                            <label class="form-check-label" for="notify">Avisar por correo a las personas inscritas</label>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent d-flex justify-content-between">
+                        <a href="{% url 'event_detail' event.pk %}" class="btn btn-outline-secondary">Volver</a>
+                        <button type="submit" class="btn btn-warning"><i class="bi bi-calendar-x" aria-hidden="true"></i> Cancelar el evento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

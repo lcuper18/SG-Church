@@ -70,7 +70,7 @@
                     <tbody>
                         {% for event in events %}
                         <tr>
-                            <td><a href="{% url 'event_detail' event.pk %}">{{ event.title }}</a></td>
+                            <td><a href="{% url 'event_detail' event.pk %}">{{ event.title }}</a>{% if event.series_id %} <i class="bi bi-arrow-repeat text-muted" title="Parte de una serie" aria-label="Parte de una serie"></i>{% endif %}</td>
                             <td>{{ event.get_event_type_display }}</td>
                             <td>{{ event.start_at|date:"d/m/Y H:i" }}</td>
                             {% if site_choices %}<td>{{ event.site.name|default:"-" }}</td>{% endif %}

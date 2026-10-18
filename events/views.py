@@ -29,26 +29,24 @@ from education.models import Course
 from members.models import Member
 from tenants.models import Site
 
+from . import recurrence
+from .forms import EVENT_FIELDS, WEEKDAY_CHOICES, EventForm
 from .models import Event, EventAttendance, EventRegistration
-
-EVENT_FIELDS = [
-    "title",
-    "description",
-    "event_type",
-    "location",
-    "start_at",
-    "end_at",
-    "capacity",
-    "requires_baptized",
-    "requires_married",
-    "required_courses",
-    "is_active",
-    "site",
-]
-
 
 class EventFormMixin:
     """Shared by create/update: the course and site pickers, limited to this church."""
+
+    form_class = EventForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["tenant"] = getattr(self.request.user, "tenant", None)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["weekday_choices"] = [(str(n), label) for n, label in WEEKDAY_CHOICES]
+        return context
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -168,13 +166,40 @@ class EventCreateView(EventFormMixin, ManageMembersRequiredMixin, CreateView):
 
     model = Event
     template_name = "events/event_form.html"
-    fields = EVENT_FIELDS
 
     def form_valid(self, form):
         tenant = getattr(self.request.user, "tenant", None)
         if tenant:
             form.instance.tenant = tenant
+        if form.rule:
+            return self._create_series(form, tenant)
         return super().form_valid(form)
+
+    def _create_series(self, form, tenant):
+        """"Repetir": one event per date, linked as a series."""
+        data = form.cleaned_data
+        plain = {
+            name: data[name]
+            for name in ("title", "description", "event_type", "location", "capacity",
+                         "requires_baptized", "requires_married", "is_active")
+        }
+        try:
+            series, events = recurrence.create_series(
+                tenant=tenant, user=self.request.user, fields=plain,
+                courses=data.get("required_courses") or [], site=form.instance.site or tenant.main_site(),
+                start_at=data["start_at"], end_at=data.get("end_at"),
+                weekdays=form.rule["weekdays"], until_date=form.rule["until_date"], weeks=form.rule["weeks"],
+            )
+        except recurrence.RecurrenceError as error:
+            form.add_error(None, str(error))
+            return self.form_invalid(form)
+        self.object = events[0]
+        messages.success(
+            self.request,
+            f"Se crearon {len(events)} eventos «{events[0].title}» "
+            f"({', '.join(series.weekday_names)}). Puedes editar o cancelar cada uno por separado.",
+        )
+        return redirect("event_list")
 
     def get_success_url(self):
         return reverse("event_detail", kwargs={"pk": self.object.pk})
@@ -188,7 +213,6 @@ class EventUpdateView(EventFormMixin, ManageMembersRequiredMixin, UpdateView):
 
     model = Event
     template_name = "events/event_form.html"
-    fields = EVENT_FIELDS
 
     def get_queryset(self):
         tenant = getattr(self.request.user, "tenant", None)
@@ -196,11 +220,50 @@ class EventUpdateView(EventFormMixin, ManageMembersRequiredMixin, UpdateView):
             return Event.objects.none()
         return Event.objects.filter(tenant=tenant)
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.object.series_id and form.cleaned_data.get("edit_scope") == "following":
+            others = recurrence.update_following(
+                self.object, set(form.changed_data), courses=form.cleaned_data.get("required_courses")
+            )
+            if others:
+                messages.success(self.request, f"También se actualizaron los {others} eventos siguientes de la serie.")
+        return response
+
     def get_success_url(self):
         return reverse("event_detail", kwargs={"pk": self.object.pk})
 
 
 event_update = EventUpdateView.as_view()
+
+
+class EventCancelView(ManageMembersRequiredMixin, View):
+    """Cancel an event (it is only deactivated, so it can be switched back on) or,
+    for a series, it and the following ones; optionally tell the people registered."""
+
+    template_name = "events/event_cancel.html"
+
+    def _event(self, request, pk):
+        return get_object_or_404(Event, pk=pk, tenant=request.user.tenant)
+
+    def get(self, request, pk):
+        return render(request, self.template_name, {"event": self._event(request, pk)})
+
+    def post(self, request, pk):
+        event = self._event(request, pk)
+        scope = "following" if request.POST.get("scope") == "following" and event.series_id else "this"
+        cancelled = recurrence.cancel(event, scope=scope)
+        told = 0
+        if request.POST.get("notify"):
+            told = sum(notify.event_cancelled(e, request) for e in cancelled)
+        text = f"{len(cancelled)} evento(s) cancelado(s)."
+        if request.POST.get("notify"):
+            text += f" Se avisó a {told} persona(s) inscrita(s)."
+        messages.success(request, text)
+        return redirect("event_detail", pk=event.pk)
+
+
+event_cancel = EventCancelView.as_view()
 
 
 class EventDeleteView(ManageMembersRequiredMixin, DeleteView):
@@ -214,6 +277,12 @@ class EventDeleteView(ManageMembersRequiredMixin, DeleteView):
         if not tenant:
             return Event.objects.none()
         return Event.objects.filter(tenant=tenant)
+
+    def form_valid(self, form):
+        scope = "following" if self.request.POST.get("scope") == "following" and self.object.series_id else "this"
+        count = recurrence.delete(self.object, scope=scope)
+        messages.success(self.request, f"{count} evento(s) enviado(s) a la papelera.")
+        return redirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("event_list")

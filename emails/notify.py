@@ -105,6 +105,30 @@ def event_registration(registration, request=None):
     )
 
 
+def event_cancelled(event, request=None):
+    """Tell the people registered that the event was cancelled. Returns how many
+    messages were queued."""
+    from events.models import EventRegistration
+
+    site = _site_url(request)
+    url = reverse("event_detail", args=[event.pk])
+    queued = 0
+    registrations = EventRegistration.objects.filter(event=event, status="registered").select_related("member")
+    for registration in registrations:
+        member = registration.member
+        if not member.email:
+            continue
+        sent = queue_email(
+            member.email,
+            f"Evento cancelado: {event.title}",
+            "event_cancelled",
+            {"member": member, "event": event, "event_url": f"{site}{url}" if site else ""},
+            event.tenant,
+        )
+        queued += 1 if sent else 0
+    return queued
+
+
 def course_enrollment(enrollment, request=None):
     member, course = enrollment.member, enrollment.course
     site = _site_url(request)

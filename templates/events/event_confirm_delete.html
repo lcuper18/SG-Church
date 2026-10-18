@@ -7,4 +7,14 @@
 <p class="text-muted mb-0">Se enviará a la papelera y podrás restaurarlo, con sus inscripciones.</p>
 {% endblock %}
 
+{% block delete_extra %}
+{% if event.series_id %}
+<fieldset class="text-start me-3 small">
+    <legend class="fs-6">Este evento es parte de una serie</legend>
+    <div class="form-check"><input class="form-check-input" type="radio" name="scope" id="scope_this" value="this" checked><label class="form-check-label" for="scope_this">Solo este evento</label></div>
+    <div class="form-check"><input class="form-check-input" type="radio" name="scope" id="scope_following" value="following"><label class="form-check-label" for="scope_following">Este y los siguientes (sin asistencia tomada)</label></div>
+</fieldset>
+{% endif %}
+{% endblock %}
+
 {% block cancel_url %}{% url 'event_detail' event.pk %}{% endblock %}

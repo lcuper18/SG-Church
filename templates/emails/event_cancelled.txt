@@ -1,0 +1,8 @@
+Hola {{ member.first_name }},
+
+Te avisamos que el evento "{{ event.title }}" ({{ event.start_at|date:"l d \d\e F \d\e Y, H:i" }}) fue cancelado.
+{% if event.location %}Lugar: {{ event.location }}
+{% endif %}{% if event_url %}
+Más información: {{ event_url }}
+{% endif %}
+Disculpa las molestias.

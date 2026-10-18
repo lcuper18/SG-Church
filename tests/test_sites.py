@@ -346,3 +346,17 @@ def test_the_demo_seed_creates_three_sites_once(admin_user):
     call_command("seed_demo_data", tenant=tenant.subdomain, stdout=StringIO())
     assert list(Event.objects.filter(tenant=tenant).order_by("pk").values_list("pk", "site_id")) == before
     assert Site.objects.filter(tenant=tenant).count() == 3
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_demo_seed_adds_a_weekly_series_once(admin_user):
+    tenant = admin_user.tenant
+    call_command("seed_demo_data", tenant=tenant.subdomain, members=60, stdout=StringIO())
+
+    series = Event.objects.filter(tenant=tenant, series__isnull=False).order_by("start_at")
+    assert series.count() == 8 and {e.title for e in series} == {"Culto de miércoles"}
+    assert {e.site.name for e in series} == {"Sede Norte"}
+    assert {e.start_at.astimezone(__import__("zoneinfo").ZoneInfo(tenant.timezone)).weekday() for e in series} == {2}
+
+    call_command("seed_demo_data", tenant=tenant.subdomain, stdout=StringIO())
+    assert Event.objects.filter(tenant=tenant, series__isnull=False).count() == 8

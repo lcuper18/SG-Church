@@ -23,6 +23,12 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Repeating events ("Repetir cada semana"): weekdays + N weeks or an end date (max 52 occurrences),
+  one ordinary event per date linked as a series, wall-clock hour kept across daylight-saving changes,
+  ends past midnight supported. Edit "solo este" or "este y los siguientes" (only the fields actually
+  changed are propagated, a new time of day applies to each event's own date, the series is split,
+  held/attended occurrences are untouched); cancel (with an optional e-mail to the registered) and
+  delete with the same scopes; demo seed adds a weekly Wednesday culto
 - Attendance per site: a visitors head-count per event (non-members, saved from the attendance
   sheet and the API), a site filter and "Resumen por sede" in the attendance report (events, registered,
   members, visitors, total, average per event, members from another site), and CSV exports with

@@ -13,7 +13,7 @@ Usage:
 import os
 import random
 import unicodedata
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
@@ -114,6 +114,7 @@ class Command(BaseCommand):
         if already and not opts["force"]:
             ids = self._fill_national_ids(tenant)
             sites = self._sites(tenant)
+            series = self._series(tenant)
             updated, removed = self._event_requirements(tenant)
             added = self._attendance(tenant)
             self.stdout.write(
@@ -122,7 +123,7 @@ class Command(BaseCommand):
                 f"registrations/attendances removed). "
                 f"Attendance backfilled for {added} past events."
                 f" National IDs filled in for {ids} adults."
-                f" Sites: {sites} records assigned."
+                f" Sites: {sites} records assigned. Series events: {series}."
             )
             return
 
@@ -136,6 +137,7 @@ class Command(BaseCommand):
             self._attendance(tenant)
             self._fill_national_ids(tenant)
             self._sites(tenant)
+            self._series(tenant)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -207,6 +209,34 @@ class Command(BaseCommand):
         tenant.settings = {**tenant.settings, "demo_sites": True}
         tenant.save(update_fields=["settings"])
         return assigned
+
+    def _series(self, tenant):
+        """A weekly Wednesday 7-9 pm culto for the next eight weeks at Sede Norte, so the
+        demo shows a repeating event. Runs once per church (flag in settings)."""
+        if tenant.settings.get("demo_series"):
+            return 0
+        from django.utils import timezone
+
+        from events import recurrence
+
+        tz = recurrence.zone_for(tenant)
+        day = timezone.localtime(timezone.now(), tz).date() + timedelta(days=1)
+        while day.weekday() != 2:  # Wednesday
+            day += timedelta(days=1)
+        site = Site.objects.filter(tenant=tenant, name="Sede Norte").first() or tenant.main_site()
+        start, end = recurrence.window(day, time(19, 0), time(21, 0), tz)
+        _, events = recurrence.create_series(
+            tenant=tenant, user=None, site=site, courses=[], start_at=start, end_at=end,
+            weekdays={2}, weeks=8,
+            fields={
+                "title": "Culto de miércoles", "description": "Culto semanal entre semana.",
+                "event_type": "service", "location": "", "capacity": None,
+                "requires_baptized": False, "requires_married": False, "is_active": True,
+            },
+        )
+        tenant.settings = {**tenant.settings, "demo_series": True}
+        tenant.save(update_fields=["settings"])
+        return len(events)
 
     def _get_tenant(self, subdomain):
         if subdomain:

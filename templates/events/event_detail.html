@@ -21,6 +21,8 @@
                 <div class="card-body">
                     <h4>{{ event.title }}</h4>
                     <span class="badge bg-info mb-3">{{ event.get_event_type_display }}</span>
+                    {% if not event.is_active %}<span class="badge bg-secondary mb-3">Cancelado / inactivo</span>{% endif %}
+                    {% if event.series %}<span class="badge bg-light text-dark border mb-3" title="Parte de una serie semanal"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Cada {{ event.series.weekday_names|join:", " }}</span>{% endif %}
                     {% if event.description %}
                     <p>{{ event.description }}</p>
                     {% endif %}
@@ -77,6 +79,11 @@
                         <a href="{% url 'event_update' event.pk %}" class="btn btn-primary">
                             <i class="bi bi-pencil"></i> Editar
                         </a>
+                        {% if event.is_active %}
+                        <a href="{% url 'event_cancel' event.pk %}" class="btn btn-outline-warning">
+                            <i class="bi bi-calendar-x"></i> Cancelar evento
+                        </a>
+                        {% endif %}
                         <a href="{% url 'event_delete' event.pk %}" class="btn btn-outline-danger">
                             <i class="bi bi-trash"></i> Eliminar
                         </a>
