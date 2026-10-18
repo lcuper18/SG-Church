@@ -1,18 +1,54 @@
 {% if support_paypal %}
-<section class="support-donate mt-3" aria-labelledby="support-donate-title">
-    <h2 class="h6 mb-1" id="support-donate-title"><i class="bi bi-heart"></i> Apoya el desarrollo</h2>
-    <p class="small text-muted mb-2">
-        SG Church es gratuito para las iglesias. Tu aporte voluntario cubre servidores y horas de desarrollo.
-        No es una ofrenda para tu iglesia.
-    </p>
-    <div id="paypal-container-{{ support_paypal.button_id }}" class="mx-auto" style="max-width: 320px;"></div>
-</section>
-<script src="https://www.paypal.com/sdk/js?client-id={{ support_paypal.client_id }}&amp;components=hosted-buttons&amp;disable-funding=venmo&amp;currency=USD" async></script>
+{# A quiet link in the footer. The PayPal script is only loaded if someone opens it. #}
+<button type="button" class="btn btn-link btn-sm p-0 align-baseline text-muted text-decoration-none support-link"
+        data-bs-toggle="modal" data-bs-target="#supportModal">
+    <i class="bi bi-heart" aria-hidden="true"></i> Apoyar el proyecto
+</button>
+
+<div class="modal fade" id="supportModal" tabindex="-1" aria-labelledby="supportModalTitle" aria-hidden="true"
+     data-paypal-client="{{ support_paypal.client_id }}" data-paypal-button="{{ support_paypal.button_id }}">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h2 class="modal-title h6" id="supportModalTitle"><i class="bi bi-heart"></i> Apoya el desarrollo</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">
+                    SG Church es gratuito para las iglesias. Tu aporte voluntario cubre servidores y horas de
+                    desarrollo. No es una ofrenda para tu iglesia.
+                </p>
+                <div id="paypal-container-{{ support_paypal.button_id }}" class="mx-auto" style="max-width: 320px;">
+                    <p class="small text-muted text-center mb-0" id="supportLoading">Cargando…</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
-    window.addEventListener("load", function () {
-        if (!window.paypal || !paypal.HostedButtons) { return; }
-        paypal.HostedButtons({ hostedButtonId: "{{ support_paypal.button_id }}" })
-            .render("#paypal-container-{{ support_paypal.button_id }}");
-    });
+    (function () {
+        var modal = document.getElementById("supportModal");
+        if (!modal) { return; }
+        var loaded = false;
+        modal.addEventListener("show.bs.modal", function () {
+            if (loaded) { return; }
+            loaded = true;
+            var buttonId = modal.dataset.paypalButton;
+            var script = document.createElement("script");
+            script.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(modal.dataset.paypalClient) +
+                "&components=hosted-buttons&disable-funding=venmo&currency=USD";
+            script.onload = function () {
+                if (window.paypal && paypal.HostedButtons) {
+                    document.getElementById("supportLoading").remove();
+                    paypal.HostedButtons({ hostedButtonId: buttonId }).render("#paypal-container-" + buttonId);
+                }
+            };
+            script.onerror = function () {
+                document.getElementById("supportLoading").textContent = "No se pudo cargar PayPal. Inténtalo más tarde.";
+                loaded = false;
+            };
+            document.head.appendChild(script);
+        });
+    })();
 </script>
 {% endif %}

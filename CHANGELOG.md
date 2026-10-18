@@ -22,6 +22,12 @@ section reflects real history (from `git log`), not a plan.
 - The dashboard computes and shows member and giving figures only to the roles
   allowed to see them, and the menus hide sections a role cannot open
 
+#### Changed
+- The "Apoya el desarrollo" block no longer takes up the footer of every page: it is now a small
+  "Apoyar el proyecto" link on the copyright line that opens a small dialog with the explanation and the
+  PayPal button. The PayPal script is loaded only when someone opens the dialog (nothing third-party on
+  ordinary page views)
+
 #### Added
 - Pastoral follow-up (admins and pastors only): record calls, visits, messages, prayer or counselling per
   member, as done or as a task with a date and a person in charge; "Seguimiento" tab on the member page and
