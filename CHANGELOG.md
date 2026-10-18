@@ -23,6 +23,12 @@ section reflects real history (from `git log`), not a plan.
   allowed to see them, and the menus hide sections a role cannot open
 
 #### Added
+- Pastoral follow-up (admins and pastors only): record calls, visits, messages, prayer or counselling per
+  member, as done or as a task with a date and a person in charge; "Seguimiento" tab on the member page and
+  a "Seguimiento pastoral" page (my pending, overdue, filters, mark done and plan the next contact in one go).
+  The page suggests new visitors nobody has contacted and regulars who stopped coming (attended earlier,
+  nothing in the last 6 weeks, only when attendance was taken lately), with a one-click "Dar seguimiento".
+  Notes are masked in the audit log; nothing is exposed through the API
 - Unsubscribe from e-mail: reminders and announcements carry a footer link (and the List-Unsubscribe /
   one-click headers mail apps show as a button) to a public, signed, no-login page that asks for
   confirmation before changing anything (a GET never unsubscribes) and lets the person come back. The choice

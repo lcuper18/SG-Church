@@ -1,6 +1,6 @@
 # Members URLs
 from django.urls import path
-from . import views
+from . import followups, views
 
 urlpatterns = [
     # Members
@@ -11,6 +11,12 @@ urlpatterns = [
     path("import/", views.member_import, name="member_import"),
     path("import/confirm/", views.member_import_confirm, name="member_import_confirm"),
     path("import/template/", views.member_import_template, name="member_import_template"),
+    path("followups/", followups.follow_up_list, name="follow_up_list"),
+    path("followups/<uuid:pk>/edit/", followups.follow_up_edit, name="follow_up_edit"),
+    path("followups/<uuid:pk>/done/", followups.follow_up_done, name="follow_up_done"),
+    path("followups/<uuid:pk>/reopen/", followups.follow_up_reopen, name="follow_up_reopen"),
+    path("followups/<uuid:pk>/delete/", followups.follow_up_delete, name="follow_up_delete"),
+    path("<uuid:pk>/followups/add/", followups.follow_up_add, name="follow_up_add"),
     path("<uuid:pk>/", views.member_detail, name="member_detail"),
     path("<uuid:pk>/edit/", views.member_update, name="member_update"),
     path("<uuid:pk>/delete/", views.member_delete, name="member_delete"),

@@ -55,6 +55,9 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{% url 'member_list' %}"><i class="bi bi-people me-2"></i>Miembros</a></li>
+                                {% if user.can_view_pastoral_notes %}
+                                <li><a class="dropdown-item" href="{% url 'follow_up_list' %}"><i class="bi bi-heart-pulse me-2"></i>Seguimiento pastoral</a></li>
+                                {% endif %}
                                 {% if not user.tenant or user.tenant.enable_families %}
                                 <li><a class="dropdown-item" href="{% url 'family_list' %}"><i class="bi bi-collection me-2"></i>Familias</a></li>
                                 {% endif %}

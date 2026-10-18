@@ -11,7 +11,7 @@ import uuid
 
 from django.core.exceptions import ValidationError
 
-from core.softdelete import SoftDeleteModel
+from core.softdelete import SoftDeleteModel, alive_through
 from core.text import fold
 from core.validators import FileSizeValidator
 
@@ -407,3 +407,64 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class FollowUp(models.Model):
+    """Pastoral follow-up of a person: a call, a visit, a prayer... either done
+    (a record of it) or still to do, with a date and someone in charge. Only
+    admins and pastors can see these; the notes are as sensitive as the pastoral
+    notes of the member."""
+
+    objects = alive_through("member")
+
+    KIND_CHOICES = [
+        ("call", "Llamada"),
+        ("visit", "Visita"),
+        ("message", "Mensaje"),
+        ("prayer", "Oración"),
+        ("counseling", "Consejería"),
+        ("other", "Otro"),
+    ]
+    STATUS_CHOICES = [("open", "Pendiente"), ("done", "Hecho")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant = models.ForeignKey(
+        "tenants.Tenant", on_delete=models.CASCADE, related_name="follow_ups"
+    )
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="follow_ups")
+    kind = models.CharField(max_length=12, choices=KIND_CHOICES, default="call")
+    notes = models.TextField(blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    assigned_to = models.ForeignKey(
+        "members.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    status = models.CharField(max_length=6, choices=STATUS_CHOICES, default="open")
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        "members.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "member_follow_ups"
+        ordering = ["status", "due_date", "-created_at"]
+        indexes = [
+            models.Index(fields=["tenant", "status", "due_date"]),
+            models.Index(fields=["member", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} · {self.member}"
+
+    def mark_done(self, when=None):
+        from django.utils import timezone
+
+        self.status = "done"
+        self.completed_at = when or timezone.now()
+        self.save(update_fields=["status", "completed_at", "updated_at"])
+
+    def reopen(self):
+        self.status = "open"
+        self.completed_at = None
+        self.save(update_fields=["status", "completed_at", "updated_at"])

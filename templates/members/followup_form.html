@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load ui %}
+
+{% block title %}Editar seguimiento - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'member_detail' item.member.pk %}#followups">{{ item.member.full_name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Editar seguimiento</li>
+        </ol>
+    </nav>
+    <div class="row"><div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><h4 class="mb-0">Editar seguimiento</h4></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% include "partials/form_errors.html" %}
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="kind" class="form-label">Tipo</label>
+                            <select class="form-select" id="kind" name="kind">
+                                {% for value, label in form.fields.kind.choices %}<option value="{{ value }}" {% if form.kind.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="due_date" class="form-label">Fecha</label>
+                            <input type="date" class="form-control {{ form.due_date|invalid }}" id="due_date" name="due_date" value="{{ form.due_date.value|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="assigned_to" class="form-label">Responsable</label>
+                            <select class="form-select" id="assigned_to" name="assigned_to">
+                                <option value="">Sin asignar</option>
+                                {% for person in form.fields.assigned_to.queryset %}<option value="{{ person.pk }}" {% if form.assigned_to.value|stringformat:"s" == person.pk|stringformat:"s" %}selected{% endif %}>{{ person.get_full_name|default:person.email }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas <span class="text-muted small">(confidenciales)</span></label>
+                        <textarea class="form-control" id="notes" name="notes" rows="5">{{ form.notes.value|default:'' }}</textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="done" name="done" {% if form.done.value %}checked{% endif %}>
+                        <label class="form-check-label" for="done">Hecho</label>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" form="delete-followup" class="btn btn-outline-danger" onclick="return confirm('¿Eliminar este seguimiento?')">Eliminar</button>
+                        <div>
+                            <a href="{% url 'member_detail' item.member.pk %}#followups" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </div>
+                </form>
+                <form method="post" action="{% url 'follow_up_delete' item.pk %}" id="delete-followup">{% csrf_token %}</form>
+            </div>
+        </div>
+    </div></div>
+</div>
+{% endblock %}

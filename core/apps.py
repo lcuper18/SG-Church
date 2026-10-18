@@ -11,13 +11,14 @@ class CoreConfig(AppConfig):
         from education.models import Course, CourseBlock, Enrollment
         from events.models import Event, EventAnnouncement, EventSeries
         from finance.models import Donation, Expense
-        from members.models import Family, Member, Tag, User
+        from members.models import Family, FollowUp, Member, Tag, User
         from tenants.models import Site, Tenant
 
         for model, label in (
             (Member, "Miembro"),
             (Family, "Familia"),
             (Tag, "Etiqueta"),
+            (FollowUp, "Seguimiento pastoral"),
             (User, "Usuario"),
             (Donation, "Donación"),
             (Expense, "Gasto"),

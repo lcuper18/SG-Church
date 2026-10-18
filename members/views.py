@@ -409,6 +409,11 @@ class MemberDetailView(ManageMembersRequiredMixin, DetailView):
         # role (the template checks it).
         if self.request.user.can_manage_finance:
             context["donations"] = member.donations.all()[:10]
+        if self.request.user.can_view_pastoral_notes:
+            from .forms import FollowUpForm
+
+            context["follow_ups"] = member.follow_ups.select_related("assigned_to")
+            context["follow_up_form"] = FollowUpForm(tenant=self.request.user.tenant)
 
         return context
 

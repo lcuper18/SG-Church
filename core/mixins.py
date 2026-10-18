@@ -39,3 +39,11 @@ class ChurchAdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
         return user.is_authenticated and user.is_church_admin
+
+
+class PastoralRequiredMixin(UserPassesTestMixin):
+    """Require a role that may see pastoral information (admin, pastor)."""
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_authenticated and user.can_view_pastoral_notes

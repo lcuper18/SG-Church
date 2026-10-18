@@ -85,6 +85,13 @@
                         Familia
                     </button>
                 </li>
+                {% if user.can_view_pastoral_notes %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="followups-tab" data-bs-toggle="tab" data-bs-target="#followups" type="button" role="tab">
+                        Seguimiento
+                    </button>
+                </li>
+                {% endif %}
                 {% if user.can_manage_finance %}
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="donations-tab" data-bs-toggle="tab" data-bs-target="#donations" type="button" role="tab">
@@ -174,6 +181,84 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Pastoral follow-up Tab -->
+                {% if user.can_view_pastoral_notes %}
+                <div class="tab-pane fade" id="followups" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <form method="post" action="{% url 'follow_up_add' member.pk %}" id="followup-form" class="mb-4">
+                                {% csrf_token %}
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label for="fu_kind" class="form-label">Tipo</label>
+                                        <select class="form-select" id="fu_kind" name="kind">
+                                            {% for value, label in follow_up_form.fields.kind.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="fu_due" class="form-label">Fecha</label>
+                                        <input type="date" class="form-control" id="fu_due" name="due_date">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="fu_assigned" class="form-label">Responsable</label>
+                                        <select class="form-select" id="fu_assigned" name="assigned_to">
+                                            <option value="">Yo</option>
+                                            {% for person in follow_up_form.fields.assigned_to.queryset %}<option value="{{ person.pk }}">{{ person.get_full_name|default:person.email }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <label for="fu_notes" class="form-label">Notas <span class="text-muted small">(confidenciales)</span></label>
+                                    <textarea class="form-control" id="fu_notes" name="notes" rows="3"></textarea>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="fu_done" name="done">
+                                        <label class="form-check-label" for="fu_done">Ya lo hice (dejar como registro)</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Agregar seguimiento</button>
+                                </div>
+                            </form>
+                            <ul class="list-group list-group-flush">
+                                {% for item in follow_ups %}
+                                <li class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="badge bg-{% if item.status == 'done' %}success{% else %}warning text-dark{% endif %}">{{ item.get_status_display }}</span>
+                                            <strong>{{ item.get_kind_display }}</strong>
+                                            <span class="text-muted small">
+                                                {% if item.due_date %}· {{ item.due_date|date:"d/m/Y" }}{% endif %}
+                                                {% if item.assigned_to %}· {{ item.assigned_to.get_full_name|default:item.assigned_to.email }}{% endif %}
+                                            </span>
+                                            {% if item.notes %}<div class="mt-1" style="white-space: pre-line;">{{ item.notes }}</div>{% endif %}
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if item.status == 'open' %}
+                                            <form method="post" action="{% url 'follow_up_done' item.pk %}">{% csrf_token %}<button class="btn btn-outline-success" title="Marcar como hecho">Hecho</button></form>
+                                            {% else %}
+                                            <form method="post" action="{% url 'follow_up_reopen' item.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary" title="Volver a pendiente">Reabrir</button></form>
+                                            {% endif %}
+                                            <a class="btn btn-outline-primary" href="{% url 'follow_up_edit' item.pk %}" aria-label="Editar seguimiento"><i class="bi bi-pencil"></i></a>
+                                        </div>
+                                    </div>
+                                </li>
+                                {% empty %}
+                                <li class="list-group-item px-0 text-muted">Todavía no hay seguimiento registrado.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    if (location.hash === '#followups') {
+                        document.addEventListener('DOMContentLoaded', function () {
+                            var tab = document.getElementById('followups-tab');
+                            if (tab && window.bootstrap) bootstrap.Tab.getOrCreateInstance(tab).show();
+                        });
+                    }
+                </script>
+                {% endif %}
 
                 <!-- Donations Tab -->
                 {% if user.can_manage_finance %}

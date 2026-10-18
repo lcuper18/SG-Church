@@ -6,7 +6,7 @@ from django import forms
 from django.db import transaction
 from django.utils.functional import cached_property
 
-from .models import Family, Member
+from .models import Family, FollowUp, Member, User
 
 
 class FamilyForm(forms.ModelForm):
@@ -127,3 +127,22 @@ class MyContactForm(forms.ModelForm):
     class Meta:
         model = Member
         fields = ["phone", "address", "city", "state", "postal_code", "email_opt_out"]
+
+
+class FollowUpForm(forms.ModelForm):
+    """What a pastor records about a follow-up. `done` marks it as already carried out."""
+
+    done = forms.BooleanField(required=False, label="Ya lo hice")
+
+    class Meta:
+        model = FollowUp
+        fields = ["kind", "notes", "due_date", "assigned_to"]
+
+    def __init__(self, *args, tenant=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["assigned_to"].queryset = User.objects.filter(
+            tenant=tenant, is_active=True, role__in=["admin", "pastor"]
+        ).order_by("first_name", "last_name", "email")
+        self.fields["assigned_to"].required = False
+        if self.instance.pk:
+            self.fields["done"].initial = self.instance.status == "done"
