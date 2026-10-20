@@ -12,7 +12,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MODE="${1:-${CHECK_MODE:-full}}"
-PYTEST="python -m pytest tests -q -p no:cacheprovider --no-cov"
+# faulthandler_timeout prints where a test is stuck if one ever hangs (a browser test did once).
+PYTEST="python -m pytest tests -q -p no:cacheprovider --no-cov -o faulthandler_timeout=240"
 [ "$MODE" = "fast" ] && PYTEST="$PYTEST -m 'not e2e'"
 
 STEPS="set -e
@@ -44,4 +45,5 @@ if ! docker image inspect "$TAG" >/dev/null 2>&1; then
     echo "Building the test image $TAG (first run only, a few minutes)..."
     docker build -q -f scripts/Dockerfile.test -t "$TAG" .
 fi
-docker run --rm -v "$PWD":/app -w /app -e DJANGO_SETTINGS_MODULE "$TAG" bash -c "$STEPS"
+# `timeout` turns a hang into a failure after 15 minutes instead of blocking forever.
+docker run --rm -v "$PWD":/app -w /app -e DJANGO_SETTINGS_MODULE "$TAG" timeout 900 bash -c "$STEPS"
