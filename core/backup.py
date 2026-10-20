@@ -139,30 +139,115 @@ def _prune(directory, keep):
     return removed
 
 
-def _upload(paths):
-    """Copy files to the configured bucket. Returns an error message or None;
-    the local backup stands either way."""
+def _remote():
+    """(boto3 client, bucket, key prefix), or None when no bucket is configured."""
     bucket = getattr(settings, "BACKUP_S3_BUCKET", "")
     if not bucket:
         return None
-    try:
-        import boto3
+    import boto3
+    from botocore.config import Config
 
-        client = boto3.client(
-            "s3",
-            endpoint_url=settings.BACKUP_S3_ENDPOINT_URL or None,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID or None,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY or None,
-            region_name=settings.AWS_S3_REGION_NAME or None,
-        )
-        prefix = settings.BACKUP_S3_PREFIX.strip("/")
+    # Recent boto3 adds integrity checksums that several S3-compatible services
+    # (Backblaze B2, MinIO, older R2) reject; ask for them only when required.
+    try:
+        config = Config(request_checksum_calculation="when_required", response_checksum_validation="when_required")
+    except TypeError:  # an older botocore does not have the option (nor the problem)
+        config = None
+    client = boto3.client(
+        "s3",
+        endpoint_url=settings.BACKUP_S3_ENDPOINT_URL or None,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID or None,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY or None,
+        region_name=settings.AWS_S3_REGION_NAME or None,
+        config=config,
+    )
+    return client, bucket, settings.BACKUP_S3_PREFIX.strip("/")
+
+
+def _key(prefix, name):
+    return f"{prefix}/{name}" if prefix else name
+
+
+def _remote_backups(client, bucket, prefix):
+    """[(key, size, last_modified)] of the backup files in the bucket, newest first."""
+    found = []
+    paginator = client.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=f"{prefix}/" if prefix else ""):
+        for item in page.get("Contents", []):
+            name = item["Key"].rsplit("/", 1)[-1]
+            if name.startswith(tuple(f"{kind}-" for kind in KINDS)):
+                found.append((item["Key"], item["Size"], item["LastModified"]))
+    return sorted(found, key=lambda row: row[0].rsplit("/", 1)[-1], reverse=True)
+
+
+def _prune_remote(client, bucket, prefix, keep):
+    """Delete the oldest copies in the bucket, keeping `keep` of each kind. Returns the keys removed."""
+    removed = []
+    rows = _remote_backups(client, bucket, prefix)
+    for kind in KINDS:
+        mine = [row for row in rows if row[0].rsplit("/", 1)[-1].startswith(f"{kind}-")]
+        for key, _size, _when in mine[keep:]:
+            client.delete_object(Bucket=bucket, Key=key)
+            removed.append(key)
+    return removed
+
+
+def _upload(paths):
+    """Copy files to the configured bucket and trim old copies there. Returns an
+    error message or None; the local backup stands either way."""
+    try:
+        remote = _remote()
+        if remote is None:
+            return None
+        client, bucket, prefix = remote
         for path in paths:
-            key = f"{prefix}/{path.name}" if prefix else path.name
-            client.upload_file(str(path), bucket, key)
+            client.upload_file(str(path), bucket, _key(prefix, path.name))
+        _prune_remote(client, bucket, prefix, getattr(settings, "BACKUP_REMOTE_KEEP", 30))
     except Exception as exc:  # noqa: BLE001 - report, don't lose the local copy
         logger.exception("Off-site backup upload failed")
         return str(exc)
     return None
+
+
+def check_remote():
+    """Prove the off-site setup works without making a backup: write, read back and delete
+    a tiny file in the bucket. Returns a list of human-readable lines; raises BackupError
+    with the reason when something is wrong."""
+    try:
+        remote = _remote()
+    except Exception as exc:  # noqa: BLE001
+        raise BackupError(f"Could not set up the bucket client: {exc}")
+    if remote is None:
+        raise BackupError("BACKUP_S3_BUCKET is not set: backups stay on this server only.")
+    client, bucket, prefix = remote
+    probe = _key(prefix, f".check-{_stamp()}")
+    payload = b"sg-church backup check"
+    steps = []
+    try:
+        client.head_bucket(Bucket=bucket)
+        steps.append(f"Bucket '{bucket}' reachable")
+        client.put_object(Bucket=bucket, Key=probe, Body=payload)
+        steps.append("Can write")
+        if client.get_object(Bucket=bucket, Key=probe)["Body"].read() != payload:
+            raise BackupError("What was read back is not what was written.")
+        steps.append("Can read")
+        client.delete_object(Bucket=bucket, Key=probe)
+        steps.append("Can delete (old copies can be trimmed)")
+        existing = _remote_backups(client, bucket, prefix)
+        steps.append(f"{len(existing)} backup file(s) already in the bucket")
+    except BackupError:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise BackupError(f"{'; '.join(steps) or 'Nothing worked'}. Then failed: {exc}")
+    return steps
+
+
+def list_remote():
+    """[(key, size, last_modified)] of the backups in the bucket, newest first."""
+    remote = _remote()
+    if remote is None:
+        raise BackupError("BACKUP_S3_BUCKET is not set.")
+    return _remote_backups(*remote)
 
 
 def create_backup(directory=None, keep=None, upload=True):

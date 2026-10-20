@@ -254,6 +254,11 @@ BACKUP_HOUR = int(os.environ.get("BACKUP_HOUR", "3"))
 BACKUP_S3_BUCKET = os.environ.get("BACKUP_S3_BUCKET", "")
 BACKUP_S3_ENDPOINT_URL = os.environ.get("BACKUP_S3_ENDPOINT_URL", "")
 BACKUP_S3_PREFIX = os.environ.get("BACKUP_S3_PREFIX", "sg-church")
+# Copies kept in the bucket per kind (the oldest are deleted after each upload).
+BACKUP_REMOTE_KEEP = int(os.environ.get("BACKUP_REMOTE_KEEP", "30"))
+# Who is told by e-mail when the nightly backup fails or cannot be copied off-site
+# (comma separated; empty = nobody). Needs working EMAIL_* settings.
+BACKUP_ALERT_EMAIL = os.environ.get("BACKUP_ALERT_EMAIL", "")
 
 # Days a deleted record stays in the trash before the nightly job removes it for good.
 # Where an uploaded CSV waits between the preview and the confirmation.

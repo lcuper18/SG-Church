@@ -17,11 +17,30 @@ def run_backup():
 
     try:
         result = create_backup()
-    except Exception:
+    except Exception as exc:
         logger.exception("Scheduled backup failed")
+        _alert("El respaldo nocturno FALLÓ", f"No se pudo crear el respaldo:\n\n{exc}")
         raise
     if result["upload_error"]:
         logger.error("Scheduled backup: off-site copy failed: %s", result["upload_error"])
+        _alert(
+            "El respaldo nocturno no se copió fuera del servidor",
+            "El respaldo local se creó, pero la copia al bucket falló:\n\n" + result["upload_error"],
+        )
+
+
+def _alert(subject, body):
+    """E-mail the person in charge of the server (BACKUP_ALERT_EMAIL). Never raises."""
+    from django.conf import settings
+    from django.core.mail import send_mail
+
+    to = [a.strip() for a in getattr(settings, "BACKUP_ALERT_EMAIL", "").split(",") if a.strip()]
+    if not to:
+        return
+    try:
+        send_mail(f"[SG Church] {subject}", body, settings.DEFAULT_FROM_EMAIL, to, fail_silently=True)
+    except Exception:  # noqa: BLE001
+        logger.exception("Could not send the backup alert")
 
 
 @shared_task(ignore_result=True)

@@ -763,11 +763,7 @@ de `docker-compose.yml` dispara la tarea y el worker de Celery la ejecuta:
 - **Cuándo:** todos los días a las `BACKUP_HOUR` (3, hora del servidor). Se
   desactiva con `BACKUP_ENABLED=false`.
 - **Copia fuera del servidor (recomendado):** un respaldo en la misma máquina
-  no protege de perder la máquina. Define `BACKUP_S3_BUCKET` (y, si no es AWS,
-  `BACKUP_S3_ENDPOINT_URL`, por ejemplo tu MinIO) más `AWS_ACCESS_KEY_ID` /
-  `AWS_SECRET_ACCESS_KEY`; cada respaldo nuevo se sube a ese bucket bajo
-  `BACKUP_S3_PREFIX` (`sg-church`). La limpieza de copias viejas en el bucket
-  se hace con una regla de ciclo de vida del propio bucket.
+  no protege de perder la máquina. Ver «Copia fuera del servidor» más abajo.
 
 ```env
 BACKUP_KEEP=14
@@ -778,6 +774,53 @@ BACKUP_HOUR=3
 # AWS_ACCESS_KEY_ID=...
 # AWS_SECRET_ACCESS_KEY=...
 ```
+
+#### Copia fuera del servidor
+
+Cada respaldo nuevo se sube a un bucket compatible con S3 (Backblaze B2, Cloudflare R2, AWS, MinIO…)
+bajo `BACKUP_S3_PREFIX`, y se borran las copias más viejas del bucket dejando las últimas
+`BACKUP_REMOTE_KEEP` (30) de cada tipo. Solo toca archivos `db-…` y `media-…` de ese prefijo.
+
+**1. Crear el bucket y una llave que solo pueda usarlo** (no uses la llave maestra de la cuenta):
+
+- **Backblaze B2** (10 GB gratis): *Buckets → Create* (privado) → *Application Keys → Add* limitada a ese
+  bucket, con lectura y escritura. Endpoint: `https://s3.<región>.backblazeb2.com` (aparece en el bucket);
+  `AWS_S3_REGION_NAME` es esa región (por ejemplo `us-west-004`).
+- **Cloudflare R2** (10 GB gratis, sin cobro por descargas): crear bucket → *Manage API tokens* con permiso
+  *Object Read & Write* sobre ese bucket. Endpoint: `https://<id-de-cuenta>.r2.cloudflarestorage.com`;
+  `AWS_S3_REGION_NAME=auto`.
+
+**2. Cargar las variables** en el servicio (Dokploy → el servicio → *Environment*), y redesplegar:
+
+```env
+BACKUP_S3_BUCKET=sg-church-respaldos
+BACKUP_S3_ENDPOINT_URL=https://...
+AWS_S3_REGION_NAME=...
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+BACKUP_ALERT_EMAIL=tu@correo.com
+```
+
+**3. Comprobarlo sin crear un respaldo** (escribe, lee y borra un archivo de prueba y dice qué falla):
+
+```bash
+docker compose exec celery python manage.py backup_data --check-remote
+```
+
+**4. Hacer un respaldo ahora y ver que llegó al bucket:**
+
+```bash
+docker compose exec celery python manage.py backup_data
+docker compose exec celery python manage.py backup_data --list-remote
+```
+
+**Si algo falla.** El respaldo local siempre se conserva. Si la copia al bucket (o la limpieza de copias
+viejas) falla, o si falla el respaldo nocturno completo, se envía un correo a `BACKUP_ALERT_EMAIL` (necesita
+`EMAIL_*` configurados); sin esa variable solo queda en el registro.
+
+**Restaurar desde el bucket:** baja el archivo desde el panel del proveedor (o con `aws s3 cp --endpoint-url …`)
+y sigue «Restaurar» más abajo. Conviene **probarlo de verdad una vez** en una base vacía: un respaldo que
+nunca se restauró no es de fiar.
 
 Para respaldar a mano (antes de un cambio delicado) o probar la configuración:
 

@@ -35,6 +35,12 @@ section reflects real history (from `git log`), not a plan.
   reset used to fail with a server error (missing `429.html`); it now shows a clear page
 
 #### Changed
+- Off-site backups made ready to switch on: `backup_data --check-remote` proves the bucket settings (write,
+  read, delete) without making a backup and says exactly what fails, `--list-remote` shows what is stored
+  off-site, old copies in the bucket are trimmed to `BACKUP_REMOTE_KEEP` (30) per kind, a failed nightly
+  backup or off-site copy e-mails `BACKUP_ALERT_EMAIL`, and the S3 client no longer sends the integrity
+  checksums that Backblaze/MinIO reject. Step-by-step setup for Backblaze B2 and Cloudflare R2 in
+  `docs/DEPLOYMENT.md`
 - Process tuning for shared servers: gunicorn now starts several workers with threads (3 x 2 hosted, 1 x 4
   standalone/SQLite, tunable with `WEB_CONCURRENCY`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT`,
   `GUNICORN_MAX_REQUESTS`) and recycles them periodically; the Celery worker is fixed at 2 processes

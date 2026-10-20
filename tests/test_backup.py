@@ -112,27 +112,80 @@ class TestCreateBackup:
         assert any(row["model"] == "members.user" for row in data)
 
 
+class FakeS3:
+    """Just enough of a boto3 S3 client, backed by a dict."""
+
+    def __init__(self):
+        self.objects = {}  # key -> bytes
+        self.fail_on = {}  # method name -> exception
+
+    def _maybe_fail(self, name):
+        if name in self.fail_on:
+            raise self.fail_on[name]
+
+    def head_bucket(self, Bucket):
+        self._maybe_fail("head_bucket")
+
+    def upload_file(self, path, bucket, key):
+        self._maybe_fail("upload_file")
+        with open(path, "rb") as handle:
+            self.objects[key] = handle.read()
+
+    def put_object(self, Bucket, Key, Body):
+        self._maybe_fail("put_object")
+        self.objects[Key] = Body
+
+    def get_object(self, Bucket, Key):
+        import io
+
+        return {"Body": io.BytesIO(self.objects[Key])}
+
+    def delete_object(self, Bucket, Key):
+        self._maybe_fail("delete_object")
+        self.objects.pop(Key, None)
+
+    def get_paginator(self, name):
+        import datetime
+
+        outer = self
+
+        class Paginator:
+            def paginate(self, Bucket, Prefix=""):
+                yield {
+                    "Contents": [
+                        {"Key": k, "Size": len(v), "LastModified": datetime.datetime(2026, 1, 1)}
+                        for k, v in sorted(outer.objects.items())
+                        if k.startswith(Prefix)
+                    ]
+                }
+
+        return Paginator()
+
+
+@pytest.fixture
+def bucket(settings):
+    settings.BACKUP_S3_BUCKET = "respaldos"
+    settings.BACKUP_S3_ENDPOINT_URL = "https://minio.example"
+    settings.BACKUP_S3_PREFIX = "sg-church/"
+    settings.BACKUP_REMOTE_KEEP = 2
+    fake = FakeS3()
+    with mock.patch("boto3.client", return_value=fake) as make_client:
+        fake.make_client = make_client
+        yield fake
+
+
 @pytest.mark.django_db(transaction=True)  # SQLite's online backup can't run inside an open transaction
 class TestOffsiteCopy:
-    def test_files_are_uploaded_when_a_bucket_is_configured(self, target, settings):
-        settings.BACKUP_S3_BUCKET = "respaldos"
-        settings.BACKUP_S3_ENDPOINT_URL = "https://minio.example"
-        settings.BACKUP_S3_PREFIX = "sg-church/"
-        client = mock.Mock()
-        with mock.patch("boto3.client", return_value=client) as make_client:
-            result = backup.create_backup()
+    def test_files_are_uploaded_when_a_bucket_is_configured(self, target, bucket):
+        result = backup.create_backup()
 
         assert result["upload_error"] is None
-        assert make_client.call_args.kwargs["endpoint_url"] == "https://minio.example"
-        bucket, key = client.upload_file.call_args.args[1:]
-        assert bucket == "respaldos" and key == f"sg-church/{result['files'][0].name}"
+        assert bucket.make_client.call_args.kwargs["endpoint_url"] == "https://minio.example"
+        assert list(bucket.objects) == [f"sg-church/{result['files'][0].name}"]
 
-    def test_a_failed_upload_keeps_the_local_backup_and_reports_it(self, target, settings):
-        settings.BACKUP_S3_BUCKET = "respaldos"
-        client = mock.Mock()
-        client.upload_file.side_effect = RuntimeError("bucket unreachable")
-        with mock.patch("boto3.client", return_value=client):
-            result = backup.create_backup()
+    def test_a_failed_upload_keeps_the_local_backup_and_reports_it(self, target, bucket):
+        bucket.fail_on["upload_file"] = RuntimeError("bucket unreachable")
+        result = backup.create_backup()
 
         assert "bucket unreachable" in result["upload_error"]
         assert result["files"][0].exists()
@@ -141,6 +194,101 @@ class TestOffsiteCopy:
         with mock.patch("boto3.client") as make_client:
             backup.create_backup()
         make_client.assert_not_called()
+
+    def test_old_copies_in_the_bucket_are_trimmed(self, target, stamps, bucket):
+        for _ in range(4):
+            backup.create_backup()
+        names = sorted(key.rsplit("/", 1)[-1] for key in bucket.objects)
+        assert len(names) == 2 and names[-1].startswith("db-20260101-000004")
+
+    def test_trimming_leaves_other_things_in_the_bucket_alone(self, target, stamps, bucket):
+        bucket.objects["sg-church/notas.txt"] = b"x"
+        bucket.objects["otro/db-20200101-000000.sql.gz"] = b"x"
+        for _ in range(4):
+            backup.create_backup()
+        assert "sg-church/notas.txt" in bucket.objects and "otro/db-20200101-000000.sql.gz" in bucket.objects
+
+    def test_a_trimming_failure_is_reported_but_the_backup_is_there(self, target, stamps, bucket):
+        for _ in range(3):
+            backup.create_backup()
+        bucket.fail_on["delete_object"] = RuntimeError("no delete permission")
+        result = backup.create_backup()
+        assert "no delete permission" in result["upload_error"]
+        assert len(bucket.objects) >= 3
+
+
+class TestCheckRemote:
+    def test_a_working_bucket_passes_every_step(self, bucket):
+        steps = backup.check_remote()
+        assert any("write" in s for s in steps) and any("read" in s for s in steps)
+        assert any("delete" in s for s in steps)
+        assert not [k for k in bucket.objects if ".check-" in k]  # the probe is removed
+
+    def test_no_bucket_says_so(self, settings):
+        settings.BACKUP_S3_BUCKET = ""
+        with pytest.raises(backup.BackupError, match="BACKUP_S3_BUCKET"):
+            backup.check_remote()
+
+    @pytest.mark.parametrize("step", ["head_bucket", "put_object", "delete_object"])
+    def test_each_failure_names_what_worked_and_what_broke(self, bucket, step):
+        bucket.fail_on[step] = RuntimeError("AccessDenied")
+        with pytest.raises(backup.BackupError, match="AccessDenied"):
+            backup.check_remote()
+
+    def test_command_reports_ok_lines(self, bucket, capsys):
+        call_command("backup_data", "--check-remote")
+        assert "OK  Can write" in capsys.readouterr().out
+
+    def test_command_fails_with_the_reason(self, bucket):
+        from django.core.management.base import CommandError
+
+        bucket.fail_on["put_object"] = RuntimeError("AccessDenied")
+        with pytest.raises(CommandError, match="AccessDenied"):
+            call_command("backup_data", "--check-remote")
+
+    def test_list_remote_shows_the_stored_backups(self, bucket, capsys):
+        bucket.objects["sg-church/db-20260101-000001.sql.gz"] = b"abc"
+        call_command("backup_data", "--list-remote")
+        out = capsys.readouterr().out
+        assert "db-20260101-000001.sql.gz" in out and "1 file(s) off-site" in out
+
+
+class TestAlerts:
+    def test_a_failed_nightly_backup_emails_the_person_in_charge(self, settings, mailoutbox):
+        from core import tasks
+
+        settings.BACKUP_ALERT_EMAIL = "yo@iglesia.org, otro@iglesia.org"
+        with mock.patch("core.backup.create_backup", side_effect=RuntimeError("disk full")):
+            with pytest.raises(RuntimeError):
+                tasks.run_backup()
+        assert mailoutbox[0].to == ["yo@iglesia.org", "otro@iglesia.org"]
+        assert "FALLÓ" in mailoutbox[0].subject and "disk full" in mailoutbox[0].body
+
+    def test_a_failed_off_site_copy_also_emails(self, settings, mailoutbox):
+        from core import tasks
+
+        settings.BACKUP_ALERT_EMAIL = "yo@iglesia.org"
+        result = {"files": [], "pruned": [], "upload_error": "bucket unreachable"}
+        with mock.patch("core.backup.create_backup", return_value=result):
+            tasks.run_backup()
+        assert "fuera del servidor" in mailoutbox[0].subject and "bucket unreachable" in mailoutbox[0].body
+
+    def test_nobody_is_emailed_when_no_address_is_set(self, settings, mailoutbox):
+        from core import tasks
+
+        settings.BACKUP_ALERT_EMAIL = ""
+        with mock.patch("core.backup.create_backup", side_effect=RuntimeError("x")):
+            with pytest.raises(RuntimeError):
+                tasks.run_backup()
+        assert mailoutbox == []
+
+    def test_a_good_backup_sends_nothing(self, settings, mailoutbox):
+        from core import tasks
+
+        settings.BACKUP_ALERT_EMAIL = "yo@iglesia.org"
+        with mock.patch("core.backup.create_backup", return_value={"files": [], "pruned": [], "upload_error": None}):
+            tasks.run_backup()
+        assert mailoutbox == []
 
 
 @pytest.mark.django_db(transaction=True)  # SQLite's online backup can't run inside an open transaction
