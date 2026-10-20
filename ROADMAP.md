@@ -116,8 +116,8 @@ Establecer la base arquitectónica y funcionalidades core mínimas para que una 
 
 #### Sprint 8-10: Donaciones y Finanzas Básicas (Semanas 15-20) ✅ COMPLETADO (parcial — ver pendientes marcados abajo)
 - [x] **Integración Stripe**
-  - [ ] Setup Stripe Connect (platform model) - Pendiente
-  - [ ] Crear connected account en onboarding - Pendiente
+  - [ ] Setup Stripe Connect (platform model) - Módulo futuro, sin fecha (decisión 2026-10-20)
+  - [ ] Crear connected account en onboarding - Módulo futuro, sin fecha
   - [x] Página pública de donaciones
     - [x] Stripe Checkout integration
     - [x] Formulario de donación única
@@ -243,7 +243,7 @@ Expandir funcionalidades para cubrir las necesidades operativas diarias de una i
 **Entregable**: Módulo sacramental completo
 
 #### Sprint 16-18: Donaciones Recurrentes (Semanas 31-36)
-- [ ] **Stripe Subscriptions**
+- [ ] **Stripe Subscriptions** (módulo futuro, sin fecha)
   - [ ] UI para configurar donación recurrente
     - [ ] Frecuencia: mensual, trimestral, anual
     - [ ] Método de pago guardado
