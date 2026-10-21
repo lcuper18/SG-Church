@@ -37,8 +37,6 @@ INSTALLED_APPS = [
     # Third party
     "rest_framework",
     "corsheaders",
-    "crispy_forms",
-    "crispy_bootstrap4",
     "allauth",
     "allauth.account",
     "allauth.mfa",
@@ -222,10 +220,6 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = os.environ.get(
     "CORS_ALLOWED_ORIGINS", "http://localhost:8000"
 ).split(",")
-
-# Crispy Forms
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
-CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 # Celery
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")

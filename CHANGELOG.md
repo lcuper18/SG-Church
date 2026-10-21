@@ -35,6 +35,11 @@ section reflects real history (from `git log`), not a plan.
   reset used to fail with a server error (missing `429.html`); it now shows a clear page
 
 #### Changed
+- Dependencies: every package now has a version ceiling (next major, or next minor for django-allauth),
+  eight packages the code never imported were removed (django-celery-beat, django-celery-results, pytz,
+  python-dotenv, django-phonenumber-field, phonenumbers, django-crispy-forms, crispy-bootstrap4), and gunicorn
+  moved from 21 to 23 (security fixes for request smuggling). The test image installs only from the
+  requirements files
 - Off-site backups made ready to switch on: `backup_data --check-remote` proves the bucket settings (write,
   read, delete) without making a backup and says exactly what fails, `--list-remote` shows what is stored
   off-site, old copies in the bucket are trimmed to `BACKUP_REMOTE_KEEP` (30) per kind, a failed nightly
