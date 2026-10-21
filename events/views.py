@@ -23,6 +23,7 @@ from django.views.generic import (
 
 from core.exports import csv_response, export_filename
 from core.mixins import ManageMembersRequiredMixin
+from core.pagination import paginate
 from members.search import search_members
 from emails import notify
 from education.models import Course
@@ -151,7 +152,9 @@ class EventDetailView(LoginRequiredMixin, DetailView):
         registrations = event.registrations.filter(status="registered").select_related(
             "member"
         )
-        context["registrations"] = registrations
+        # The counts below use everyone; only the table on screen is paged.
+        context["page_obj"] = paginate(self.request, registrations.order_by("member__last_name", "member__first_name"))
+        context["registrations"] = context["page_obj"].object_list
         attended_ids = set(event.attendances.values_list("member_id", flat=True))
         registered_ids = set(registrations.values_list("member_id", flat=True))
         context["attended_count"] = len(attended_ids)

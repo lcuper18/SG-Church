@@ -194,7 +194,7 @@ Dos caminos, ambos vigentes:
 
 - **Wizard web** (`/onboarding/`): 4 pasos (datos de la iglesia, admin,
   configuración, confirmación) — crea el `Tenant` y el primer usuario
-  `admin` (`members/views.py::OnboardingCompleteView`).
+  `admin` (`members/views/onboarding.py::OnboardingCompleteView`).
 - **Línea de comandos**: `python manage.py create_tenant "Nombre" subdominio
   [--admin-email E --admin-password P]`, o `bootstrap_tenant` para el
   primer arranque no interactivo de una instalación autoinstalable (ver

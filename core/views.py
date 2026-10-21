@@ -183,6 +183,7 @@ class ChurchUsersMixin(LoginRequiredMixin, ChurchAdminRequiredMixin):
 class UserListView(ChurchUsersMixin, ListView):
     template_name = "core/user_list.html"
     context_object_name = "church_users"
+    paginate_by = 50
 
     def get_queryset(self):
         return super().get_queryset().order_by("-is_active", "first_name", "last_name")

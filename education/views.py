@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
+from core.pagination import paginate
 from core.mixins import ManageEducationRequiredMixin, ManageMembersRequiredMixin
 from emails import notify
 from members.models import Member, User
@@ -35,6 +36,7 @@ class CourseListView(LoginRequiredMixin, ListView):
     model = Course
     template_name = "education/course_list.html"
     context_object_name = "courses"
+    paginate_by = 25
 
     def get_queryset(self):
         tenant = getattr(self.request.user, "tenant", None)
@@ -66,9 +68,13 @@ class CourseDetailView(LoginRequiredMixin, DetailView):
         if not self.request.user.can_view_roster:
             return context
 
-        context["enrollments"] = course.enrollments.select_related("member").exclude(
-            status="dropped"
+        enrollments = (
+            course.enrollments.select_related("member")
+            .exclude(status="dropped")
+            .order_by("member__last_name", "member__first_name")
         )
+        context["page_obj"] = paginate(self.request, enrollments)
+        context["enrollments"] = context["page_obj"].object_list
         return context
 
 
@@ -216,6 +222,7 @@ class CourseBlockListView(LoginRequiredMixin, ListView):
     model = CourseBlock
     template_name = "education/course_block_list.html"
     context_object_name = "course_blocks"
+    paginate_by = 25
 
     def get_queryset(self):
         tenant = getattr(self.request.user, "tenant", None)
@@ -264,7 +271,9 @@ class CourseBlockDetailView(LoginRequiredMixin, DetailView):
                 completed_by_member[member_id] += 1
 
         certificates = {c.member_id: c for c in block.certificates.all()}
-        members = Member.objects.filter(id__in=list(completed_by_member))
+        members = Member.objects.filter(id__in=list(completed_by_member)).order_by(
+            "last_name", "first_name"
+        )
 
         progress = [
             {
@@ -277,7 +286,8 @@ class CourseBlockDetailView(LoginRequiredMixin, DetailView):
         ]
 
         context["courses"] = courses
-        context["progress"] = progress
+        context["page_obj"] = paginate(self.request, progress)
+        context["progress"] = context["page_obj"].object_list
         if self.request.user.can_manage_education:
             context["available_courses"] = Course.objects.filter(
                 tenant=block.tenant, course_block__isnull=True, is_active=True

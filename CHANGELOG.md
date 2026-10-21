@@ -35,6 +35,13 @@ section reflects real history (from `git log`), not a plan.
   reset used to fail with a server error (missing `429.html`); it now shows a clear page
 
 #### Changed
+- Code organisation: `members/views.py` (1056 lines) and `finance/views.py` (852 lines) are now packages
+  split by topic (members, families, tags, "Mi ficha", lookup, import, onboarding / dashboard, donations,
+  expenses, public donate page, reports, exports). Everything is re-exported from the package, so URLs, imports
+  and behaviour are unchanged
+- More lists are paged (50 per page, 25 for courses and blocks): courses, course blocks, church users, and the
+  enrolled / registered / block-progress tables on the course, event and block pages (totals and counts still
+  cover everyone). The attendance sheet intentionally stays on one page: its live search needs every name
 - Dependencies: every package now has a version ceiling (next major, or next minor for django-allauth),
   eight packages the code never imported were removed (django-celery-beat, django-celery-results, pytz,
   python-dotenv, django-phonenumber-field, phonenumbers, django-crispy-forms, crispy-bootstrap4), and gunicorn

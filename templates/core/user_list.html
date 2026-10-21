@@ -66,8 +66,9 @@
             </table>
         </div>
     </div>
+    {% include "partials/pagination.html" %}
 
-    <div class="card">
+    <div class="card mt-4">
         <div class="card-header">¿Qué puede hacer cada rol?</div>
         <ul class="list-group list-group-flush">
             {% for label, description in role_help %}
