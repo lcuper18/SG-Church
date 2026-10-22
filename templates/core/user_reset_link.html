@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Enlace de restablecimiento - SG Church{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h1 class="h4"><i class="bi bi-key"></i> Enlace para {{ target_user.get_full_name }}</h1>
+                    <p class="text-muted">Pásale este enlace a la persona (WhatsApp, mensaje o en persona). Al abrirlo elige su propia contraseña; tú no llegas a verla. Funciona por <strong>3 días</strong> y deja de servir cuando se use o se cambie su contraseña.</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="reset-url" value="{{ reset_url }}" readonly aria-label="Enlace de restablecimiento">
+                        <button class="btn btn-primary" type="button" id="copy-reset-url">Copiar</button>
+                    </div>
+                    <p class="small text-muted mb-4">Cualquiera que tenga este enlace puede cambiar esa contraseña: no lo publiques en un grupo. Este movimiento queda anotado en la bitácora.</p>
+                    <a href="{% url 'user_list' %}" class="btn btn-secondary">Volver a Usuarios</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('copy-reset-url').addEventListener('click', function () {
+    var field = document.getElementById('reset-url');
+    field.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(field.value) : Promise.reject()).catch(function () {
+        document.execCommand('copy');
+    });
+    this.textContent = 'Copiado';
+});
+</script>
+{% endblock %}

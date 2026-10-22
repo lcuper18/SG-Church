@@ -734,6 +734,54 @@ Agregar endpoint de health a uptime monitoring:
 
 ## Backups
 
+### Correo (recuperar contraseña, recordatorios)
+
+Sin configuración, los correos solo se imprimen en el registro del servidor (modo consola): nada llega a
+nadie. Para que «olvidé mi contraseña», los recordatorios y los anuncios funcionen hace falta un servidor SMTP.
+**No necesitas un servidor de correo propio**, basta una cuenta en un servicio:
+
+| Opción | Cuesta | Notas |
+|---|---|---|
+| **Gmail** (cuenta propia con verificación en dos pasos y *contraseña de aplicación*) | Gratis, ~500 correos/día | Lo más rápido para pruebas. Salen desde tu dirección de Gmail |
+| **Brevo** | Gratis, 300/día | Permite verificar una sola dirección de remitente sin dominio |
+| **Resend, Amazon SES, Mailgun** | Gratis o centavos | Piden verificar un dominio propio |
+
+Sin dominio propio los correos tienen más probabilidad de caer en spam; para producción conviene un dominio con
+SPF/DKIM. Variables (en Dokploy, como las demás) y luego redesplegar:
+
+```env
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=tu.cuenta@gmail.com
+EMAIL_HOST_PASSWORD=la-contraseña-de-aplicación
+DEFAULT_FROM_EMAIL=tu.cuenta@gmail.com
+SITE_URL=https://la-direccion-de-tu-sistema
+```
+
+`SITE_URL` hace que los enlaces de los correos (ver el evento, darse de baja) apunten a tu sistema. Mientras no
+haya correo, los administradores pueden dar enlaces de restablecimiento a mano (ver
+`docs/USER_LOGIN_SECURITY.md`).
+
+### Copia de respaldos en tu computador (sin bucket)
+
+Mientras no haya una copia fuera del servidor, `scripts/pull-backup.sh` baja los respaldos al Mac por SSH:
+
+```bash
+scripts/pull-backup.sh --now      # hace un respaldo en el servidor y lo descarga
+scripts/pull-backup.sh            # descarga lo nuevo (se queda con las últimas 14 copias)
+scripts/pull-backup.sh --list     # solo muestra qué hay en el servidor
+```
+
+Valores por defecto: `SG_SERVER=root@148.230.92.233`, `SG_CONTAINER_MATCH=sg-church-demo.*celery`,
+`SG_BACKUP_DEST=~/Backups/sg-church` (con permisos privados). Comprueba el tamaño y que el archivo sea un gzip
+válido antes de guardarlo, y avisa si el último respaldo del servidor tiene más de 30 horas. Hace falta acceso
+SSH por llave. Para automatizarlo, una línea en `crontab -e` del Mac (por ejemplo cada día a las 9):
+`0 9 * * * /ruta/a/SG-Church/scripts/pull-backup.sh >> ~/Backups/sg-church/pull.log 2>&1`; el Mac debe estar
+encendido a esa hora. Los respaldos contienen datos personales: guarda la carpeta en un disco cifrado
+(FileVault). **No sustituye** a la copia fuera del servidor en un bucket, porque depende de que el Mac esté
+encendido y de que lo ejecutes.
+
 ### Procesos y límites de recursos
 
 `docker-compose.yml` arranca gunicorn con 3 procesos de 2 hilos (1 proceso de 4 hilos en el modo

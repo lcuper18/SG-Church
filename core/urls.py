@@ -22,6 +22,8 @@ urlpatterns = [
         views.UserToggleActiveView.as_view(),
         name="user_toggle_active",
     ),
+    path("users/<uuid:pk>/reset-link/", views.UserResetLinkView.as_view(), name="user_reset_link"),
+    path("users/<uuid:pk>/remove-two-step/", views.UserRemoveTwoStepView.as_view(), name="user_remove_two_step"),
     # Sites (sedes)
     path("sites/", views.SiteListView.as_view(), name="site_list"),
     path("sites/create/", views.SiteCreateView.as_view(), name="site_create"),

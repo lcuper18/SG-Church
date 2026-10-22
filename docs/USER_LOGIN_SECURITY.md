@@ -13,12 +13,30 @@ aplicación e ingresa el código que muestra. Al activarla se generan **códigos
 
 **Entrar:** contraseña como siempre y, después, el código de la aplicación (o un código de recuperación).
 
-**Si pierdes el teléfono y los códigos:** un administrador de la iglesia no puede saltarse el paso; hay que
-quitarla desde el servidor (`manage.py shell`, borrando los `Authenticator` del usuario). Por eso conviene
-guardar los códigos de recuperación.
+**La verificación en dos pasos no necesita correo ni internet en el teléfono:** el código lo calcula la
+aplicación sola.
+
+**Si pierdes el teléfono:** entra con uno de tus **códigos de recuperación**. Si tampoco los tienes, un
+administrador de tu iglesia abre **Usuarios**, pulsa el escudo con la X junto a tu nombre
+(«Quitar su verificación en dos pasos») y vuelves a entrar solo con tu contraseña para configurarla de nuevo.
+Queda anotado en la bitácora. Un administrador no puede quitarse la suya: debe usar sus códigos o pedírselo a
+otro administrador.
 
 Desactivarla, ver los códigos o generar nuevos pide confirmar la contraseña si iniciaste sesión hace más
 de 5 minutos.
+
+## Olvidé mi contraseña
+
+- **Por correo:** en «¿Olvidaste tu contraseña?» pones tu correo y recibes un enlace para elegir una nueva.
+  **Esto requiere que el servidor tenga correo configurado** (ver `docs/DEPLOYMENT.md`, «Correo»); sin eso el
+  mensaje solo se imprime en el registro del servidor y nunca llega a nadie.
+- **Con ayuda de un administrador (no necesita correo):** en **Usuarios**, el botón de la llave junto a la
+  persona genera un **enlace de restablecimiento** que el administrador le pasa por WhatsApp o en persona. La
+  persona lo abre, elige su propia contraseña (el administrador nunca la ve), y el enlace funciona 3 días o
+  hasta que se use. Queda anotado en la bitácora. Cualquiera que tenga el enlace puede cambiar esa contraseña,
+  así que no se publica en grupos.
+- **Si eres el único administrador** y olvidaste tu contraseña sin correo configurado, hay que hacerlo desde el
+  servidor: `docker compose exec web python manage.py changepassword tu@correo.com`.
 
 ## Límites contra adivinar contraseñas
 

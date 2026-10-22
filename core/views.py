@@ -25,6 +25,7 @@ from core.forms import (
     UserCreateForm,
     UserEditForm,
 )
+from core import audit
 from core.mixins import ChurchAdminRequiredMixin
 from emails import notify
 from members.models import Member, User
@@ -193,6 +194,13 @@ class UserListView(ChurchUsersMixin, ListView):
         context["role_help"] = [
             (label, ROLE_HELP[value]) for value, label in User.ROLE_CHOICES
         ]
+        from allauth.mfa.models import Authenticator
+
+        context["two_step_ids"] = set(
+            Authenticator.objects.filter(
+                user__in=[u.pk for u in context["church_users"]], type=Authenticator.Type.TOTP
+            ).values_list("user_id", flat=True)
+        )
         return context
 
 
@@ -259,6 +267,45 @@ class UserToggleActiveView(ChurchUsersMixin, View):
                 f"{target.get_full_name()} "
                 f"{'ya puede' if target.is_active else 'ya no puede'} iniciar sesión.",
             )
+        return redirect("user_list")
+
+
+class UserResetLinkView(ChurchUsersMixin, View):
+    """Give the administrator a link to hand to someone who forgot their password
+    (WhatsApp, in person...). Works without any e-mail set-up. POST only: a GET
+    must never mint a link."""
+
+    def post(self, request, pk):
+        target = get_object_or_404(self.get_queryset(), pk=pk)
+        url = notify.password_reset_url(target, request)
+        if not url:
+            messages.error(request, "No se pudo generar el enlace.")
+            return redirect("user_list")
+        audit.log_note(
+            request.user.tenant, request.user, "update", "members.user",
+            f"Enlace de restablecimiento de contraseña generado para {target.email}",
+        )
+        return render(request, "core/user_reset_link.html", {"target_user": target, "reset_url": url})
+
+
+class UserRemoveTwoStepView(ChurchUsersMixin, View):
+    """For someone who lost their phone and recovery codes: remove their two-step
+    verification so they can sign in and set it up again."""
+
+    def post(self, request, pk):
+        from allauth.mfa.models import Authenticator
+
+        target = get_object_or_404(self.get_queryset(), pk=pk)
+        if target.pk == request.user.pk:
+            messages.error(request, "Tu propia verificación se gestiona desde «Seguridad (2 pasos)».")
+            return redirect("user_list")
+        removed, _ = Authenticator.objects.filter(user=target).delete()
+        if removed:
+            audit.log_note(
+                request.user.tenant, request.user, "update", "members.user",
+                f"Verificación en dos pasos quitada a {target.email}",
+            )
+            messages.success(request, f"Se quitó la verificación en dos pasos de {target.get_full_name()}.")
         return redirect("user_list")
 
 

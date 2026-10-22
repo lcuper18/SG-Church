@@ -11,6 +11,10 @@ Nothing tagged as a release yet — all work so far lives on `main`. This
 section reflects real history (from `git log`), not a plan.
 
 #### Security
+- Access recovery without a mail server: church admins can generate a password-reset link for a user (key
+  button in Usuarios; the link is shown once, valid 3 days, single use, the admin never sees the new password,
+  and it is written to the audit log) and can remove the two-step verification of someone who lost their phone
+  and recovery codes (not their own). Both are POST-only and limited to the admin's own church
 - Closed the member directory to plain members: list/detail of members,
   families and tags, the CSV export and the matching API endpoints now require
   a member-management role (admin, pastor, volunteer). Who is enrolled in a
@@ -64,6 +68,9 @@ section reflects real history (from `git log`), not a plan.
   ordinary page views)
 
 #### Added
+- `scripts/pull-backup.sh`: downloads the newest backups from the server to a computer over SSH (integrity
+  checked, private permissions, keeps the last N, warns when the server's latest backup is stale), as an
+  interim copy outside the server until a bucket is configured
 - Pastoral follow-up (admins and pastors only): record calls, visits, messages, prayer or counselling per
   member, as done or as a task with a date and a person in charge; "Seguimiento" tab on the member page and
   a "Seguimiento pastoral" page (my pending, overdue, filters, mark done and plan the next contact in one go).

@@ -82,9 +82,9 @@ def queue_email(to_email, subject, template, context, tenant=None, unsubscribe_m
         return False
 
 
-def account_created(user, request=None):
-    """Tell a new user their account exists, with a link to choose their own
-    password (the password the admin typed is never e-mailed)."""
+def password_reset_url(user, request=None):
+    """Absolute link where `user` chooses a new password (valid for Django's
+    PASSWORD_RESET_TIMEOUT, 3 days). "" if it cannot be built."""
     from allauth.account.forms import default_token_generator
     from allauth.account.utils import user_pk_to_url_str
 
@@ -96,7 +96,14 @@ def account_created(user, request=None):
         )
     except Exception:
         logger.exception("Could not build the password link for %s", user.email)
-        path = ""
+        return ""
+    site = _site_url(request)
+    return f"{site}{path}" if site else ""
+
+
+def account_created(user, request=None):
+    """Tell a new user their account exists, with a link to choose their own
+    password (the password the admin typed is never e-mailed)."""
     site = _site_url(request)
     tenant = user.tenant
     return queue_email(
@@ -107,7 +114,7 @@ def account_created(user, request=None):
             "user": user,
             "role": user.get_role_display(),
             "login_url": f"{site}{reverse('login')}" if site else "",
-            "password_url": f"{site}{path}" if site and path else "",
+            "password_url": password_reset_url(user, request),
         },
         tenant,
     )

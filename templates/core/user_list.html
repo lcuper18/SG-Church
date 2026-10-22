@@ -43,6 +43,20 @@
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
                                 {% if person.pk != user.pk %}
+                                <form method="post" action="{% url 'user_reset_link' person.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Enlace para restablecer su contraseña" aria-label="Enlace para restablecer la contraseña de {{ person.get_full_name }}">
+                                        <i class="bi bi-key" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                                {% if person.pk in two_step_ids %}
+                                <form method="post" action="{% url 'user_remove_two_step' person.pk %}" class="d-inline" onsubmit="return confirm('¿Quitar la verificación en dos pasos de {{ person.get_full_name|escapejs }}? Úsalo solo si perdió su teléfono y sus códigos de recuperación.')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Quitar su verificación en dos pasos" aria-label="Quitar la verificación en dos pasos de {{ person.get_full_name }}">
+                                        <i class="bi bi-shield-x" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
                                 <form method="post" action="{% url 'user_toggle_active' person.pk %}" class="d-inline">
                                     {% csrf_token %}
                                     {% if person.is_active %}
